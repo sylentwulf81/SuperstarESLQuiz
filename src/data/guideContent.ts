@@ -108,7 +108,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           icon: 'HelpCircle',
           points: [
             'Visual & Multiple Choice: Read the prompt and examine the image. Students choose from 4 options (A, B, C, D).',
-            'Letter Unscramble: Students click scrambled letter tiles to spell the vocabulary word. Use Hint or Backspace if students get stuck.',
+            'Letter Unscramble: Students click scrambled letter tiles to spell the vocabulary word. Use Reveal Answer or Backspace if students get stuck.',
             'Open Trivia: Knowledge and conversation questions. Click "Reveal Answer" to check, then tap "Correct (+Coins)" or "Incorrect".',
             'Mystery Roulette: When a question mark mystery block is hit, 6 face-down cards appear. The student picks their lucky card (1–6)!',
           ],
@@ -193,27 +193,39 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       subtitle: 'Click any card below to test authentic sound effects and preview game effects.',
       instructions:
         'When a team hits a Mystery Card block, 6 face-down cards are presented in a 2:3 ratio. The student chooses one card (1 to 6). Below is the complete deck of possible outcomes:',
-      deckInfo: 'Complete Deck: 8 Special Cards',
+      deckInfo: 'Complete Deck: 10 Special Cards',
       cardDescriptions: {
         bowser_revolution: {
-          title: 'Bowser Revolution',
-          desc: 'Bowser shakes up the board! Equalizes all team coin totals so everyone is tied.',
+          title: "Bowser's Revolution",
+          desc: 'Bowser creates chaos! Choose any rival team and swap your total coins with theirs!',
+        },
+        bowser_fury: {
+          title: "Bowser's Fury",
+          desc: 'Bowser breathes fire across the arena! Inflicts -5 coins on each and every rival team!',
+        },
+        ghost_steal_5: {
+          title: 'Boo',
+          desc: 'Choose an opponent team, then roll a 6-sided die to steal that exact number of coins!',
         },
         boo_steal_5: {
-          title: 'Boo Coin Steal',
-          desc: 'Boo steals 5 coins from an opponent of your choice and gives them to your team!',
+          title: 'Boo',
+          desc: 'Choose an opponent team, then roll a 6-sided die to steal that exact number of coins!',
+        },
+        king_boo: {
+          title: 'King Boo',
+          desc: 'Roll a 6-sided die and steal that number of coins from EACH other team!',
         },
         boo_steal_10: {
-          title: 'King Boo Grand Heist',
-          desc: 'King Boo swoops in and steals 10 coins from a rival team!',
+          title: 'King Boo',
+          desc: 'Roll a 6-sided die and steal that number of coins from EACH other team!',
         },
         super_star_x2: {
-          title: 'Super Star Bonus',
-          desc: 'Invincibility star! Grants instant bonus coins plus double value on your next turn.',
+          title: 'Super Mushroom',
+          desc: 'Power-up mushroom! Take another turn immediately and choose another block!',
         },
         blue_shell: {
-          title: 'Spiny Shell Strike',
-          desc: 'Target the current 1st-place team and blast away their lead for a huge comeback!',
+          title: 'Blue Shell',
+          desc: 'Target the current 1st-place team! The leading team is stunned and skips their next turn.',
         },
         super_coins_10: {
           title: '10 Gold Coins Jackpot',
@@ -223,9 +235,13 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: 'Double Mushroom',
           desc: 'Grants an immediate extra consecutive turn with doubled question rewards!',
         },
+        pow_block: {
+          title: 'POW Block',
+          desc: 'Trigger a seismic earthquake! Equalize all teams\' coins to either the HIGHEST or LOWEST score (your choice)!',
+        },
         hidden_block: {
-          title: 'Lucky Hidden Block',
-          desc: 'You uncovered a hidden block with surprise bonus coins!',
+          title: 'POW Block',
+          desc: 'Trigger a seismic earthquake! Equalize all teams\' coins to either the HIGHEST or LOWEST score (your choice)!',
         },
       },
       testSoundLabel: 'TEST SOUND & EFFECT',
@@ -290,7 +306,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           icon: 'HelpCircle',
           points: [
             '4択・画像クイズ：写真や問題文を見て、4つの選択肢（A, B, C, D）からチームで相談して正解を選びます。',
-            'スペル並べ替え：バラバラになったアルファベットタイルを正しい順に押して英単語を完成させます。「Hint」や「1文字戻す」も使えます。',
+            'スペル並べ替え：バラバラになったアルファベットタイルを正しい順に押して英単語を完成させます。「答えを表示」や「1文字戻す」も使えます。',
             'オープン問題：知識やフリートークの問題です。「答えを表示」で正解を確認し、先生が「正解（＋コイン）」または「不正解」を押します。',
             'サプライズルーレット：ハテナブロックを引くと、2:3比率の美しい6枚のカードが出現！手番チームが1〜6の好きなカードを選びます。',
           ],
@@ -374,27 +390,39 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       subtitle: '下のカードをクリックすると、実際の効果音とゲーム内効果を試聴・テストできます。',
       instructions:
         'ハテナブロックを開くと、2:3のトランプ比率の6枚のカードが提示されます。手番のチームが1〜6番の中から1枚を選択します。デッキに含まれるカードの効果は以下の通りです：',
-      deckInfo: '全8種類の特別カード',
+      deckInfo: '全10種類の特別カード',
       cardDescriptions: {
         bowser_revolution: {
           title: 'クッパ革命',
-          desc: 'クッパが登場！全チームの所持コインを合計して均等に再分配し、全員同点にします！',
+          desc: 'クッパが登場！相手チームを1つ選び、そのチームと所持コイン総数を入れ替えます！',
+        },
+        bowser_fury: {
+          title: 'クッパの怒り',
+          desc: 'クッパの猛火が炸裂！自チーム以外のすべてのライバルチームからコインを5枚ずつ減らします！',
+        },
+        ghost_steal_5: {
+          title: 'テレサ',
+          desc: '相手チームを指名後、6面ダイスを振って出た目の数だけコインを奪い取ります！',
         },
         boo_steal_5: {
-          title: 'テレサのコイン強奪（5枚）',
-          desc: 'ライバルチームを指名して、そのチームからコインを5枚奪い取ります！',
+          title: 'テレサ',
+          desc: '相手チームを指名後、6面ダイスを振って出た目の数だけコインを奪い取ります！',
+        },
+        king_boo: {
+          title: 'キングテレサ',
+          desc: '6面ダイスを振り、相手のすべてのチームから出た目の数だけコインを奪い取ります！',
         },
         boo_steal_10: {
-          title: 'キングテレサの大強奪（10枚）',
-          desc: 'キングテレサが襲来！指定した相手チームからコインを一気に10枚奪取！',
+          title: 'キングテレサ',
+          desc: '6面ダイスを振り、相手のすべてのチームから出た目の数だけコインを奪い取ります！',
         },
         super_star_x2: {
-          title: 'スーパースターボーナス',
-          desc: '無敵のスター！即座にボーナスコインを獲得し、次のターンの配点が2倍になります。',
+          title: 'スーパーキノコ（連続ターン）',
+          desc: 'スーパーキノコでパワーアップ！手番をもう一度連続で行い、次のブロックを選べます。',
         },
         blue_shell: {
-          title: 'トゲゾーこうら直撃',
-          desc: '現在1位を走るトップチームに直撃！リードを削り落とす大逆転アイテム！',
+          title: 'ブルーシェル（トゲゾー）',
+          desc: '現在1位を走るトップチームに直撃！トップチームは1回休みとなります。',
         },
         super_coins_10: {
           title: 'ゴールドコイン10枚ジャックポット',
@@ -404,9 +432,13 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: 'スーパーキノコ（2倍連続ターン）',
           desc: '連続でもう一度ターンを実行でき、さらに問題の配点コインが2倍になります！',
         },
+        pow_block: {
+          title: 'POWブロック',
+          desc: '激震が走る！全チームのコインを「最高得点」か「最低得点」のどちらかに均一化（引いたチームが選択）！',
+        },
         hidden_block: {
-          title: 'ラッキー隠しブロック',
-          desc: '隠されたブロックを発見！ラッキーなボーナスコインを獲得します。',
+          title: 'POWブロック',
+          desc: '激震が走る！全チームのコインを「最高得点」か「最低得点」のどちらかに均一化（引いたチームが選択）！',
         },
       },
       testSoundLabel: '効果音と効果をテスト',

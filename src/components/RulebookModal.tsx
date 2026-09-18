@@ -4,7 +4,7 @@ import { sounds } from '../utils/sound';
 import { 
   X, HelpCircle, Trophy, Sparkles, Ghost, Flame, Zap, Gift, Coins, 
   ShieldAlert, Volume2, BookOpen, Layers, Play, CheckCircle2,
-  GraduationCap, Users, Gamepad2, Sliders, Settings2, Monitor, Languages, Crown
+  GraduationCap, Users, Gamepad2, Sliders, Settings2, Monitor, Languages, Crown, BoxSelect
 } from 'lucide-react';
 import { REWARD_CARDS } from '../data/rewards';
 import { RewardCard } from '../types';
@@ -57,20 +57,25 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
       case 'bowser_revolution':
         sounds.playBowser();
         break;
+      case 'bowser_fury':
+        sounds.playBowserFury();
+        break;
       case 'ghost_steal_5':
       case 'boo_steal_5':
       case 'boo_steal_10':
+      case 'king_boo':
         sounds.playBoo();
         break;
       case 'super_star_x2':
       case 'mushroom_x2':
-        sounds.playSuperstar();
+        sounds.playPowerUp();
         break;
       case 'blue_shell':
         sounds.playBlueShell();
         break;
+      case 'pow_block':
       case 'hidden_block':
-        sounds.playPowerUp();
+        sounds.playPowBlock();
         break;
       case 'super_coins_10':
       case 'coins_10':
@@ -102,19 +107,23 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
     switch (type) {
       case 'bowser_revolution':
         return <Flame className="w-8 h-8 text-orange-400 fill-orange-400" />;
+      case 'bowser_fury':
+        return <Flame className="w-8 h-8 text-red-500 fill-red-500 animate-pulse" />;
       case 'ghost_steal_5':
       case 'boo_steal_5':
         return <Ghost className="w-8 h-8 text-indigo-300" />;
       case 'boo_steal_10':
+      case 'king_boo':
         return <Crown className="w-8 h-8 text-purple-400" />;
       case 'super_star_x2':
-        return <Sparkles className="w-8 h-8 text-yellow-300 fill-yellow-400 animate-pulse" />;
+      case 'mushroom_x2':
+        return <Zap className="w-8 h-8 text-red-400 fill-red-400 animate-pulse" />;
       case 'blue_shell':
         return <ShieldAlert className="w-8 h-8 text-sky-400 fill-sky-500/30" />;
       case 'super_coins_10':
         return <Trophy className="w-8 h-8 text-yellow-400 fill-yellow-500/30" />;
-      case 'mushroom_x2':
-        return <Zap className="w-8 h-8 text-red-400 fill-red-400" />;
+      case 'pow_block':
+        return <BoxSelect className="w-8 h-8 text-blue-400" />;
       case 'hidden_block':
         return <Gift className="w-8 h-8 text-amber-400" />;
       default:
@@ -126,18 +135,23 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
     switch (cardId) {
       case 'bowser_revolution':
         return 'from-red-950/90 via-slate-900 to-orange-950/80 border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.25)]';
+      case 'bowser_fury':
+        return 'from-red-950/90 via-slate-900 to-amber-950/80 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)]';
       case 'blue_shell':
         return 'from-sky-950/90 via-slate-900 to-blue-950/80 border-sky-400/60 shadow-[0_0_20px_rgba(56,189,248,0.25)]';
       case 'super_star_x2':
-        return 'from-amber-950/90 via-slate-900 to-yellow-950/80 border-yellow-400/70 shadow-[0_0_25px_rgba(250,204,21,0.3)]';
+      case 'mushroom_x2':
+        return 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]';
       case 'ghost_steal_5':
       case 'boo_steal_5':
-      case 'boo_steal_10':
         return 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]';
+      case 'boo_steal_10':
+      case 'king_boo':
+        return 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]';
       case 'super_coins_10':
         return 'from-yellow-950/90 via-slate-900 to-amber-950/80 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]';
-      case 'mushroom_x2':
-        return 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_20px_rgba(244,63,94,0.25)]';
+      case 'pow_block':
+        return 'from-blue-950/90 via-slate-900 to-indigo-950/80 border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]';
       case 'hidden_block':
         return 'from-emerald-950/90 via-slate-900 to-amber-950/80 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.25)]';
       default:

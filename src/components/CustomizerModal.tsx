@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '../types';
 import { sounds } from '../utils/sound';
 import { useAuth } from '../context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { ImageUploader } from './ImageUploader';
 import { MarioCoin } from './MarioCoin';
+import { shuffleWordLetters } from '../utils/shuffle';
 
 interface CustomizerModalProps {
   theme: GameTheme;
@@ -33,11 +35,21 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
   const [editingQuestion, setEditingQuestion] = useState<GameQuestion>(currentBlock.question);
   const [isCloudBusy, setIsCloudBusy] = useState(false);
+  const [isSavedRecently, setIsSavedRecently] = useState(false);
+  const [isCustomPoints, setIsCustomPoints] = useState<boolean>(() => {
+    const coins = currentBlock?.question?.rewardCoins;
+    return coins !== undefined && ![1, 3, 5, 10].includes(coins);
+  });
 
   useEffect(() => {
     const blk = blocks.find(b => b.id === selectedBlockId);
     if (blk) {
-      setEditingQuestion(blk.question);
+      const q = { ...blk.question };
+      if (q.type !== 'mystery_card') {
+        q.rewardCoins = Math.max(1, Number(q.rewardCoins) || 1);
+      }
+      setEditingQuestion(q);
+      setIsCustomPoints(![1, 3, 5, 10].includes(q.rewardCoins));
     }
   }, [selectedBlockId, blocks]);
 
@@ -48,23 +60,54 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
   const handleSaveCurrent = () => {
     sounds.playCorrect();
-    onUpdateBlockQuestion(currentBlock.id, editingQuestion);
+    const finalCoins = editingQuestion.type === 'mystery_card'
+      ? 0
+      : Math.max(1, Number(editingQuestion.rewardCoins) || 1);
+    const sanitizedQuestion: GameQuestion = {
+      ...editingQuestion,
+      rewardCoins: finalCoins,
+    };
+    onUpdateBlockQuestion(currentBlock.id, sanitizedQuestion);
+    setIsSavedRecently(true);
+    setTimeout(() => setIsSavedRecently(false), 2200);
   };
 
   const handleSaveToCloud = async () => {
     if (!onSaveCloud) return;
     setIsCloudBusy(true);
     sounds.playSaveCloud();
-    await onSaveCloud();
-    setIsCloudBusy(false);
+    try {
+      await onSaveCloud();
+      toast.success('Question Deck Synced to Cloud', {
+        description: 'All 60 questions backed up to Firestore.',
+        duration: 3500,
+      });
+    } catch {
+      toast.error('Cloud Sync Failed', {
+        description: 'Unable to connect to Firestore database.',
+      });
+    } finally {
+      setIsCloudBusy(false);
+    }
   };
 
   const handleLoadFromCloud = async () => {
     if (!onLoadCloud) return;
     setIsCloudBusy(true);
     sounds.playCloudSync();
-    await onLoadCloud();
-    setIsCloudBusy(false);
+    try {
+      await onLoadCloud();
+      toast.info('Restored from Cloud', {
+        description: 'Downloaded your cloud question deck from Firestore.',
+        duration: 3500,
+      });
+    } catch {
+      toast.error('Restore Failed', {
+        description: 'Unable to load cloud questions.',
+      });
+    } finally {
+      setIsCloudBusy(false);
+    }
   };
 
   const handleTypeChange = (type: QuestionType) => {
@@ -154,7 +197,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               setEditingQuestion({
                 ...q,
                 targetWord: val,
-                scrambledLetters: val.split('').sort(() => Math.random() - 0.5)
+                scrambledLetters: shuffleWordLetters(val)
               });
             }}
             placeholder="e.g. NINTENDO"
@@ -167,12 +210,12 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 overflow-hidden">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-5xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-5xl h-[92vh] md:h-[86vh] min-h-[580px] max-h-[860px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
       >
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-90 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
@@ -256,47 +299,49 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-4 sm:p-6 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-4 min-h-0">
+        <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
           {/* Left Block selector grid */}
-          <div className="md:col-span-4 bg-slate-950/70 p-3 rounded-2xl border border-white/15 overflow-y-auto max-h-48 md:max-h-none">
-            <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider block mb-2 px-1">
+          <div className="md:col-span-4 bg-slate-950/70 p-3 sm:p-3.5 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
+            <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider block mb-2 px-1 shrink-0">
               Select Block (1-{blocks.length})
             </span>
-            <div className="grid grid-cols-6 gap-1.5">
-              {blocks.map((b) => {
-                const hasImage = Boolean(b.question.imageUrl || b.question.image);
-                return (
-                  <button
-                    key={b.id}
-                    onClick={() => handleSelectBlock(b.id)}
-                    className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-pointer relative ${
-                      selectedBlockId === b.id
-                        ? 'bg-amber-500 text-slate-950 border-yellow-200 font-bold scale-105 glass-glow-gold'
-                        : b.question.type === 'mystery_card' 
-                          ? 'bg-amber-900/60 text-amber-300 border-amber-500/50 hover:bg-amber-800/60'
-                          : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/10'
-                    }`}
-                  >
-                    {b.id}
-                    {b.question.type === 'mystery_card' && (
-                      <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
-                    )}
-                    {hasImage && (
-                      <span className="absolute -bottom-1 -right-1 text-[9px] drop-shadow">🖼️</span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+              <div className="grid grid-cols-6 gap-1.5">
+                {blocks.map((b) => {
+                  const hasImage = Boolean(b.question.imageUrl || b.question.image);
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => handleSelectBlock(b.id)}
+                      className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-pointer relative ${
+                        selectedBlockId === b.id
+                          ? 'bg-amber-500 text-slate-950 border-yellow-200 font-bold scale-105 glass-glow-gold'
+                          : b.question.type === 'mystery_card' 
+                            ? 'bg-amber-900/60 text-amber-300 border-amber-500/50 hover:bg-amber-800/60'
+                            : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/10'
+                      }`}
+                    >
+                      {b.id}
+                      {b.question.type === 'mystery_card' && (
+                        <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
+                      )}
+                      {hasImage && (
+                        <span className="absolute -bottom-1 -right-1 text-[9px] drop-shadow">🖼️</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <p className="text-[11px] text-white/50 mt-3 px-1 leading-normal">
-              ⭐ indicates a Special Mystery Card block. <br />
-              🖼️ indicates a block with an attached clue image.
+            <p className="text-[11px] text-white/50 mt-2 px-1 leading-tight shrink-0 border-t border-white/10 pt-2">
+              ⭐ Mystery Card block &bull; 🖼️ Clue image attached
             </p>
           </div>
 
           {/* Right Editor Pane */}
-          <div className="md:col-span-8 bg-slate-950/60 p-4 sm:p-6 rounded-2xl border border-white/15 overflow-y-auto space-y-4 shadow-xl">
-            <div className="flex flex-col gap-3 border-b border-white/15 pb-4">
+          <div className="md:col-span-8 bg-slate-950/60 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-xl">
+            {/* Pinned Header & Type Switcher */}
+            <div className="p-3.5 sm:p-4 border-b border-white/15 bg-slate-900/70 flex flex-col gap-2.5 shrink-0">
               <div className="flex items-center justify-between">
                 <h3 className="font-mario text-xl text-yellow-300">
                   Editing Block #{currentBlock.id}
@@ -327,8 +372,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               </div>
             </div>
 
-            {/* Editable Fields */}
-            <div className="space-y-4">
+            {/* Scrollable Form Fields with stable scrollbar */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 [scrollbar-gutter:stable]">
               <div>
                 <label className="text-xs font-bold text-indigo-200 block mb-1">
                   Question Prompt / Title:
@@ -337,6 +382,12 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   type="text"
                   value={editingQuestion.title}
                   onChange={(e) => setEditingQuestion({ ...editingQuestion, title: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveCurrent();
+                    }
+                  }}
                   className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
                 />
               </div>
@@ -378,37 +429,116 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-indigo-200 block mb-1">
-                  Reward Coins:
-                </label>
-                <div className="flex items-center gap-2">
-                  {[1, 3, 5, 10].map(amt => (
+              {editingQuestion.type !== 'mystery_card' && (
+                <div>
+                  <label className="text-xs font-bold text-indigo-200 block mb-1.5">
+                    Reward Coins: <span className="text-white/50 text-[11px] font-normal">(Default: at least 1 Coin)</span>
+                  </label>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {[1, 3, 5, 10].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsCustomPoints(false);
+                          setEditingQuestion(prev => ({ ...prev, rewardCoins: amt }));
+                        }}
+                        className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
+                          !isCustomPoints && (editingQuestion.rewardCoins || 1) === amt
+                            ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
+                            : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
+                        }`}
+                      >
+                        <span className="flex items-center gap-1">
+                          +{amt}
+                          <MarioCoin size="xs" />
+                        </span>
+                      </button>
+                    ))}
+
                     <button
-                      key={amt}
-                      onClick={() => setEditingQuestion({ ...editingQuestion, rewardCoins: amt })}
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setIsCustomPoints(true);
+                      }}
                       className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
-                        editingQuestion.rewardCoins === amt
+                        isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)
                           ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
                           : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
                       }`}
                     >
-                      <span className="flex items-center gap-1">
-                        +{amt}
-                        <MarioCoin size="xs" />
-                      </span>
+                      <span>Custom</span>
                     </button>
-                  ))}
+
+                    {(isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)) && (
+                      <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-xl border border-yellow-400/40 shadow-inner">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playPop();
+                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
+                            setEditingQuestion(prev => ({ ...prev, rewardCoins: Math.max(1, currentVal - 1) }));
+                          }}
+                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
+                          title="Minus 1 coin"
+                        >
+                          -
+                        </button>
+                        <span className="text-yellow-300 font-mario text-sm font-bold">+</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={99}
+                          value={editingQuestion.rewardCoins || 1}
+                          onChange={(e) => {
+                            const parsed = parseInt(e.target.value, 10);
+                            setEditingQuestion(prev => ({
+                              ...prev,
+                              rewardCoins: isNaN(parsed) ? 1 : Math.max(1, parsed)
+                            }));
+                          }}
+                          onBlur={() => {
+                            if (!editingQuestion.rewardCoins || editingQuestion.rewardCoins < 1) {
+                              setEditingQuestion(prev => ({ ...prev, rewardCoins: 1 }));
+                            }
+                          }}
+                          className="w-14 bg-black/80 border border-white/30 rounded-lg px-1.5 py-0.5 text-center font-mario text-sm text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playPop();
+                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
+                            setEditingQuestion(prev => ({ ...prev, rewardCoins: currentVal + 1 }));
+                          }}
+                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
+                          title="Plus 1 coin"
+                        >
+                          +
+                        </button>
+                        <span className="text-xs text-amber-200 font-bold ml-1 flex items-center gap-1">
+                          Coins <MarioCoin size="xs" />
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-2 border-t border-white/15">
+            {/* Pinned Bottom Action Bar */}
+            <div className="p-3 sm:px-5 bg-slate-900/95 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 shrink-0">
               <button
                 onClick={() => {
                   sounds.playResetDeck();
                   onResetAllQuestions();
                   handleSelectBlock(1);
+                  toast.info('Deck Restored to Defaults', {
+                    description: `All ${blocks.length} questions reset to standard curriculum.`,
+                    duration: 3500,
+                  });
                 }}
                 className="px-3.5 py-2 bg-slate-800/80 hover:bg-red-950/60 text-slate-300 hover:text-red-300 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
               >
@@ -417,9 +547,13 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
               <button
                 onClick={handleSaveCurrent}
-                className="px-5 py-2 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-base rounded-xl shadow-md border border-emerald-300/60 flex items-center gap-1.5 transition-all cursor-pointer"
+                className={`px-5 py-2 font-mario text-base rounded-xl shadow-md border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  isSavedRecently
+                    ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white border-yellow-200 scale-105 shadow-[0_0_20px_rgba(74,222,128,0.7)]'
+                    : 'bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white border-emerald-300/60'
+                }`}
               >
-                <Check className="w-4 h-4" /> Save Block Changes
+                <Check className="w-4 h-4" /> {isSavedRecently ? 'Saved! 🎉' : 'Save Block Changes'}
               </button>
             </div>
           </div>

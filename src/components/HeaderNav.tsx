@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
@@ -17,7 +18,10 @@ import {
   Menu,
   Music,
   BookOpen,
-  GraduationCap
+  GraduationCap,
+  Library,
+  Gamepad2,
+  ArrowLeft
 } from 'lucide-react';
 import { Team, GameTheme } from '../types';
 import { CHARACTERS } from '../data/characters';
@@ -25,6 +29,7 @@ import { sounds } from '../utils/sound';
 import { MusicPlayer } from './MusicPlayer';
 import { AccountMenu } from './AccountMenu';
 import { TeamAvatar } from './TeamAvatar';
+import { MarioCoin } from './MarioCoin';
 
 interface HeaderNavProps {
   theme: GameTheme;
@@ -37,6 +42,7 @@ interface HeaderNavProps {
   onOpenCustomizer: () => void;
   onDeclareWinner: () => void;
   onResetGame: () => void;
+  onExitToLauncher?: () => void;
   onShuffleBoard?: () => void;
   onNextTurn: () => void;
   openedCount: number;
@@ -57,6 +63,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   onOpenCustomizer,
   onDeclareWinner,
   onResetGame,
+  onExitToLauncher,
   onShuffleBoard,
   onNextTurn,
   openedCount,
@@ -71,8 +78,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const character = CHARACTERS[currentTeam.characterId];
 
   return (
-    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 py-1.5 shadow-xl shrink-0">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
+    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
+      <div className="w-full max-w-[1750px] mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0">
         {/* Left: Brand & Active Team Turn Indicator */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div className="flex items-center gap-1.5">
@@ -88,6 +95,19 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             >
               {theme === 'summer' ? 'Summer' : 'Holiday'}
             </span>
+            {onExitToLauncher && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  setShowResetConfirm(true);
+                }}
+                className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white border border-white/10 text-[10px] font-bold transition-all cursor-pointer"
+                title="Return to ALT Games Launcher"
+              >
+                <Library className="w-3 h-3 text-amber-300" />
+                <span>Library</span>
+              </button>
+            )}
           </div>
 
           {/* Active Player Turn Chip */}
@@ -106,13 +126,21 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               <span className="text-[10px] sm:text-xs text-indigo-200 font-bold uppercase tracking-wider shrink-0 whitespace-nowrap leading-none select-none">
                 Turn:
               </span>
-              <span className="font-mario text-xs sm:text-sm text-yellow-300 max-w-[90px] sm:max-w-[130px] md:max-w-[160px] truncate shrink-0 whitespace-nowrap leading-none drop-shadow-sm">
+              <span className="font-mario text-xs sm:text-sm text-yellow-300 max-w-[80px] sm:max-w-[120px] md:max-w-[150px] truncate shrink-0 whitespace-nowrap leading-none drop-shadow-sm">
                 {currentTeam.name}
+              </span>
+              <span className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-mario px-2 py-0.5 rounded-lg border leading-tight ${
+                currentTeam.coins < 0
+                  ? 'bg-red-950/90 border-red-500/80 text-red-400 font-bold shadow-[0_0_6px_rgba(239,68,68,0.4)]'
+                  : 'bg-black/50 border-yellow-400/40 text-yellow-300'
+              }`}>
+                <span>{currentTeam.coins}</span>
+                <MarioCoin size="xs" />
               </span>
             </div>
             {currentTeam.hasDoubleTurn && (
-              <span className="px-1.5 py-0.5 bg-gradient-to-r from-amber-500 to-red-600 text-yellow-200 text-[9px] font-black rounded-md animate-pulse border border-yellow-300/80 shadow-sm whitespace-nowrap shrink-0">
-                ⭐ 2x TURN
+              <span className="px-1.5 py-0.5 bg-gradient-to-r from-red-600 to-rose-700 text-yellow-200 text-[9px] font-black rounded-md animate-pulse border border-yellow-300/80 shadow-sm whitespace-nowrap shrink-0">
+                🍄 EXTRA TURN
               </span>
             )}
           </div>
@@ -132,9 +160,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </div>
 
         {/* Center: Music Player & Progress (Wide Screens: ≥ xl) */}
-        <div className="hidden xl:flex items-center gap-2.5 shrink-0">
+        <div className="hidden xl:flex items-center gap-2 shrink-0">
           <MusicPlayer />
-          <div className={`flex items-center gap-2 text-xs font-semibold px-2.5 py-1 rounded-xl border h-[34px] transition-all ${
+          <div className={`flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-xl border h-[34px] transition-all ${
             isGameOver 
               ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]' 
               : 'bg-slate-800/60 border-white/10 text-slate-300'
@@ -145,7 +173,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <span className={`font-bold font-pixel text-[10px] ${isGameOver ? 'text-yellow-300' : 'text-amber-300'}`}>
               {openedCount}/{totalBlocks}
             </span>
-            <div className="w-16 bg-white/10 rounded-full h-1.5 overflow-hidden ml-0.5 border border-white/10">
+            <div className="hidden 2xl:block w-14 bg-white/10 rounded-full h-1.5 overflow-hidden ml-0.5 border border-white/10">
               <div
                 className={`h-full transition-all duration-300 ${
                   isGameOver ? 'bg-gradient-to-r from-emerald-400 to-yellow-300' : 'bg-gradient-to-r from-amber-400 to-yellow-300'
@@ -157,7 +185,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </div>
 
         {/* Right Desktop: Actions & Account (Wide Screens: ≥ xl) */}
-        <div className="hidden xl:flex items-center gap-2 shrink-0">
+        <div className="hidden xl:flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Superstar Ceremony / Leaderboard Button */}
           <button
             onClick={() => {
@@ -305,368 +333,422 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         </div>
       </div>
 
-      {/* Slide-over Responsive Hamburger Menu Drawer (< xl) */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 xl:hidden">
-            {/* Backdrop Blur */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-              onClick={() => {
-                sounds.playClick();
-                setIsMobileMenuOpen(false);
-              }}
-            />
+      {/* Slide-over Responsive Hamburger Menu Drawer */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <div className="fixed inset-0 z-[100]">
+                {/* Backdrop Blur */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18 }}
+                  className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm"
+                  onClick={() => {
+                    sounds.playClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                />
 
-            {/* Sliding Drawer from Right */}
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-              className="absolute top-0 right-0 bottom-0 w-full sm:w-[380px] max-w-[92vw] bg-slate-900 border-l border-white/20 shadow-2xl p-4 sm:p-5 flex flex-col justify-between overflow-y-auto text-white"
-            >
-              {/* Drawer Top / Header */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-white/15">
-                  <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-xl bg-amber-400/20 border border-amber-300/40">
-                      <Sparkles className="w-4 h-4 text-amber-300" />
+                {/* Sliding Drawer from Right */}
+                <motion.div
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+                  className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] max-w-[92vw] bg-slate-900 border-l border-white/20 shadow-2xl p-4 sm:p-5 flex flex-col justify-between overflow-y-auto text-white z-10"
+                >
+                  {/* Drawer Top / Header */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/15">
+                      <div className="flex items-center gap-2">
+                        <div className="p-1.5 rounded-xl bg-amber-400/20 border border-amber-300/40">
+                          <Sparkles className="w-4 h-4 text-amber-300" />
+                        </div>
+                        <div>
+                          <h3 className="font-mario text-base sm:text-lg text-yellow-300 tracking-wider">
+                            GAME MENU
+                          </h3>
+                          <p className="text-[11px] text-indigo-200">Controls, music player & guide</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer"
+                        aria-label="Close menu"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
-                    <div>
-                      <h3 className="font-mario text-base sm:text-lg text-yellow-300 tracking-wider">
-                        GAME MENU
-                      </h3>
-                      <p className="text-[11px] text-indigo-200">Controls, music player & guide</p>
+
+                    {/* Section 1: Music Player Nested in Menu */}
+                    <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                        <Music className="w-3.5 h-3.5 text-yellow-400" />
+                        <span>Background Music (BGM)</span>
+                      </div>
+                      <div className="pt-0.5">
+                        <MusicPlayer />
+                      </div>
+                    </div>
+
+                    {/* Section 2: Progress & Turn Status */}
+                    <div className="p-3 bg-slate-800/70 rounded-2xl border border-white/10 space-y-2">
+                      <div className="flex items-center justify-between text-xs gap-2">
+                        <span className="text-indigo-200 font-semibold whitespace-nowrap shrink-0">Active Turn:</span>
+                        <div className="flex items-center gap-1.5 font-mario min-w-0 truncate">
+                          <TeamAvatar
+                            characterId={currentTeam.characterId}
+                            size="sm"
+                            customUrl={currentTeam.customImageUrl}
+                            className="w-5 h-5 shrink-0"
+                          />
+                          <span className="truncate text-yellow-300">{currentTeam.name}</span>
+                          <span className={`inline-flex items-center gap-1 text-xs ml-1 font-bold ${
+                            currentTeam.coins < 0 ? 'text-red-400' : 'text-yellow-300'
+                          }`}>
+                            <span>({currentTeam.coins}</span>
+                            <MarioCoin size="xs" />
+                            <span>)</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
+                        <span className="text-indigo-200 font-semibold">Board Progress:</span>
+                        <span className="font-bold text-amber-300">{openedCount} / {totalBlocks} Blocks</span>
+                      </div>
+                      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/10">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 transition-all duration-300"
+                          style={{ width: `${(openedCount / totalBlocks) * 100}%` }}
+                        />
+                      </div>
+
+                      {/* Pass Turn Button Inside Drawer */}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                          onNextTurn();
+                        }}
+                        className="w-full mt-1 py-1.5 px-3 rounded-xl bg-slate-700 hover:bg-slate-650 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-white/15 transition-all cursor-pointer"
+                      >
+                        <SkipForward className="w-3.5 h-3.5 text-indigo-300" />
+                        <span>Pass Turn to Next Team</span>
+                      </button>
+                    </div>
+
+                    {/* Section 3: Primary Navigation Buttons */}
+                    <div className="space-y-2">
+                      {/* How to Play & Host Guide */}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                          onOpenRules();
+                        }}
+                        className="w-full p-3 rounded-2xl bg-gradient-to-r from-indigo-900/90 to-blue-900/90 hover:from-indigo-850 hover:to-blue-850 active:scale-97 text-left border border-indigo-400/40 shadow-md flex items-center justify-between cursor-pointer transition-all"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-1.5 rounded-xl bg-yellow-400/20 text-yellow-300">
+                            <GraduationCap className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="font-mario text-xs sm:text-sm text-yellow-300">
+                              HOW TO PLAY & HOST GUIDE
+                            </div>
+                            <div className="text-[10px] text-indigo-200">
+                              Teacher manual & rules (EN / 日本語)
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-xs text-yellow-300 font-bold">📖</span>
+                      </button>
+
+                      {/* Question Editor */}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                          onOpenCustomizer();
+                        }}
+                        className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Settings2 className="w-4 h-4 text-amber-300" />
+                          <div>
+                            <div className="font-semibold text-xs sm:text-sm text-white">
+                              Edit Question Deck
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Customize 60 questions, answers & points
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Theme Switcher */}
+                      {onToggleTheme && (
+                        <button
+                          onClick={() => {
+                            sounds.playClick();
+                            onToggleTheme();
+                          }}
+                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            {theme === 'summer' ? (
+                              <Sun className="w-4 h-4 text-amber-400" />
+                            ) : (
+                              <Snowflake className="w-4 h-4 text-cyan-300" />
+                            )}
+                            <div>
+                              <div className="font-semibold text-xs sm:text-sm text-white">
+                                Theme: {theme === 'summer' ? 'Summer Edition' : 'Christmas Edition'}
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Tap to switch {theme === 'summer' ? 'to Christmas' : 'to Summer'}
+                              </div>
+                            </div>
+                          </div>
+                          <span className="text-xs">{theme === 'summer' ? '☀️' : '❄️'}</span>
+                        </button>
+                      )}
+
+                      {/* Sound FX Toggle */}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          onToggleSound();
+                        }}
+                        className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {soundEnabled ? (
+                            <Volume2 className="w-4 h-4 text-amber-300" />
+                          ) : (
+                            <VolumeX className="w-4 h-4 text-slate-500" />
+                          )}
+                          <div>
+                            <div className="font-semibold text-xs sm:text-sm text-white">
+                              Sound Effects: {soundEnabled ? 'Enabled' : 'Muted'}
+                            </div>
+                            <div className="text-[10px] text-slate-400">
+                              Coin sounds, fanfares, and character voice FX
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Shuffle Board */}
+                      {onShuffleBoard && (
+                        <button
+                          onClick={() => {
+                            sounds.playClick();
+                            setIsMobileMenuOpen(false);
+                            onShuffleBoard();
+                          }}
+                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Shuffle className="w-4 h-4 text-amber-300" />
+                            <div>
+                              <div className="font-semibold text-xs sm:text-sm text-white">
+                                Shuffle Board Blocks
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Randomize question and mystery positions
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Exit to Games Launcher */}
+                      {onExitToLauncher && (
+                        <button
+                          onClick={() => {
+                            sounds.playClick();
+                            setIsMobileMenuOpen(false);
+                            onExitToLauncher();
+                          }}
+                          className="w-full p-2.5 rounded-2xl bg-indigo-950/50 hover:bg-indigo-900/70 active:scale-97 text-left border border-indigo-500/30 shadow-sm flex items-center justify-between cursor-pointer transition-all text-indigo-200"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Library className="w-4 h-4 text-indigo-300" />
+                            <div>
+                              <div className="font-semibold text-xs sm:text-sm text-white">
+                                Exit to Games Launcher
+                              </div>
+                              <div className="text-[10px] text-indigo-300/80">
+                                Return to full 12-game classroom arcade library
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      )}
+
+                      {/* Restart Game */}
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                          setShowResetConfirm(true);
+                        }}
+                        className="w-full p-2.5 rounded-2xl bg-red-950/40 hover:bg-red-900/60 active:scale-97 text-left border border-red-500/30 shadow-sm flex items-center justify-between cursor-pointer transition-all text-red-200"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <RotateCcw className="w-4 h-4 text-red-400" />
+                          <div>
+                            <div className="font-semibold text-xs sm:text-sm text-red-300">
+                              Restart / New Game
+                            </div>
+                            <div className="text-[10px] text-red-400/80">
+                              Return to team setup screen
+                            </div>
+                          </div>
+                        </div>
+                      </button>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer"
-                    aria-label="Close menu"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Section 1: Music Player Nested in Menu */}
-                <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                    <Music className="w-3.5 h-3.5 text-yellow-400" />
-                    <span>Background Music (BGM)</span>
-                  </div>
-                  <div className="pt-0.5">
-                    <MusicPlayer />
-                  </div>
-                </div>
-
-                {/* Section 2: Progress & Turn Status */}
-                <div className="p-3 bg-slate-800/70 rounded-2xl border border-white/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs gap-2">
-                    <span className="text-indigo-200 font-semibold whitespace-nowrap shrink-0">Active Turn:</span>
-                    <div className="flex items-center gap-1.5 font-mario text-yellow-300 min-w-0 truncate">
-                      <TeamAvatar
-                        characterId={currentTeam.characterId}
-                        size="sm"
-                        customUrl={currentTeam.customImageUrl}
-                        className="w-5 h-5 shrink-0"
-                      />
-                      <span className="truncate">{currentTeam.name}</span>
+                  {/* Drawer Bottom / Cloud Account */}
+                  <div className="pt-4 mt-4 border-t border-white/15 flex items-center justify-between">
+                    <div className="text-[11px] text-slate-400">
+                      <span>Cloud Sync & Profile:</span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
-                    <span className="text-indigo-200 font-semibold">Board Progress:</span>
-                    <span className="font-bold text-amber-300">{openedCount} / {totalBlocks} Blocks</span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden border border-white/10">
-                    <div
-                      className="h-full bg-gradient-to-r from-amber-400 to-yellow-300 transition-all duration-300"
-                      style={{ width: `${(openedCount / totalBlocks) * 100}%` }}
+                    <AccountMenu
+                      onManualSync={onManualSync}
+                      onManualLoad={onManualLoad}
                     />
                   </div>
-
-                  {/* Pass Turn Button Inside Drawer */}
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsMobileMenuOpen(false);
-                      onNextTurn();
-                    }}
-                    className="w-full mt-1 py-1.5 px-3 rounded-xl bg-slate-700 hover:bg-slate-650 active:scale-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-white/15 transition-all cursor-pointer"
-                  >
-                    <SkipForward className="w-3.5 h-3.5 text-indigo-300" />
-                    <span>Pass Turn to Next Team</span>
-                  </button>
-                </div>
-
-                {/* Section 3: Primary Navigation Buttons */}
-                <div className="space-y-2">
-                  {/* How to Play & Host Guide */}
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsMobileMenuOpen(false);
-                      onOpenRules();
-                    }}
-                    className="w-full p-3 rounded-2xl bg-gradient-to-r from-indigo-900/90 to-blue-900/90 hover:from-indigo-850 hover:to-blue-850 active:scale-97 text-left border border-indigo-400/40 shadow-md flex items-center justify-between cursor-pointer transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 rounded-xl bg-yellow-400/20 text-yellow-300">
-                        <GraduationCap className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="font-mario text-xs sm:text-sm text-yellow-300">
-                          HOW TO PLAY & HOST GUIDE
-                        </div>
-                        <div className="text-[10px] text-indigo-200">
-                          Teacher manual & rules (EN / 日本語)
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-xs text-yellow-300 font-bold">📖</span>
-                  </button>
-
-                  {/* Question Editor */}
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsMobileMenuOpen(false);
-                      onOpenCustomizer();
-                    }}
-                    className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <Settings2 className="w-4 h-4 text-amber-300" />
-                      <div>
-                        <div className="font-semibold text-xs sm:text-sm text-white">
-                          Edit Question Deck
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Customize 60 questions, answers & points
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Theme Switcher */}
-                  {onToggleTheme && (
-                    <button
-                      onClick={() => {
-                        sounds.playClick();
-                        onToggleTheme();
-                      }}
-                      className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        {theme === 'summer' ? (
-                          <Sun className="w-4 h-4 text-amber-400" />
-                        ) : (
-                          <Snowflake className="w-4 h-4 text-cyan-300" />
-                        )}
-                        <div>
-                          <div className="font-semibold text-xs sm:text-sm text-white">
-                            Theme: {theme === 'summer' ? 'Summer Edition' : 'Christmas Edition'}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Tap to switch {theme === 'summer' ? 'to Christmas' : 'to Summer'}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="text-xs">{theme === 'summer' ? '☀️' : '❄️'}</span>
-                    </button>
-                  )}
-
-                  {/* Sound FX Toggle */}
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      onToggleSound();
-                    }}
-                    className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {soundEnabled ? (
-                        <Volume2 className="w-4 h-4 text-amber-300" />
-                      ) : (
-                        <VolumeX className="w-4 h-4 text-slate-500" />
-                      )}
-                      <div>
-                        <div className="font-semibold text-xs sm:text-sm text-white">
-                          Sound Effects: {soundEnabled ? 'Enabled' : 'Muted'}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Coin sounds, fanfares, and character voice FX
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* Shuffle Board */}
-                  {onShuffleBoard && (
-                    <button
-                      onClick={() => {
-                        sounds.playClick();
-                        setIsMobileMenuOpen(false);
-                        onShuffleBoard();
-                      }}
-                      className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Shuffle className="w-4 h-4 text-amber-300" />
-                        <div>
-                          <div className="font-semibold text-xs sm:text-sm text-white">
-                            Shuffle Board Blocks
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Randomize question and mystery positions
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  )}
-
-                  {/* Restart Game */}
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsMobileMenuOpen(false);
-                      setShowResetConfirm(true);
-                    }}
-                    className="w-full p-2.5 rounded-2xl bg-red-950/40 hover:bg-red-900/60 active:scale-97 text-left border border-red-500/30 shadow-sm flex items-center justify-between cursor-pointer transition-all text-red-200"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <RotateCcw className="w-4 h-4 text-red-400" />
-                      <div>
-                        <div className="font-semibold text-xs sm:text-sm text-red-300">
-                          Restart / New Game
-                        </div>
-                        <div className="text-[10px] text-red-400/80">
-                          Return to team setup screen
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
+                </motion.div>
               </div>
-
-              {/* Drawer Bottom / Cloud Account */}
-              <div className="pt-4 mt-4 border-t border-white/15 flex items-center justify-between">
-                <div className="text-[11px] text-slate-400">
-                  <span>Cloud Sync & Profile:</span>
-                </div>
-                <AccountMenu
-                  onManualSync={onManualSync}
-                  onManualLoad={onManualLoad}
-                />
-              </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
 
       {/* Are You Sure Reset Confirmation Modal */}
-      <AnimatePresence>
-        {showResetConfirm && (
-          <div
-            id="reset-confirm-backdrop"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm"
-            onClick={() => {
-              sounds.playClick();
-              setShowResetConfirm(false);
-            }}
-          >
-            <motion.div
-              id="reset-confirm-modal"
-              role="alertdialog"
-              aria-modal="true"
-              aria-labelledby="reset-modal-title"
-              aria-describedby="reset-modal-desc"
-              initial={{ scale: 0.92, opacity: 0, y: 8 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 8 }}
-              transition={{ duration: 0.16 }}
-              className="relative w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-red-950/40 text-white overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Subtle accent bar */}
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-600 via-amber-500 to-red-600" />
-
-              {/* Close Button */}
-              <button
-                id="reset-modal-close-btn"
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <AnimatePresence>
+            {showResetConfirm && (
+              <div
+                id="reset-confirm-backdrop"
+                className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm"
                 onClick={() => {
                   sounds.playClick();
                   setShowResetConfirm(false);
                 }}
-                className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-all cursor-pointer"
-                title="Cancel"
               >
-                <X className="w-4 h-4" />
-              </button>
+                <motion.div
+                  id="reset-confirm-modal"
+                  role="alertdialog"
+                  aria-modal="true"
+                  aria-labelledby="reset-modal-title"
+                  aria-describedby="reset-modal-desc"
+                  initial={{ scale: 0.92, opacity: 0, y: 8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.92, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.16 }}
+                  className="relative w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl shadow-red-950/40 text-white overflow-hidden"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Subtle accent bar */}
+                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-600 via-amber-500 to-red-600" />
 
-              <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0 text-red-400 shadow-inner">
-                  <AlertTriangle className="w-6 h-6 text-red-400" />
-                </div>
+                  {/* Close Button */}
+                  <button
+                    id="reset-modal-close-btn"
+                    onClick={() => {
+                      sounds.playClick();
+                      setShowResetConfirm(false);
+                    }}
+                    className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white border border-white/10 transition-all cursor-pointer"
+                    title="Cancel"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
 
-                <div className="flex-1 min-w-0 pr-4">
-                  <h3 id="reset-modal-title" className="text-lg sm:text-xl font-bold font-mario text-yellow-300 drop-shadow">
-                    ARE YOU SURE?
-                  </h3>
-                  <p id="reset-modal-desc" className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
-                    Resetting will end this session and return you to the <strong>Setup Screen</strong>.
-                  </p>
-                  <div className="mt-2.5 p-2.5 bg-slate-800/80 rounded-xl border border-white/10 text-xs text-indigo-200">
-                    <p className="font-semibold text-amber-300 mb-0.5">⚠️ The following will be reset:</p>
-                    <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px]">
-                      <li>Board progress ({openedCount} of {totalBlocks} mystery blocks opened)</li>
-                      <li>Current team scores, rankings, and active turn</li>
-                      <li>Active power-ups and coin steal logs</li>
-                    </ul>
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center shrink-0 text-red-400 shadow-inner">
+                      <AlertTriangle className="w-6 h-6 text-red-400" />
+                    </div>
+
+                    <div className="flex-1 min-w-0 pr-4">
+                      <h3 id="reset-modal-title" className="text-lg sm:text-xl font-bold font-mario text-yellow-300 drop-shadow">
+                        ARE YOU SURE?
+                      </h3>
+                      <p id="reset-modal-desc" className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
+                        Resetting will end this session and return you to the <strong>Setup Screen</strong>.
+                      </p>
+                      <div className="mt-2.5 p-2.5 bg-slate-800/80 rounded-xl border border-white/10 text-xs text-indigo-200">
+                        <p className="font-semibold text-amber-300 mb-0.5">⚠️ The following will be reset:</p>
+                        <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px]">
+                          <li>Board progress ({openedCount} of {totalBlocks} mystery blocks opened)</li>
+                          <li>Current team scores, rankings, and active turn</li>
+                          <li>Active power-ups and coin steal logs</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {/* Modal Actions */}
-              <div className="flex items-center justify-end gap-2.5 mt-5 pt-3 border-t border-white/10">
-                <button
-                  id="reset-modal-cancel-btn"
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setShowResetConfirm(false);
-                  }}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold border border-white/15 transition-all cursor-pointer"
-                >
-                  Keep Playing
-                </button>
-                <button
-                  id="reset-modal-confirm-btn"
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setShowResetConfirm(false);
-                    onResetGame();
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/60 border border-red-400/30 transition-all cursor-pointer"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Yes, Reset Game</span>
-                </button>
+                  {/* Modal Actions */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 mt-5 pt-3 border-t border-white/10">
+                    <button
+                      id="reset-modal-cancel-btn"
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setShowResetConfirm(false);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold border border-white/15 transition-all cursor-pointer"
+                    >
+                      Keep Playing
+                    </button>
+                    {onExitToLauncher && (
+                      <button
+                        id="reset-modal-library-btn"
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setShowResetConfirm(false);
+                          onExitToLauncher();
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-900/80 hover:bg-indigo-800 active:scale-95 text-indigo-200 hover:text-white text-xs sm:text-sm font-bold border border-indigo-400/40 transition-all cursor-pointer"
+                      >
+                        <Library className="w-3.5 h-3.5 text-indigo-300" />
+                        <span>Exit to Library</span>
+                      </button>
+                    )}
+                    <button
+                      id="reset-modal-confirm-btn"
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setShowResetConfirm(false);
+                        onResetGame();
+                      }}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-lg shadow-red-950/60 border border-red-400/30 transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Restart Setup</span>
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            </motion.div>
-          </div>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
     </header>
   );
 };

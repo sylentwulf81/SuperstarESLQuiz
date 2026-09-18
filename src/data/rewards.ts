@@ -1,4 +1,5 @@
 import { RewardCard } from '../types';
+import { shuffleArray } from '../utils/shuffle';
 
 export const REWARD_CARDS: RewardCard[] = [
   {
@@ -12,24 +13,34 @@ export const REWARD_CARDS: RewardCard[] = [
     badgeColor: 'from-amber-400 to-yellow-600 text-amber-950',
   },
   {
-    id: 'hidden_block',
-    type: 'hidden_block',
-    title: 'Hidden Block',
-    subtitle: '+7 Bonus Coins!',
-    coins: 7,
-    description: 'You uncovered an invisible hidden block with +7 secret bonus coins!',
-    iconName: 'Gift',
-    badgeColor: 'from-amber-700 via-amber-600 to-yellow-700 text-amber-100',
+    id: 'pow_block',
+    type: 'pow_block',
+    title: 'POW Block',
+    subtitle: 'Equalize Highest or Lowest!',
+    coins: 0,
+    description: 'Trigger a board-shaking seismic earthquake! Equalize all teams\' coins to either the HIGHEST or LOWEST score — your team\'s choice!',
+    iconName: 'BoxSelect',
+    badgeColor: 'from-blue-600 via-indigo-700 to-slate-900 text-blue-100',
   },
   {
     id: 'ghost_steal_5',
     type: 'ghost_steal_5',
-    title: 'Boo Steal',
-    subtitle: 'Steal 5 Coins from a Team!',
-    coins: 5,
-    description: 'Send Boo to haunt an opponent team and steal 5 coins for your squad!',
+    title: 'Boo',
+    subtitle: 'Roll Die & Steal Coins!',
+    coins: 0,
+    description: 'Send Boo to a rival team of your choice! Roll a 6-sided die to steal that exact number of coins from them!',
     iconName: 'Ghost',
     badgeColor: 'from-indigo-100 via-purple-100 to-slate-200 text-slate-800',
+  },
+  {
+    id: 'king_boo',
+    type: 'king_boo',
+    title: 'King Boo',
+    subtitle: 'Steal from EACH Other Team!',
+    coins: 0,
+    description: 'The King of Ghosts strikes! Roll a 6-sided die and steal that number of coins from EACH and every rival team!',
+    iconName: 'Crown',
+    badgeColor: 'from-purple-900 via-fuchsia-950 to-slate-950 text-fuchsia-200',
   },
   {
     id: 'wonderful_coins_5',
@@ -44,12 +55,12 @@ export const REWARD_CARDS: RewardCard[] = [
   {
     id: 'super_star_x2',
     type: 'super_star_x2',
-    title: 'Super Star',
-    subtitle: 'Extra Turn & Double Coins!',
+    title: 'Super Mushroom',
+    subtitle: 'Take Another Turn!',
     coins: 0,
-    description: 'Superstar invincibility! Take another turn immediately AND your coins or next bounty are doubled (x2)!',
-    iconName: 'Sparkles',
-    badgeColor: 'from-yellow-300 via-amber-400 to-yellow-500 text-yellow-950',
+    description: 'Super Mushroom power-up! Take another turn immediately and choose another block!',
+    iconName: 'Zap',
+    badgeColor: 'from-red-500 via-rose-600 to-red-700 text-white',
   },
   {
     id: 'super_coins_10',
@@ -67,27 +78,35 @@ export const REWARD_CARDS: RewardCard[] = [
     title: 'Blue Shell',
     subtitle: '1st Place Skips 1 Round!',
     coins: 0,
-    description: 'Fires the dreaded Spiny Shell at the leading team! The #1 team skips their next turn!',
+    description: 'Fires the dreaded Blue Shell at the leading team! The #1 team skips their next turn!',
     iconName: 'ShieldAlert',
     badgeColor: 'from-sky-500 via-blue-600 to-indigo-700 text-white',
   },
   {
     id: 'bowser_revolution',
     type: 'bowser_revolution',
-    title: 'Bowser Revolution',
-    subtitle: 'Equalize All Coins!',
+    title: "Bowser's Revolution",
+    subtitle: 'Swap Coin Totals with a Rival!',
     coins: 0,
-    description: 'Bowser appears! He pools all team coins together and redistributes them equally!',
+    description: 'Bowser causes chaos! Choose any rival team and swap your total coins with theirs!',
     iconName: 'Flame',
     badgeColor: 'from-red-600 via-orange-600 to-amber-700 text-white',
+  },
+  {
+    id: 'bowser_fury',
+    type: 'bowser_fury',
+    title: "Bowser's Fury",
+    subtitle: '-5 Coins to All Rivals!',
+    coins: 0,
+    description: 'Bowser unleashes raging fireballs across the board! -5 coins to each and every other team!',
+    iconName: 'Flame',
+    badgeColor: 'from-amber-600 via-red-700 to-red-950 text-amber-200',
   },
 ];
 
 /**
- * Generate 6 randomized mystery cards for the reward roulette from the 8-card pool
+ * Generate 6 randomized mystery cards for the reward roulette from the full 10-card pool
  */
 export function generateRouletteCards(): RewardCard[] {
-  // Shuffle all 8 cards and pick 6
-  const shuffled = [...REWARD_CARDS].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, 6);
+  return shuffleArray(REWARD_CARDS).slice(0, 6);
 }

@@ -61,7 +61,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
   };
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative shrink-0" ref={menuRef}>
       {isLoggedIn && user ? (
         /* Logged In: ShadCN Avatar nested at top-right */
         <button
@@ -70,7 +70,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
             sounds.playClick();
             setIsOpen(!isOpen);
           }}
-          className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400/80 cursor-pointer group transition-transform active:scale-95"
+          className="relative rounded-full focus:outline-none focus:ring-2 focus:ring-amber-400/80 cursor-pointer group transition-transform active:scale-95 shrink-0"
           title={`${user.displayName || user.email || 'Host'} - Account & Cloud Sync`}
         >
           <Avatar className="w-8 h-8 sm:w-9 sm:h-9 border border-amber-400/60 group-hover:border-amber-300 shadow-md">
@@ -106,11 +106,11 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
             sounds.playClick();
             setIsOpen(!isOpen);
           }}
-          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-white/20 text-xs font-semibold shadow-md transition-all cursor-pointer active:scale-95"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-white/20 text-xs font-semibold shadow-md transition-all cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
           title="Sign in optionally for cloud question backup"
         >
-          <LogIn className="w-3.5 h-3.5 text-amber-300" />
-          <span className="hidden sm:inline">Sign In</span>
+          <LogIn className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+          <span className="hidden sm:inline whitespace-nowrap">Sign In</span>
         </button>
       )}
 
@@ -118,7 +118,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
       {isOpen && (
         <div
           id="account-dropdown-panel"
-          className="absolute right-0 mt-2 w-72 sm:w-80 bg-slate-900 border border-white/20 rounded-2xl shadow-2xl z-50 p-4 text-white animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 mt-2 w-72 sm:w-80 max-w-[calc(100vw-1.5rem)] bg-slate-900 border border-white/20 rounded-2xl shadow-2xl z-50 p-4 text-white animate-in fade-in zoom-in-95 duration-150"
         >
           {isLoggedIn && user ? (
             /* Logged In View */

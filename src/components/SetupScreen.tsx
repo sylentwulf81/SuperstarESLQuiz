@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Users, Play, Check, Sun, Snowflake, Shuffle, 
   GraduationCap, HelpCircle, BookOpen, ArrowRight, ArrowLeft, 
-  CheckCircle2, Compass, Award, Gamepad2
+  CheckCircle2, Compass, Award, Gamepad2, Camera
 } from 'lucide-react';
 import { CharacterId, Team, GameTheme } from '../types';
 import { CHARACTERS, CHARACTER_LIST } from '../data/characters';
@@ -18,6 +18,7 @@ interface SetupScreenProps {
   onSelectTheme?: (theme: GameTheme) => void;
   onStartGame: (teams: Team[], startingCoins: number) => void;
   onOpenRules: () => void;
+  onBackToLauncher?: () => void;
 }
 
 export const SetupScreen: React.FC<SetupScreenProps> = ({
@@ -26,6 +27,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
   onSelectTheme,
   onStartGame,
   onOpenRules,
+  onBackToLauncher,
 }) => {
   // Step 1: 'welcome' (Theme selection & Rules/Guide)
   // Step 2: 'teams' (Team selection, Starting Coins & Start Game)
@@ -44,6 +46,25 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
   });
 
   const [startingCoins, setStartingCoins] = useState<number>(0);
+  const [customAvatars, setCustomAvatars] = useState<Partial<Record<CharacterId, string>>>({});
+
+  const handleAvatarUpload = (charId: CharacterId, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setCustomAvatars(prev => ({ ...prev, [charId]: dataUrl }));
+        try {
+          localStorage.setItem(`avatar_${charId}`, dataUrl);
+        } catch {
+          // LocalStorage full or blocked
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const toggleCharacter = (charId: CharacterId) => {
     if (selectedChars.includes(charId)) {
@@ -84,6 +105,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       coinsStolen: 0,
       hasDoubleTurn: false,
       skipTurns: 0,
+      customImageUrl: customAvatars[charId] || localStorage.getItem(`avatar_${charId}`) || undefined,
     }));
     onStartGame(teams, startingCoins);
   };
@@ -104,6 +126,24 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
           <AccountMenu />
         </div>
+
+        {/* Back to Launcher in Top-Left */}
+        {onBackToLauncher && (
+          <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
+            <button
+              onClick={() => {
+                sounds.playClick();
+                onBackToLauncher();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all shadow-md cursor-pointer group"
+              title="Return to ALT Games Launcher Library"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-300" />
+              <span className="hidden xs:inline">Game Library</span>
+              <span className="xs:hidden">Back</span>
+            </button>
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {/* ========================================================================= */}
@@ -372,11 +412,27 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                             </div>
                           )}
 
-                          <TeamAvatar
-                            characterId={char.id}
-                            size="lg"
-                            className="w-14 h-14 sm:w-16 sm:h-16 shadow-md"
-                          />
+                          <div className="relative group/avatar">
+                            <TeamAvatar
+                              characterId={char.id}
+                              size="lg"
+                              customUrl={customAvatars[char.id]}
+                              className="w-14 h-14 sm:w-16 sm:h-16 shadow-md"
+                            />
+                            <label
+                              onClick={(e) => e.stopPropagation()}
+                              className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center cursor-pointer transition-opacity text-yellow-300"
+                              title="Upload custom character portrait"
+                            >
+                              <Camera className="w-4 h-4" />
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => handleAvatarUpload(char.id, e)}
+                              />
+                            </label>
+                          </div>
 
                           <div className="w-full text-center" onClick={(e) => e.stopPropagation()}>
                             <input

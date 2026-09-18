@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { X, CheckCircle, AlertCircle, Sparkles, HelpCircle, Eye, EyeOff, RefreshCw, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Sparkles, Eye, RefreshCw, Upload, Image as ImageIcon, Trash2, Plus, Minus } from 'lucide-react';
 import { GameQuestion, Team } from '../types';
 import { CHARACTERS } from '../data/characters';
 import { sounds } from '../utils/sound';
 import { MarioCoin } from './MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
 import { compressImageFile } from '../utils/imageUtils';
+import { shuffleWordLetters } from '../utils/shuffle';
 
 interface QuestionModalProps {
   question: GameQuestion;
@@ -16,6 +17,7 @@ interface QuestionModalProps {
   onAnswerIncorrect: () => void;
   onTriggerRoulette: () => void;
   onUpdateQuestionImage?: (blockNumber: number, imageUrl: string | undefined) => void;
+  onAdjustCoins?: (teamId: string, delta: number) => void;
 }
 
 interface ShuffledOption {
@@ -44,12 +46,12 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   onAnswerIncorrect,
   onTriggerRoulette,
   onUpdateQuestionImage,
+  onAdjustCoins,
 }) => {
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>(() => getShuffledOptions(question));
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
-  const [isHintVisible, setIsHintVisible] = useState(false);
   const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
 
   const [currentImage, setCurrentImage] = useState<string | undefined>(question.imageUrl || question.image);
@@ -61,12 +63,15 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const [availableLetters, setAvailableLetters] = useState<{ id: string; char: string; isUsed: boolean }[]>([]);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
-  const rewardCoins = currentTeam.hasDoubleTurn ? question.rewardCoins * 2 : question.rewardCoins;
+  const baseRewardCoins = question.type === 'mystery_card' ? 0 : Math.max(1, Number(question.rewardCoins) || 1);
+  const [customCoinReward, setCustomCoinReward] = useState<number | null>(null);
+  const effectiveBaseReward = customCoinReward !== null ? customCoinReward : baseRewardCoins;
+  const rewardCoins = currentTeam.hasDoubleTurn ? effectiveBaseReward * 2 : effectiveBaseReward;
 
   useEffect(() => {
     setCurrentImage(question.imageUrl || question.image);
     setImageLoadFailed(false);
-    setIsHintVisible(false);
+    setCustomCoinReward(null);
     if (question.type === 'multiple_choice') {
       setShuffledOptions(getShuffledOptions(question));
       setSelectedOption(null);
@@ -74,7 +79,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
       setIsAnswerRevealed(false);
       setStatus('idle');
     } else if (question.type === 'unscramble') {
-      const letters = question.scrambledLetters.map((char, index) => ({
+      const randomized = shuffleWordLetters(question.targetWord || question.scrambledLetters.join(''));
+      const letters = randomized.map((char, index) => ({
         id: `${char}-${index}`,
         char,
         isUsed: false,
@@ -332,6 +338,46 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
             <div className={`flex items-center gap-2 px-2.5 py-1 rounded-xl ${charInfo.bgColor} bg-opacity-60 border border-white/30 text-xs sm:text-sm font-bold text-white`}>
               <TeamAvatar characterId={currentTeam.characterId} size="xs" customUrl={currentTeam.customImageUrl} />
               <span className="hidden sm:inline max-w-[140px] truncate">{currentTeam.name}</span>
+              <div className={`flex items-center gap-1 ml-1 px-2 py-0.5 rounded-lg border transition-colors ${
+                currentTeam.coins < 0
+                  ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
+                  : 'bg-black/50 border-white/20'
+              }`}>
+                <MarioCoin size="xs" />
+                <span className={`font-mario text-xs sm:text-sm ${
+                  currentTeam.coins < 0 ? 'text-red-500 font-black drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]' : 'text-yellow-300'
+                }`}>
+                  {currentTeam.coins}
+                </span>
+                {onAdjustCoins && (
+                  <div className="flex items-center gap-0.5 ml-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        sounds.playPop();
+                        onAdjustCoins(currentTeam.id, 1);
+                      }}
+                      title="Add 1 coin"
+                      className="w-4 h-4 rounded bg-white/10 hover:bg-emerald-500/50 text-white flex items-center justify-center border border-white/20 cursor-pointer"
+                    >
+                      <Plus className="w-2.5 h-2.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        sounds.playPop();
+                        onAdjustCoins(currentTeam.id, -1);
+                      }}
+                      title="Deduct 1 coin"
+                      className="w-4 h-4 rounded bg-white/10 hover:bg-red-500/50 text-white flex items-center justify-center border border-white/20 cursor-pointer"
+                    >
+                      <Minus className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <button
               onClick={() => {
@@ -347,9 +393,11 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-5 lg:px-6 py-3 sm:py-4 gap-3 overflow-hidden">
-          <h2 className="font-mario text-xl sm:text-2xl md:text-3xl lg:text-[2.15rem] text-yellow-300 leading-tight drop-shadow-md shrink-0">
-            {question.title}
-          </h2>
+          {!(question.type === 'open_trivia' && currentImage) && (
+            <h2 className="font-mario text-xl sm:text-2xl md:text-3xl lg:text-[2.15rem] text-yellow-300 leading-tight drop-shadow-md shrink-0">
+              {question.title}
+            </h2>
+          )}
 
           <input
             ref={fileUploadRef}
@@ -367,71 +415,78 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           )}
 
           {question.type === 'open_trivia' && (
-            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
-              {currentImage && (
-                <div className="shrink-0 max-h-44 sm:max-h-56 lg:max-h-72 flex justify-center">
-                  {renderImagePanel(false)}
+            currentImage ? (
+              <div className="flex-1 min-h-0 overflow-y-auto lg:overflow-hidden flex flex-col lg:grid lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.2fr)] gap-4 lg:gap-6 items-center">
+                {/* Left Side: Clue Image taking up full left side */}
+                <div className="w-full h-64 sm:h-80 lg:h-full min-h-0 flex items-center justify-center">
+                  {renderImagePanel(true)}
                 </div>
-              )}
-              {!currentImage && renderImagePanel()}
 
-              {question.hint && (
-                <div className="flex flex-wrap items-center gap-3 p-3 bg-indigo-950/70 border-2 border-indigo-500/40 rounded-2xl shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setIsHintVisible(prev => !prev);
-                    }}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm border-2 border-indigo-400/50 cursor-pointer shrink-0"
-                  >
-                    {isHintVisible ? (
-                      <>
-                        <EyeOff className="w-4 h-4 text-amber-300" />
-                        Hide Hint
-                      </>
+                {/* Right Side: Question Title & Answer */}
+                <div className="w-full flex-1 min-h-0 flex flex-col justify-center gap-4 sm:gap-6 p-1 sm:p-2 lg:p-4">
+                  <h2 className="font-mario text-2xl sm:text-3xl lg:text-4xl text-yellow-300 leading-tight drop-shadow-md">
+                    {question.title}
+                  </h2>
+
+                  <div className="w-full">
+                    {!isAnswerRevealed ? (
+                      <button
+                        onClick={() => {
+                          sounds.playCardFlip();
+                          sounds.playPowerUp();
+                          setIsAnswerRevealed(true);
+                          setStatus('correct');
+                        }}
+                        className="w-full py-5 sm:py-6 lg:py-7 bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-500 hover:to-blue-500 text-white font-mario text-xl sm:text-2xl lg:text-3xl rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-2 border-indigo-400/60 cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        <Eye className="w-6 h-6 sm:w-7 sm:h-7 text-yellow-300 drop-shadow" />
+                        REVEAL ANSWER
+                      </button>
                     ) : (
-                      <>
-                        <Eye className="w-4 h-4 text-amber-300" />
-                        Show Hint
-                      </>
+                      <div className="w-full p-5 sm:p-7 lg:p-8 bg-black/75 rounded-3xl border-2 border-white/25 text-center space-y-2 shadow-2xl">
+                        <span className="text-xs sm:text-sm uppercase font-black text-indigo-300 tracking-widest block">
+                          ANSWER
+                        </span>
+                        <h3 className="font-mario text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-emerald-300 leading-tight drop-shadow-[0_0_20px_rgba(110,231,183,0.4)]">
+                          {question.answer}
+                        </h3>
+                      </div>
                     )}
-                  </button>
-                  {isHintVisible ? (
-                    <p className="text-sm sm:text-base md:text-lg text-indigo-100 font-medium italic flex-1 min-w-0">
-                      <HelpCircle className="w-5 h-5 text-amber-400 inline mr-1.5 -mt-0.5" />
-                      <strong className="text-amber-300 not-italic">Hint:</strong> {question.hint}
-                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-3xl mx-auto w-full gap-6">
+                <div className="w-full flex justify-end">
+                  {renderImagePanel()}
+                </div>
+                <div className="w-full">
+                  {!isAnswerRevealed ? (
+                    <button
+                      onClick={() => {
+                        sounds.playCardFlip();
+                        sounds.playPowerUp();
+                        setIsAnswerRevealed(true);
+                        setStatus('correct');
+                      }}
+                      className="w-full py-6 sm:py-8 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-mario text-2xl sm:text-3xl rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-2 border-indigo-400/60 cursor-pointer transition-all hover:scale-[1.02]"
+                    >
+                      <Eye className="w-7 h-7" />
+                      REVEAL ANSWER
+                    </button>
                   ) : (
-                    <span className="text-xs sm:text-sm text-indigo-300/80 italic">Hidden until you reveal it.</span>
+                    <div className="w-full p-6 sm:p-10 bg-black/70 rounded-3xl border-2 border-white/25 text-center space-y-2 shadow-inner">
+                      <span className="text-xs sm:text-sm uppercase font-black text-indigo-300 tracking-widest block">
+                        ANSWER
+                      </span>
+                      <h3 className="font-mario text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-emerald-300 leading-tight">
+                        {question.answer}
+                      </h3>
+                    </div>
                   )}
                 </div>
-              )}
-
-              <div className="flex-1 min-h-0 flex items-center">
-                {!isAnswerRevealed ? (
-                  <button
-                    onClick={() => {
-                      sounds.playCardFlip();
-                      sounds.playPowerUp();
-                      setIsAnswerRevealed(true);
-                      setStatus('correct');
-                    }}
-                    className="w-full py-5 sm:py-7 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-mario text-xl sm:text-3xl rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-2 border-indigo-400/60 cursor-pointer"
-                  >
-                    <Eye className="w-7 h-7" />
-                    REVEAL ANSWER
-                  </button>
-                ) : (
-                  <div className="w-full p-5 sm:p-8 bg-black/70 rounded-3xl border-2 border-white/25 text-center space-y-2 shadow-inner">
-                    <span className="text-sm uppercase font-bold text-indigo-300 tracking-wider">Answer</span>
-                    <h3 className="font-mario text-3xl sm:text-4xl md:text-5xl text-emerald-300 leading-tight">
-                      {question.answer}
-                    </h3>
-                  </div>
-                )}
               </div>
-            </div>
+            )
           )}
 
           {question.type === 'unscramble' && (
@@ -545,13 +600,40 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           <div className="shrink-0 bg-slate-800/95 px-3 sm:px-5 py-3 border-t-2 border-white/20 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-base sm:text-lg font-semibold">
               <span className="text-slate-300">Reward</span>
-              <span className="font-mario text-2xl sm:text-3xl text-yellow-300 text-shadow-gold flex items-center gap-2">
+              <span className="font-mario text-2xl sm:text-3xl text-yellow-300 text-shadow-gold flex items-center gap-1.5">
                 +{rewardCoins}
                 <MarioCoin size="md" />
               </span>
+
+              {/* Custom Points live adjustment in modal */}
+              <div className="flex items-center gap-1 ml-1 bg-black/40 px-2 py-1 rounded-xl border border-white/15">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    setCustomCoinReward(prev => Math.max(1, (prev ?? baseRewardCoins) - 1));
+                  }}
+                  title="Decrease reward by 1 coin (min 1)"
+                  className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                >
+                  -
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playPop();
+                    setCustomCoinReward(prev => (prev ?? baseRewardCoins) + 1);
+                  }}
+                  title="Increase reward by 1 coin"
+                  className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                >
+                  +
+                </button>
+              </div>
+
               {currentTeam.hasDoubleTurn && (
                 <span className="text-[11px] bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2 py-1 rounded-lg font-bold border border-yellow-300/80">
-                  2x
+                  2x Double Turn
                 </span>
               )}
             </div>

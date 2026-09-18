@@ -78,19 +78,28 @@ export type Question = GameQuestion;
 export type RewardCardType = 
   | 'great_coins_3'
   | 'hidden_block'
+  | 'pow_block'
   | 'ghost_steal_5'
   | 'wonderful_coins_5'
   | 'super_star_x2'
   | 'super_coins_10'
   | 'blue_shell'
   | 'bowser_revolution'
+  | 'bowser_fury'
   | 'coins_1'
   | 'coins_3'
   | 'coins_5'
   | 'coins_10'
   | 'mushroom_x2'
   | 'boo_steal_5'
-  | 'boo_steal_10';
+  | 'boo_steal_10'
+  | 'king_boo';
+
+export interface RewardCardActionOptions {
+  targetTeamId?: string;
+  dieRoll?: number;
+  powChoice?: 'highest' | 'lowest';
+}
 
 export interface RewardCard {
   id: string;
@@ -115,6 +124,7 @@ export interface BlockState {
 }
 
 export type GameView = 
+  | 'launcher'
   | 'setup'
   | 'board'
   | 'superstar';

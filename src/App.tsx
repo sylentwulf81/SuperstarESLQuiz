@@ -8,12 +8,14 @@ import { QuestionModal } from './components/QuestionModal';
 import { RewardRouletteModal } from './components/RewardRouletteModal';
 import { SuperstarModal } from './components/SuperstarModal';
 import { SetupScreen } from './components/SetupScreen';
+import { LauncherScreen } from './components/LauncherScreen';
 import { ThemedBackdrop } from './components/ThemedBackdrop';
 import { RulebookModal } from './components/RulebookModal';
 import { CustomizerModal } from './components/CustomizerModal';
 import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { Team, BlockState, GameQuestion, RewardCard, GameView, GameTheme, Question } from './types';
+import { Toaster, toast } from 'sonner';
+import { Team, BlockState, GameQuestion, RewardCard, GameView, GameTheme, Question, RewardCardActionOptions } from './types';
 import { DEFAULT_QUESTIONS } from './data/questions';
 import { SUMMER_QUESTIONS } from './data/summerQuestions';
 import { generateRouletteCards } from './data/rewards';
@@ -97,6 +99,10 @@ function createGameBlocks(
       };
     }
 
+    if (question.type !== 'mystery_card') {
+      question.rewardCoins = Math.max(1, Number(question.rewardCoins) || 1);
+    }
+
     return {
       id: i + 1,
       isOpened: false,
@@ -111,7 +117,7 @@ function GameApp() {
 
   // Theme & Flow
   const [theme, setTheme] = useState<GameTheme>('summer');
-  const [view, setView] = useState<GameView>('setup');
+  const [view, setView] = useState<GameView>('launcher');
 
   // Teams State (Default 6 characters)
   const [teams, setTeams] = useState<Team[]>([
@@ -250,6 +256,22 @@ function GameApp() {
     handleSelectTheme(newTheme);
   };
 
+  // Launch game directly from ALT Games Launcher (sets theme if specified, transitions to setup)
+  const handleLaunchGame = (targetTheme?: GameTheme) => {
+    if (targetTheme && targetTheme !== theme) {
+      handleSelectTheme(targetTheme);
+    }
+    setView('setup');
+  };
+
+  // Open Question Studio directly from ALT Games Launcher or header without starting game
+  const handleOpenQuestionStudio = (targetTheme?: GameTheme) => {
+    if (targetTheme && targetTheme !== theme) {
+      handleSelectTheme(targetTheme);
+    }
+    setIsCustomizerOpen(true);
+  };
+
   // Start Game from Setup (Automatically shuffles all questions & mystery blocks)
   const handleStartGame = (configuredTeams: Team[]) => {
     setTeams(configuredTeams);
@@ -299,9 +321,9 @@ function GameApp() {
     let baseTeams = options?.currentTeams ? [...options.currentTeams] : [...teams];
     const active = baseTeams[currentTeamIndex] || baseTeams[0];
 
-    // Case 1: An extra turn was JUST granted (e.g. Super Star drawn in roulette)
+    // Case 1: An extra turn was JUST granted (e.g. Super Mushroom drawn in roulette)
     if (keepCurrentTurn) {
-      showToast(`⭐ ${active.name} gets another turn! Pick another block!`);
+      showToast(`🍄 ${active.name} gets another turn! Pick another block!`);
       return;
     }
 
@@ -381,7 +403,7 @@ function GameApp() {
     if (selectedBlockId === null) return;
 
     const nextBlocks = blocks.map(b => 
-      b.id === selectedBlockId ? { ...b, isOpened: true, openedByTeamId: activeTeam.id } : b
+      b.id === selectedBlockId ? { ...b, isOpened: true, openedByTeamId: activeTeam.id, rewardCoins: earnedCoins } : b
     );
     setBlocks(nextBlocks);
 
@@ -462,9 +484,13 @@ function GameApp() {
 
   const handleRewardCardSelected = (
     card: RewardCard, 
-    targetTeamId?: string, 
+    targetTeamIdOrOptions?: string | RewardCardActionOptions, 
     shouldAdvanceTurn: boolean = true
   ) => {
+    const options: RewardCardActionOptions = typeof targetTeamIdOrOptions === 'string'
+      ? { targetTeamId: targetTeamIdOrOptions }
+      : (targetTeamIdOrOptions || {});
+
     const wasOnBonusTurn = activeTeam.hasDoubleTurn;
     let keepTurn = false;
     let nextTeams = [...teams];
@@ -497,51 +523,74 @@ function GameApp() {
         showToast(`🪙 ${activeTeam.name} gained +1 Coin!`);
         break;
       }
+      case 'pow_block':
       case 'hidden_block': {
-        sounds.playPowerUp();
-        nextTeams = nextTeams.map(t => t.id === activeTeam.id ? { ...t, coins: t.coins + 7, blocksOpened: t.blocksOpened + 1 } : t);
-        showToast(`🎁 HIDDEN BLOCK! ${activeTeam.name} found a secret block with +7 Coins!`);
+        sounds.playPowBlock();
+        const choice = options.powChoice || 'highest';
+        const allCoins = nextTeams.map(t => t.coins);
+        const targetEqualized = choice === 'highest' ? Math.max(...allCoins) : Math.min(...allCoins);
+        nextTeams = nextTeams.map(t => ({ ...t, coins: targetEqualized }));
+        showToast(`💥 POW BLOCK! All teams' coins equalized to the ${choice.toUpperCase()} score (${targetEqualized} Coins)!`, 5000);
         break;
       }
       case 'super_star_x2':
       case 'mushroom_x2': {
-        sounds.playSuperstar();
+        sounds.playPowerUp();
         nextTeams = nextTeams.map(t => {
           if (t.id === activeTeam.id) {
-            const doubleAmount = Math.max(t.coins, 5);
-            return { ...t, coins: t.coins + doubleAmount, hasDoubleTurn: true };
+            return { ...t, hasDoubleTurn: true };
           }
           return t;
         });
-        showToast(`⭐ SUPER STAR! ${activeTeam.name}'s coins are DOUBLED (x2) & extra turn granted!`);
+        showToast(`🍄 SUPER MUSHROOM! ${activeTeam.name} takes another turn!`);
         keepTurn = true;
         break;
       }
       case 'ghost_steal_5':
-      case 'boo_steal_5':
-      case 'boo_steal_10': {
+      case 'boo_steal_5': {
         sounds.playBoo();
-        const stolenCoins = card.coins || 5;
-        const target = targetTeamId 
-          ? nextTeams.find(t => t.id === targetTeamId)
+        const stolenCoins = options.dieRoll || 5;
+        const target = options.targetTeamId 
+          ? nextTeams.find(t => t.id === options.targetTeamId)
           : [...nextTeams.filter(t => t.id !== activeTeam.id)].sort((a, b) => b.coins - a.coins)[0];
 
-        if (target && target.coins > 0) {
-          const actualStolen = Math.min(stolenCoins, target.coins);
+        if (target) {
           nextTeams = nextTeams.map(t => {
             if (t.id === activeTeam.id) {
-              return { ...t, coins: t.coins + actualStolen, coinsStolen: t.coinsStolen + actualStolen };
+              return { ...t, coins: t.coins + stolenCoins, coinsStolen: (t.coinsStolen || 0) + stolenCoins };
             }
             if (t.id === target.id) {
-              return { ...t, coins: t.coins - actualStolen };
+              return { ...t, coins: t.coins - stolenCoins };
             }
             return t;
           });
-          showToast(`👻 GHOST HEIST! ${activeTeam.name} stole ${actualStolen} coins from ${target.name}!`);
+          const targetCoinsAfter = target.coins - stolenCoins;
+          if (targetCoinsAfter < 0) {
+            showToast(`👻 BOO STEAL! Rolled a ${stolenCoins}! ${activeTeam.name} stole ${stolenCoins} coins from ${target.name} (now at ${targetCoinsAfter} in red)!`, 5000);
+          } else {
+            showToast(`👻 BOO STEAL! Rolled a ${stolenCoins}! ${activeTeam.name} stole ${stolenCoins} coins from ${target.name}!`, 5000);
+          }
         } else {
           nextTeams = nextTeams.map(t => t.id === activeTeam.id ? { ...t, coins: t.coins + stolenCoins } : t);
-          showToast(`👻 Ghost found no rival coins, so ${activeTeam.name} received +${stolenCoins} coins!`);
+          showToast(`👻 Boo awarded +${stolenCoins} coins to ${activeTeam.name}!`);
         }
+        break;
+      }
+      case 'king_boo':
+      case 'boo_steal_10': {
+        sounds.playBoo();
+        const dieValue = options.dieRoll || 5;
+        const rivals = nextTeams.filter(t => t.id !== activeTeam.id);
+        const totalStolen = dieValue * rivals.length;
+
+        nextTeams = nextTeams.map(t => {
+          if (t.id === activeTeam.id) {
+            return { ...t, coins: t.coins + totalStolen, coinsStolen: (t.coinsStolen || 0) + totalStolen };
+          }
+          return { ...t, coins: t.coins - dieValue };
+        });
+
+        showToast(`👑 KING BOO! Rolled a ${dieValue}! Stole ${dieValue} coins from EACH rival team (+${totalStolen} coins total)!`, 5000);
         break;
       }
       case 'blue_shell': {
@@ -561,10 +610,42 @@ function GameApp() {
       }
       case 'bowser_revolution': {
         sounds.playBowser();
-        const totalCoins = nextTeams.reduce((sum, t) => sum + t.coins, 0);
-        const splitAmount = Math.floor(totalCoins / nextTeams.length);
-        nextTeams = nextTeams.map(t => ({ ...t, coins: splitAmount }));
-        showToast(`💥 BOWSER REVOLUTION! All coins pooled and distributed equally!`);
+        const targetId = options.targetTeamId;
+        const target = targetId ? nextTeams.find(t => t.id === targetId) : null;
+        if (target && target.id !== activeTeam.id) {
+          const activeCoins = activeTeam.coins;
+          const targetCoins = target.coins;
+          nextTeams = nextTeams.map(t => {
+            if (t.id === activeTeam.id) return { ...t, coins: targetCoins };
+            if (t.id === target.id) return { ...t, coins: activeCoins };
+            return t;
+          });
+          showToast(`💥 BOWSER'S REVOLUTION! ${activeTeam.name} swapped coins with ${target.name}! (${activeCoins} ⮂ ${targetCoins})`, 5000);
+        } else {
+          const rivals = nextTeams.filter(t => t.id !== activeTeam.id);
+          if (rivals.length > 0) {
+            const randRival = rivals[0];
+            const activeCoins = activeTeam.coins;
+            const targetCoins = randRival.coins;
+            nextTeams = nextTeams.map(t => {
+              if (t.id === activeTeam.id) return { ...t, coins: targetCoins };
+              if (t.id === randRival.id) return { ...t, coins: activeCoins };
+              return t;
+            });
+            showToast(`💥 BOWSER'S REVOLUTION! ${activeTeam.name} swapped coins with ${randRival.name}! (${activeCoins} ⮂ ${targetCoins})`, 5000);
+          }
+        }
+        break;
+      }
+      case 'bowser_fury': {
+        sounds.playBowserFury();
+        nextTeams = nextTeams.map(t => {
+          if (t.id !== activeTeam.id) {
+            return { ...t, coins: t.coins - 5 };
+          }
+          return t;
+        });
+        showToast(`🔥 BOWSER'S FURY! -5 coins inflicted on all rival teams!`, 5000);
         break;
       }
       default:
@@ -619,9 +700,19 @@ function GameApp() {
 
   // Customizer: update question
   const handleUpdateBlockQuestion = (blockId: number, updatedQuestion: GameQuestion) => {
-    const updated = blocks.map(b => (b.id === blockId ? { ...b, question: updatedQuestion } : b));
+    const sanitizedQuestion: GameQuestion = {
+      ...updatedQuestion,
+      rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(1, Number(updatedQuestion.rewardCoins) || 1),
+    };
+    const updated = blocks.map(b => (b.id === blockId ? { ...b, question: sanitizedQuestion } : b));
     setBlocks(updated);
     persistQuestions(updated);
+    toast.success(`Block #${blockId} Question Saved!`, {
+      description: updatedQuestion.title
+        ? `"${updatedQuestion.title.length > 55 ? updatedQuestion.title.slice(0, 52) + '…' : updatedQuestion.title}"`
+        : 'Question content updated in deck.',
+      duration: 3500,
+    });
     showToast(`✅ Saved changes for Block #${blockId}!`);
   };
 
@@ -693,7 +784,7 @@ function GameApp() {
   const selectedQuestion = selectedBlock?.question;
 
   return (
-    <div className="min-h-screen lg:h-screen lg:max-h-screen text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
+    <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
       {/* Hand-crafted Cartoony Artistic Nintendo Themed Backdrop */}
       <ThemedBackdrop theme={theme} />
 
@@ -717,6 +808,16 @@ function GameApp() {
 
       {/* Primary Application Views */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
+        {view === 'launcher' && (
+          <LauncherScreen
+            onLaunchGame={handleLaunchGame}
+            onOpenQuestionStudio={handleOpenQuestionStudio}
+            onOpenRulebook={() => setIsRulesModalOpen(true)}
+            soundEnabled={soundEnabled}
+            onToggleSound={handleToggleSound}
+          />
+        )}
+
         {view === 'setup' && (
           <SetupScreen
             theme={theme}
@@ -724,11 +825,12 @@ function GameApp() {
             onSelectTheme={handleSelectTheme}
             onStartGame={handleStartGame}
             onOpenRules={() => setIsRulesModalOpen(true)}
+            onBackToLauncher={() => setView('launcher')}
           />
         )}
 
         {view === 'board' && (
-          <div className="flex-1 flex flex-col justify-between min-h-0 lg:h-screen lg:max-h-screen lg:overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Streamlined Top Navigation Bar with nested ShadCN Avatar */}
             <HeaderNav
               theme={theme}
@@ -741,6 +843,7 @@ function GameApp() {
               onOpenCustomizer={() => setIsCustomizerOpen(true)}
               onDeclareWinner={() => setView('superstar')}
               onResetGame={() => setView('setup')}
+              onExitToLauncher={() => setView('launcher')}
               onShuffleBoard={handleShuffleBoard}
               onNextTurn={() => advanceTurn()}
               openedCount={openedBlocksCount}
@@ -758,8 +861,8 @@ function GameApp() {
               onAdjustCoins={handleAdjustCoins}
             />
 
-            {/* Main 48 Mystery Blocks Game Board */}
-            <main className="flex-1 min-h-0 flex flex-col justify-center overflow-hidden py-1">
+            {/* Main 60 Mystery Blocks Game Board */}
+            <main className="flex-1 min-h-0 flex flex-col py-1 pb-16 sm:pb-24">
               <GameBoard
                 blocks={blocks}
                 teams={teams}
@@ -783,6 +886,7 @@ function GameApp() {
             onAnswerIncorrect={handleAnswerIncorrect}
             onTriggerRoulette={handleTriggerRoulette}
             onUpdateQuestionImage={handleUpdateQuestionImage}
+            onAdjustCoins={handleAdjustCoins}
           />
         )}
       </AnimatePresence>
@@ -836,6 +940,7 @@ function GameApp() {
               setView('setup');
             }}
             onClose={() => setView('board')}
+            onExitToLauncher={() => setView('launcher')}
           />
         )}
       </AnimatePresence>
@@ -850,6 +955,19 @@ function GameApp() {
           />
         )}
       </AnimatePresence>
+      {/* Sonner Toast Notification Stack */}
+      <Toaster
+        position="top-center"
+        richColors
+        theme="dark"
+        closeButton
+        toastOptions={{
+          className: 'font-sans font-medium text-sm border border-white/20 shadow-2xl backdrop-blur-md',
+          style: {
+            zIndex: 999999,
+          },
+        }}
+      />
     </div>
   );
 }

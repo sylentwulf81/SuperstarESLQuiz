@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CharacterId } from '../types';
 import { CHARACTERS } from '../data/characters';
+import { TeamEmblem } from './TeamEmblems';
 
 interface TeamAvatarProps {
   characterId: CharacterId;
@@ -28,9 +29,25 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
 }) => {
   const char = CHARACTERS[characterId];
   const [imgError, setImgError] = useState(false);
-  const src = customUrl || char?.imageUrl;
+  const [storedUrl, setStoredUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`avatar_${characterId}`);
+      if (saved) {
+        setStoredUrl(saved);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [characterId]);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [customUrl, storedUrl, characterId]);
 
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
+  const activeImageUrl = customUrl || storedUrl || `/avatars/${characterId}.png`;
 
   return (
     <div
@@ -38,16 +55,18 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
         showBorder ? 'border border-white/20 shadow-md' : ''
       } ${className}`}
     >
-      {src && !imgError ? (
+      {activeImageUrl && !imgError ? (
         <img
-          src={src}
+          src={activeImageUrl}
           alt={char?.name || 'Team Emblem'}
           onError={() => setImgError(true)}
           referrerPolicy="no-referrer"
           className="w-full h-full object-cover select-none pointer-events-none"
         />
+      ) : char ? (
+        <TeamEmblem characterId={characterId} className="w-full h-full object-cover" />
       ) : (
-        <span className="select-none leading-none">{char?.avatarIcon || '🎮'}</span>
+        <span className="select-none leading-none">🎮</span>
       )}
     </div>
   );

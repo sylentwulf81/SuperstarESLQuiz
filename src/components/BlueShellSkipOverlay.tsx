@@ -65,7 +65,7 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
           {/* Badge */}
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/25 border border-sky-300/50 text-sky-200 text-xs sm:text-sm font-bold tracking-wider uppercase mb-2">
             <ShieldAlert className="w-4 h-4 text-sky-300" />
-            <span>Spiny Shell Freeze</span>
+            <span>Blue Shell Freeze</span>
           </div>
 
           {/* Title */}

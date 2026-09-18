@@ -755,6 +755,103 @@ class SoundEngine {
     osc.start(now);
     osc.stop(now + duration);
   }
+
+  // Quick dice ticking sound when die face flips
+  playDiceTick() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600 + Math.random() * 200, now);
+    osc.frequency.exponentialRampToValueAtTime(180, now + 0.04);
+
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.045);
+  }
+
+  // Authentic Mario Party dice roll landing fanfare / chime
+  playDiceRoll() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Satisfying two-tone landing impact
+    this.playNote(523.25, 0.08, 'triangle', 0.25); // C5
+    setTimeout(() => {
+      this.playNote(783.99, 0.18, 'sine', 0.3); // G5
+    }, 60);
+    setTimeout(() => {
+      this.playNote(1046.50, 0.28, 'triangle', 0.35); // C6
+    }, 130);
+  }
+
+  // POW Block board-shaking seismic rumble & shockwave
+  playPowBlock() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Heavy low rumble
+    [55, 73.42, 110].forEach(f => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.linearRampToValueAtTime(30, now + 0.7);
+
+      gain.gain.setValueAtTime(0.35, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.75);
+    });
+
+    // Metallic spring / shockwave ping
+    setTimeout(() => {
+      this.playNote(440, 0.15, 'square', 0.2);
+      this.playNote(880, 0.2, 'sine', 0.25);
+    }, 100);
+  }
+
+  // Bowser's Fury roar & infernal blast
+  playBowserFury() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+
+    // Infernal deep roar
+    [48.99, 65.41, 92.50].forEach(f => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, now);
+      osc.frequency.linearRampToValueAtTime(f * 1.5, now + 0.3);
+      osc.frequency.linearRampToValueAtTime(35, now + 1.1);
+
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.005, now + 1.1);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 1.1);
+    });
+
+    // Fire whoosh
+    setTimeout(() => {
+      this.playBowser();
+    }, 180);
+  }
 }
 
 export const sounds = new SoundEngine();

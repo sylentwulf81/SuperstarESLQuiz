@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
-import { Trophy, Crown, Sparkles, RotateCcw, X, Medal, Flame } from 'lucide-react';
+import { Trophy, Crown, Sparkles, RotateCcw, X, Medal, Flame, Library } from 'lucide-react';
 import { Team } from '../types';
 import { CHARACTERS } from '../data/characters';
 import { sounds } from '../utils/sound';
@@ -12,12 +12,14 @@ interface SuperstarModalProps {
   teams: Team[];
   onRestart: () => void;
   onClose: () => void;
+  onExitToLauncher?: () => void;
 }
 
 export const SuperstarModal: React.FC<SuperstarModalProps> = ({
   teams,
   onRestart,
   onClose,
+  onExitToLauncher,
 }) => {
   // Determine winner (highest coins)
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
@@ -101,9 +103,15 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
             "{charInfo.catchphrase}"
           </p>
 
-          <div className="inline-flex items-center gap-2.5 bg-slate-800/90 px-5 py-2.5 rounded-2xl border border-yellow-300/60 mt-4 shadow-inner glass-glow-gold">
+          <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border mt-4 shadow-inner ${
+            winner.coins < 0
+              ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+              : 'bg-slate-800/90 border-yellow-300/60 glass-glow-gold'
+          }`}>
             <MarioCoin size="xl" animated />
-            <span className="font-mario text-3xl sm:text-4xl text-yellow-300 text-shadow-gold">
+            <span className={`font-mario text-3xl sm:text-4xl ${
+              winner.coins < 0 ? 'text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-yellow-300 text-shadow-gold'
+            }`}>
               {winner.coins} COINS
             </span>
           </div>
@@ -154,7 +162,9 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
 
                   <div className="text-right flex items-center justify-end gap-1.5 shrink-0">
                     <MarioCoin size="sm" animated={isWinner} />
-                    <span className="font-mario text-xl text-yellow-400 text-shadow-gold">
+                    <span className={`font-mario text-xl ${
+                      team.coins < 0 ? 'text-red-400 font-bold drop-shadow-[0_0_6px_rgba(239,68,68,0.7)]' : 'text-yellow-400 text-shadow-gold'
+                    }`}>
                       {team.coins}
                     </span>
                   </div>
@@ -165,16 +175,26 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
 
           {/* Bottom Actions */}
           <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-white/15">
+            {onExitToLauncher && (
+              <button
+                onClick={() => { sounds.playClick(); onExitToLauncher(); }}
+                className="px-5 py-3 bg-indigo-900/80 hover:bg-indigo-800 text-indigo-200 hover:text-white rounded-2xl font-bold text-sm transition-all border border-indigo-400/40 flex items-center gap-1.5 cursor-pointer shadow-md"
+              >
+                <Library className="w-4 h-4 text-indigo-300" />
+                Exit to Library
+              </button>
+            )}
+
             <button
               onClick={() => { sounds.playClick(); onClose(); }}
-              className="px-6 py-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-2xl font-bold text-base transition-all border border-white/20 cursor-pointer"
+              className="px-5 py-3 bg-slate-800/80 hover:bg-slate-700 text-slate-200 rounded-2xl font-bold text-sm transition-all border border-white/20 cursor-pointer"
             >
               Review Board
             </button>
 
             <button
               onClick={() => { sounds.playClick(); onRestart(); }}
-              className="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 hover:scale-105 text-white font-mario text-xl rounded-2xl shadow-xl border border-emerald-300/80 flex items-center gap-2 transition-all cursor-pointer"
+              className="px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 hover:scale-105 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border border-emerald-300/80 flex items-center gap-2 transition-all cursor-pointer"
             >
               <RotateCcw className="w-5 h-5" />
               PLAY AGAIN / NEW GAME

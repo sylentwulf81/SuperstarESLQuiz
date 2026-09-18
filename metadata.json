@@ -1,6 +1,6 @@
 {
   "name": "Super Mario Party Quiz Game",
-  "description": "An interactive Super Mario ESL trivia and mystery block party game featuring Summer Edition (60 tiered ESL questions) and Christmas Edition, team stealing mechanics, 6-card mystery roulette draws, Bowser revolutions, and sing-alongs.",
+  "description": "An Epic Games/Steam-inspired ALT Classroom Arcade launcher featuring Super Mario Party Quiz (Summer & Holiday Editions) with 60 mystery blocks, Question Studio deck editor, and a suite of upgraded interactive PowerPoint alternative games.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
