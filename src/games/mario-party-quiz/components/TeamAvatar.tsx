@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { CharacterId } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { TeamEmblem } from './TeamEmblems';
-import { useGameTheme } from '../GameThemeContext';
 
 interface TeamAvatarProps {
   characterId: CharacterId;
@@ -28,7 +27,6 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
   customUrl,
   showBorder = true,
 }) => {
-  const theme = useGameTheme();
   const char = CHARACTERS[characterId];
   const [imgError, setImgError] = useState(false);
   const [storedUrl, setStoredUrl] = useState<string | null>(null);
@@ -46,11 +44,10 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
 
   useEffect(() => {
     setImgError(false);
-  }, [customUrl, storedUrl, characterId, theme]);
+  }, [customUrl, storedUrl, characterId]);
 
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
-  const portrait = char?.portraits?.[theme];
-  const activeImageUrl = customUrl || storedUrl || portrait || char?.imageUrl;
+  const activeImageUrl = customUrl || storedUrl || `/avatars/${characterId}.png`;
 
   return (
     <div

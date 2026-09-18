@@ -10,10 +10,6 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     borderColor: 'border-emerald-400',
     avatarIcon: '🦖',
     imageUrl: '/teams/team_yoshi.svg',
-    portraits: {
-      summer: '/assets/characters/summer/yoshi.jpg',
-      christmas: '/assets/characters/winter/yoshi.jpg',
-    },
     imagePromptDescription: 'Yoshi wearing cute reindeer antlers with small golden jingle bells',
     catchphrase: 'Yoshi! Yoshi!',
     superstarTitle: 'YOSHI - The Festive Dino Superstar!',
@@ -27,10 +23,6 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     borderColor: 'border-red-400',
     avatarIcon: '🎅',
     imageUrl: '/teams/team_mario.svg',
-    portraits: {
-      summer: '/assets/characters/summer/mario.jpg',
-      christmas: '/assets/characters/winter/mario.jpg',
-    },
     imagePromptDescription: 'Mario in Santa suit holding a festive green gift box',
     catchphrase: 'Mamma Mia! It\'s-a me, Mario!',
     superstarTitle: 'MARIO - The Holiday Hero Superstar!',
@@ -44,10 +36,6 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     borderColor: 'border-pink-300',
     avatarIcon: '👑',
     imageUrl: '/teams/team_peach.svg',
-    portraits: {
-      summer: '/assets/characters/summer/peach.jpg',
-      christmas: '/assets/characters/winter/peach.jpg',
-    },
     imagePromptDescription: 'Princess Peach in pink holiday gown holding a wrapped gift with a golden bow',
     catchphrase: 'Peachy keen! Let\'s celebrate!',
     superstarTitle: 'PEACH - The Royal Christmas Superstar!',
@@ -61,10 +49,6 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     borderColor: 'border-amber-300',
     avatarIcon: '🌼',
     imageUrl: '/teams/team_daisy.svg',
-    portraits: {
-      summer: '/assets/characters/summer/daisy.jpg',
-      christmas: '/assets/characters/winter/daisy.jpg',
-    },
     imagePromptDescription: 'Princess Daisy wearing a stylish red and white Santa dress with a gold present',
     catchphrase: 'Hi, I\'m Daisy! Ready for victory!',
     superstarTitle: 'DAISY - The High-Energy Superstar!',
@@ -78,9 +62,6 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     borderColor: 'border-amber-500',
     avatarIcon: '🦍',
     imageUrl: '/teams/team_dk.svg',
-    portraits: {
-      christmas: '/assets/characters/winter/dk.jpg',
-    },
     imagePromptDescription: 'Donkey Kong wearing a jolly Santa hat and his red DK tie',
     catchphrase: 'Banana slamma! Ho ho ho!',
     superstarTitle: 'DONKEY KONG - The Jungle Claus Superstar!',

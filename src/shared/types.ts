@@ -10,8 +10,6 @@ export interface CharacterInfo {
   borderColor: string;
   avatarIcon: string;
   imageUrl?: string;
-  /** Theme-specific portraits from `public/assets/characters/{summer|winter}/`. */
-  portraits?: Partial<Record<GameTheme, string>>;
   imagePromptDescription: string;
   catchphrase: string;
   superstarTitle: string;

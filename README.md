@@ -20,6 +20,6 @@ Open http://localhost:43123. The front page is the game launcher. Playable box a
 - `src/games/mario-party-quiz/` — the only playable game module (board, studio, Firebase decks)
 - `src/shared/` — auth, Firebase, types, shared UI
 - `public/assets/boxart/` — Summer/Winter launcher covers
-- `public/assets/characters/summer|winter/` — theme portraits (Rosalina and Toad art is stored here but not added as extra playable characters)
+- `public/assets/characters/summer|winter/` — character art kept on disk for later; team slots still use the original SVG emblems
 
 Google sign-in and Firestore question sync still use the committed Firebase applet config.

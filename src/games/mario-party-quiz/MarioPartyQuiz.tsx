@@ -18,7 +18,6 @@ import { Team, BlockState, GameQuestion, RewardCard, GameView, GameTheme, Reward
 import { generateRouletteCards } from './data/rewards';
 import { sounds } from '@/shared/utils/sound';
 import { createGameBlocks, TOTAL_BLOCKS } from './createBlocks';
-import { GameThemeProvider } from './GameThemeContext';
 
 export { TOTAL_BLOCKS };
 
@@ -690,7 +689,6 @@ export function MarioPartyQuiz({
   const selectedQuestion = selectedBlock?.question;
 
   return (
-    <GameThemeProvider theme={theme}>
     <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
       {/* Hand-crafted Cartoony Artistic Nintendo Themed Backdrop */}
       <ThemedBackdrop theme={theme} />
@@ -853,6 +851,5 @@ export function MarioPartyQuiz({
         )}
       </AnimatePresence>
     </div>
-    </GameThemeProvider>
   );
 }
