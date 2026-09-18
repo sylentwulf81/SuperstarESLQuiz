@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Team DK Emblem matching team_dk.png -->
+  <rect width="200" height="200" fill="#FFD600"/>
+  <circle cx="100" cy="100" r="76" fill="#D70014"/>
+  <g transform="translate(100, 100) scale(0.85) translate(-100, -100)">
+    <!-- Outer Red Outline / Drop Shape for D -->
+    <path d="M 46 62
+             L 90 58
+             C 108 58, 120 72, 120 98
+             C 120 126, 106 142, 86 142
+             L 46 142
+             Z"
+          fill="#FFEA00"
+          stroke="#D70014"
+          stroke-width="9"
+          stroke-linejoin="round"/>
+    <!-- Inner counter for D -->
+    <path d="M 68 82
+             L 86 82
+             C 94 82, 98 90, 98 100
+             C 98 112, 92 118, 84 118
+             L 68 118
+             Z"
+          fill="#D70014"/>
+    <!-- Letter K -->
+    <path d="M 106 60
+             L 128 60
+             L 128 92
+             L 152 60
+             L 178 60
+             L 142 102
+             L 180 142
+             L 152 142
+             L 128 112
+             L 128 142
+             L 106 142
+             Z"
+          fill="#FFEA00"
+          stroke="#D70014"
+          stroke-width="9"
+          stroke-linejoin="round"/>
+    <!-- Yellow highlight contour -->
+    <path d="M 46 62
+             L 90 58
+             C 108 58, 120 72, 120 98
+             C 120 126, 106 142, 86 142
+             L 46 142
+             Z"
+          fill="none"
+          stroke="#FFF275"
+          stroke-width="3"
+          stroke-linejoin="round"/>
+    <path d="M 106 60
+             L 128 60
+             L 128 92
+             L 152 60
+             L 178 60
+             L 142 102
+             L 180 142
+             L 152 142
+             L 128 112
+             L 128 142
+             L 106 142
+             Z"
+          fill="none"
+          stroke="#FFF275"
+          stroke-width="3"
+          stroke-linejoin="round"/>
+  </g>
+</svg>

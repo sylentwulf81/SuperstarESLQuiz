@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Team Mario Emblem matching team_mario.png -->
+  <rect width="200" height="200" fill="#E50014"/>
+  <circle cx="100" cy="100" r="76" fill="#FFFFFF"/>
+  <path d="M 42 140
+           L 68 46
+           L 100 106
+           L 132 46
+           L 158 140
+           L 132 140
+           L 120 86
+           L 100 118
+           L 80 86
+           L 68 140
+           Z"
+        fill="#E50014"
+        stroke="#E50014"
+        stroke-width="4"
+        stroke-linejoin="round"
+        stroke-linecap="round"/>
+</svg>

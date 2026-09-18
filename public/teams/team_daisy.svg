@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Team Daisy Emblem matching team_daisy.png -->
+  <rect width="200" height="200" fill="#F37B12"/>
+  <circle cx="100" cy="100" r="76" fill="#FFFFFF"/>
+  <g stroke="#F37B12" stroke-width="6" fill="#FFDE00" stroke-linejoin="round">
+    <circle cx="100" cy="62" r="23"/>
+    <circle cx="133" cy="81" r="23"/>
+    <circle cx="133" cy="119" r="23"/>
+    <circle cx="100" cy="138" r="23"/>
+    <circle cx="67" cy="119" r="23"/>
+    <circle cx="67" cy="81" r="23"/>
+    <circle cx="100" cy="100" r="28" stroke="none" fill="#FFDE00"/>
+  </g>
+  <circle cx="100" cy="100" r="33" fill="#52C4AE" stroke="#0C8E77" stroke-width="6"/>
+</svg>

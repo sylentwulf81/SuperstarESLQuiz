@@ -1,0 +1,74 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document for saved preferences and question packs",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Firebase Auth UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name"
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User avatar image URL"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "updatedAt"]
+    },
+    "QuestionSet": {
+      "title": "QuestionSet",
+      "description": "Persisted customized deck of Mario Party trivia questions",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the question deck"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID who created or modified the set"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title or name of this question set"
+        },
+        "theme": {
+          "type": "string",
+          "description": "Theme: christmas or summer"
+        },
+        "questionsData": {
+          "type": "string",
+          "description": "JSON string containing the array of 48 question definitions"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": ["id", "userId", "questionsData", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and preferences"
+    },
+    "/users/{userId}/questionSets/{questionSetId}": {
+      "schema": "QuestionSet",
+      "description": "Private customized question sets belonging to the user"
+    }
+  }
+}

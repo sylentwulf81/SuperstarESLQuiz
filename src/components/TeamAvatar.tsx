@@ -1,0 +1,54 @@
+import React, { useState } from 'react';
+import { CharacterId } from '../types';
+import { CHARACTERS } from '../data/characters';
+
+interface TeamAvatarProps {
+  characterId: CharacterId;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  className?: string;
+  customUrl?: string;
+  showBorder?: boolean;
+}
+
+const SIZE_MAP = {
+  xs: 'w-5 h-5 rounded-md text-xs',
+  sm: 'w-7 h-7 rounded-lg text-sm',
+  md: 'w-9 h-9 rounded-xl text-base',
+  lg: 'w-12 h-12 rounded-xl text-xl',
+  xl: 'w-20 h-20 rounded-2xl text-3xl',
+  '2xl': 'w-28 h-28 rounded-3xl text-5xl',
+};
+
+export const TeamAvatar: React.FC<TeamAvatarProps> = ({
+  characterId,
+  size = 'md',
+  className = '',
+  customUrl,
+  showBorder = true,
+}) => {
+  const char = CHARACTERS[characterId];
+  const [imgError, setImgError] = useState(false);
+  const src = customUrl || char?.imageUrl;
+
+  const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
+
+  return (
+    <div
+      className={`relative inline-flex items-center justify-center shrink-0 overflow-hidden select-none transition-transform ${sizeClass} ${
+        showBorder ? 'border border-white/20 shadow-md' : ''
+      } ${className}`}
+    >
+      {src && !imgError ? (
+        <img
+          src={src}
+          alt={char?.name || 'Team Emblem'}
+          onError={() => setImgError(true)}
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-cover select-none pointer-events-none"
+        />
+      ) : (
+        <span className="select-none leading-none">{char?.avatarIcon || '🎮'}</span>
+      )}
+    </div>
+  );
+};
