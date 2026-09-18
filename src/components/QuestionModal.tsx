@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { X, CheckCircle, AlertCircle, Sparkles, HelpCircle, Eye, EyeOff, RefreshCw, Volume2, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { X, CheckCircle, AlertCircle, Sparkles, HelpCircle, Eye, EyeOff, RefreshCw, Upload, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { GameQuestion, Team } from '../types';
 import { CHARACTERS } from '../data/characters';
 import { sounds } from '../utils/sound';
@@ -52,17 +52,16 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const [isHintVisible, setIsHintVisible] = useState(false);
   const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
 
-  // Image Clue Upload & Display state
   const [currentImage, setCurrentImage] = useState<string | undefined>(question.imageUrl || question.image);
   const [imageLoadFailed, setImageLoadFailed] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const fileUploadRef = useRef<HTMLInputElement>(null);
 
-  // Spelling / Unscramble state
   const [spelledLetters, setSpelledLetters] = useState<string[]>([]);
   const [availableLetters, setAvailableLetters] = useState<{ id: string; char: string; isUsed: boolean }[]>([]);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
+  const rewardCoins = currentTeam.hasDoubleTurn ? question.rewardCoins * 2 : question.rewardCoins;
 
   useEffect(() => {
     setCurrentImage(question.imageUrl || question.image);
@@ -124,7 +123,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }
   };
 
-  // Handle Multiple Choice Click (Does NOT reveal correct answer if wrong; eliminates choice for steals)
   const handleSelectOption = (idx: number) => {
     if (status === 'correct' || eliminatedOptions.includes(idx) || isAnswerRevealed || question.type !== 'multiple_choice') return;
     setSelectedOption(idx);
@@ -141,7 +139,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }
   };
 
-  // Letter Click for Unscramble
   const handleLetterClick = (item: { id: string; char: string; isUsed: boolean }) => {
     if (item.isUsed || status === 'correct') return;
     sounds.playLetterTile(spelledLetters.length);
@@ -149,7 +146,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     setAvailableLetters(prev => prev.map(l => l.id === item.id ? { ...l, isUsed: true } : l));
   };
 
-  // Remove letter from spelled
   const handleRemoveLetter = (indexToRemove: number) => {
     if (status === 'correct') return;
     sounds.playPop();
@@ -157,7 +153,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     const newSpelled = spelledLetters.filter((_, i) => i !== indexToRemove);
     setSpelledLetters(newSpelled);
 
-    // Find first matching used letter in availableLetters and restore it
     let restored = false;
     setAvailableLetters(prev => prev.map(l => {
       if (!restored && l.isUsed && l.char === charToRemove) {
@@ -168,7 +163,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }));
   };
 
-  // Check Spelling
   const handleCheckSpelling = () => {
     if (question.type !== 'unscramble') return;
     const currentWord = spelledLetters.join('').replace(/\s+/g, '').toUpperCase();
@@ -184,248 +178,237 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }
   };
 
-  // Award Coins
   const handleClaimReward = () => {
     sounds.playClaimReward();
-    const coins = currentTeam.hasDoubleTurn ? question.rewardCoins * 2 : question.rewardCoins;
-    onAnswerCorrect(coins);
+    onAnswerCorrect(rewardCoins);
   };
 
-  // Colors for slide dashed border (random or alternating green/red like slides)
-  const isGreenTheme = question.id % 2 === 0;
+  const renderChoiceButtons = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 lg:gap-4 flex-1 min-h-0 auto-rows-fr">
+      {shuffledOptions.map((opt, idx) => {
+        const isSelected = selectedOption === idx;
+        const isCorrectOption = opt.isCorrect;
+        const isEliminated = eliminatedOptions.includes(idx);
+
+        let btnStyle = 'bg-slate-800/95 hover:bg-slate-700 border-white/25 text-white hover:border-indigo-400/70';
+        if (isAnswerRevealed) {
+          if (isCorrectOption) {
+            btnStyle = 'bg-emerald-600 border-emerald-300 text-white font-black ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.45)]';
+          } else if (isSelected && !isCorrectOption) {
+            btnStyle = 'bg-red-700 border-red-500 text-white/90 line-through opacity-60';
+          } else {
+            btnStyle = 'bg-slate-900/50 border-white/10 text-slate-400 opacity-50';
+          }
+        } else if (isEliminated) {
+          btnStyle = 'bg-red-950/70 border-red-500/50 text-red-300/70 line-through cursor-not-allowed opacity-50';
+        }
+
+        return (
+          <button
+            key={idx}
+            disabled={isAnswerRevealed || isEliminated}
+            onClick={() => handleSelectOption(idx)}
+            className={`min-h-[4.25rem] sm:min-h-0 h-full rounded-2xl border-2 text-left text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold transition-all flex items-center justify-between px-3 sm:px-4 lg:px-5 py-3 shadow-xl cursor-pointer ${btnStyle}`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <span className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl border-2 flex items-center justify-center text-lg sm:text-xl lg:text-2xl font-black shrink-0 ${
+                isEliminated
+                  ? 'bg-red-900/70 border-red-500/50 text-red-300'
+                  : 'bg-black/50 border-white/20 text-yellow-300'
+              }`}>
+                {['A', 'B', 'C', 'D'][idx]}
+              </span>
+              <span className="leading-snug break-words">{opt.text}</span>
+            </div>
+            {isAnswerRevealed && isCorrectOption && (
+              <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-300 shrink-0 ml-2 drop-shadow" />
+            )}
+            {!isAnswerRevealed && isEliminated && (
+              <span className="text-[10px] sm:text-xs font-bold text-red-300 uppercase bg-red-950/90 px-2 py-1 rounded-lg border border-red-500/50 shrink-0 ml-2">
+                Incorrect
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderImagePanel = (compact = false) => {
+    if (!currentImage && !(onUpdateQuestionImage && question.type !== 'mystery_card')) return null;
+
+    if (!currentImage) {
+      return (
+        <button
+          type="button"
+          disabled={isProcessingImage}
+          onClick={() => fileUploadRef.current?.click()}
+          className="self-end text-xs text-indigo-200 hover:text-white flex items-center gap-1.5 bg-indigo-950/60 px-3 py-1.5 rounded-xl border border-indigo-400/40 cursor-pointer font-semibold shrink-0"
+        >
+          <ImageIcon className="w-4 h-4 text-amber-400" />
+          {isProcessingImage ? 'Processing...' : 'Add image'}
+        </button>
+      );
+    }
+
+    return (
+      <div className={`relative min-h-0 flex items-center justify-center ${compact ? 'h-full max-h-full' : 'max-h-40 sm:max-h-48 lg:max-h-56 w-full'}`}>
+        <div className="relative h-full max-h-full rounded-2xl overflow-hidden border-2 border-white/25 bg-black/70 shadow-2xl flex items-center justify-center">
+          {!imageLoadFailed ? (
+            <img
+              src={currentImage}
+              alt={question.imageAlt || question.title}
+              referrerPolicy="no-referrer"
+              onError={() => setImageLoadFailed(true)}
+              className="max-h-full max-w-full w-auto h-auto object-contain"
+            />
+          ) : (
+            <div className="p-4 text-center space-y-2 max-w-xs">
+              <p className="text-amber-300 text-sm font-bold flex items-center justify-center gap-1.5">
+                <AlertCircle className="w-4 h-4" />
+                Image failed to load
+              </p>
+              {onUpdateQuestionImage && (
+                <button
+                  type="button"
+                  onClick={() => fileUploadRef.current?.click()}
+                  className="px-3 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg cursor-pointer"
+                >
+                  Upload replacement
+                </button>
+              )}
+            </div>
+          )}
+
+          {onUpdateQuestionImage && !imageLoadFailed && (
+            <div className="absolute top-2 right-2 flex gap-1.5">
+              <button
+                type="button"
+                disabled={isProcessingImage}
+                onClick={() => fileUploadRef.current?.click()}
+                className="p-1.5 rounded-lg bg-slate-950/80 text-white border border-white/20 cursor-pointer"
+                title="Change image"
+              >
+                <Upload className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="p-1.5 rounded-lg bg-slate-950/80 text-red-300 border border-white/20 cursor-pointer"
+                title="Remove image"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const isCorrectClickable = isAnswerRevealed && (status === 'correct' || question.type === 'open_trivia');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 lg:p-4 bg-slate-950/88">
       <motion.div
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.94, opacity: 0, y: 16 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-4xl lg:max-w-5xl bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh]"
+        exit={{ scale: 0.94, opacity: 0 }}
+        className="relative w-full max-w-6xl h-[min(94dvh,980px)] max-h-[94dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
       >
-        {/* Luminous top ambient glow */}
-        <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-95 shadow-[0_0_20px_rgba(99,102,241,0.7)]" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
 
-        {/* Top Header with Mario Coin Bar */}
-        <div className="bg-slate-800/95 p-4 sm:p-5 text-white flex items-center justify-between border-b border-white/15 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="font-mario text-2xl sm:text-3xl md:text-4xl text-yellow-300 text-shadow-mario">
+        <div className="bg-slate-800/95 px-3 sm:px-5 py-2.5 sm:py-3 text-white flex items-center justify-between border-b border-white/15 shrink-0 gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="font-mario text-lg sm:text-2xl md:text-3xl text-yellow-300 text-shadow-mario whitespace-nowrap">
               BLOCK #{question.blockNumber}
             </span>
-            <span className="bg-slate-700/90 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold uppercase tracking-wider border border-white/20 text-indigo-200">
+            <span className="hidden sm:inline bg-slate-700/90 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border border-white/20 text-indigo-200">
               {question.category.replace('_', ' ')}
             </span>
           </div>
 
-          {/* Current Turn Badge */}
-          <div className="flex items-center gap-3">
-            <div className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl ${charInfo.bgColor} bg-opacity-60 border border-white/30 text-xs sm:text-sm font-bold text-white shadow-md`}>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className={`flex items-center gap-2 px-2.5 py-1 rounded-xl ${charInfo.bgColor} bg-opacity-60 border border-white/30 text-xs sm:text-sm font-bold text-white`}>
               <TeamAvatar characterId={currentTeam.characterId} size="xs" customUrl={currentTeam.customImageUrl} />
-              <span>{currentTeam.name}'s Turn</span>
+              <span className="hidden sm:inline max-w-[140px] truncate">{currentTeam.name}</span>
             </div>
             <button
               onClick={() => {
                 sounds.playClick();
                 onClose();
               }}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20 cursor-pointer"
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
               aria-label="Close"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content Container */}
-        <div className="p-4 sm:p-6 md:p-8 space-y-5 overflow-y-auto flex-1">
-          {/* Slide Box */}
-          <div className="p-5 sm:p-7 md:p-8 rounded-3xl border-2 border-white/20 bg-slate-950/70 relative shadow-2xl">
-            {/* Question Title */}
-            <div className="flex items-start justify-between gap-3 mb-5">
-              <h2 className="font-mario text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-yellow-300 leading-tight drop-shadow-md">
-                {question.title}
-              </h2>
-            </div>
+        <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-5 lg:px-6 py-3 sm:py-4 gap-3 overflow-hidden">
+          <h2 className="font-mario text-xl sm:text-2xl md:text-3xl lg:text-[2.15rem] text-yellow-300 leading-tight drop-shadow-md shrink-0">
+            {question.title}
+          </h2>
 
-            {/* Visual Clue Image (if any) or Presenter Image Upload */}
-            {currentImage ? (
-              <div className="flex flex-col items-center my-4 relative">
-                <div className="relative rounded-2xl overflow-hidden border-2 border-white/30 shadow-2xl max-h-64 sm:max-h-80 md:max-h-96 bg-black/70 flex items-center justify-center min-w-[260px]">
-                  {!imageLoadFailed ? (
-                    <img
-                      src={currentImage}
-                      alt={question.imageAlt || question.title}
-                      referrerPolicy="no-referrer"
-                      onError={() => setImageLoadFailed(true)}
-                      className="max-h-64 sm:max-h-80 md:max-h-96 w-auto object-contain"
-                    />
+          <input
+            ref={fileUploadRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+
+          {question.type === 'multiple_choice' && (
+            <div className={`flex-1 min-h-0 overflow-y-auto lg:overflow-hidden ${currentImage ? 'flex flex-col lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3 lg:gap-5' : 'flex flex-col'}`}>
+              {currentImage && renderImagePanel(true)}
+              {renderChoiceButtons()}
+            </div>
+          )}
+
+          {question.type === 'open_trivia' && (
+            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+              {currentImage && (
+                <div className="shrink-0 max-h-44 sm:max-h-56 lg:max-h-72 flex justify-center">
+                  {renderImagePanel(false)}
+                </div>
+              )}
+              {!currentImage && renderImagePanel()}
+
+              {question.hint && (
+                <div className="flex flex-wrap items-center gap-3 p-3 bg-indigo-950/70 border-2 border-indigo-500/40 rounded-2xl shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setIsHintVisible(prev => !prev);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm border-2 border-indigo-400/50 cursor-pointer shrink-0"
+                  >
+                    {isHintVisible ? (
+                      <>
+                        <EyeOff className="w-4 h-4 text-amber-300" />
+                        Hide Hint
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4 text-amber-300" />
+                        Show Hint
+                      </>
+                    )}
+                  </button>
+                  {isHintVisible ? (
+                    <p className="text-sm sm:text-base md:text-lg text-indigo-100 font-medium italic flex-1 min-w-0">
+                      <HelpCircle className="w-5 h-5 text-amber-400 inline mr-1.5 -mt-0.5" />
+                      <strong className="text-amber-300 not-italic">Hint:</strong> {question.hint}
+                    </p>
                   ) : (
-                    <div className="p-6 text-center space-y-3 bg-slate-900/90 max-w-sm rounded-xl">
-                      <p className="text-amber-300 text-sm font-bold flex items-center justify-center gap-1.5">
-                        <AlertCircle className="w-5 h-5 text-amber-400" />
-                        <span>Web image link failed to load</span>
-                      </p>
-                      <p className="text-slate-400 text-xs">
-                        External links can expire. You can quickly upload an image directly:
-                      </p>
-                      {onUpdateQuestionImage && (
-                        <button
-                          type="button"
-                          disabled={isProcessingImage}
-                          onClick={() => fileUploadRef.current?.click()}
-                          className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl cursor-pointer flex items-center gap-2 mx-auto shadow"
-                        >
-                          <Upload className="w-4 h-4" />
-                          <span>Upload Replacement Image</span>
-                        </button>
-                      )}
-                    </div>
+                    <span className="text-xs sm:text-sm text-indigo-300/80 italic">Hidden until you reveal it.</span>
                   )}
                 </div>
+              )}
 
-                {/* Presenter Quick Actions toolbar */}
-                {onUpdateQuestionImage && !imageLoadFailed && (
-                  <div className="mt-2.5 flex items-center gap-2">
-                    <button
-                      type="button"
-                      disabled={isProcessingImage}
-                      onClick={() => fileUploadRef.current?.click()}
-                      className="text-xs text-slate-300 hover:text-white flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-750 px-3 py-1.5 rounded-xl border border-white/20 transition-all cursor-pointer shadow-sm font-semibold"
-                    >
-                      <Upload className="w-3.5 h-3.5 text-amber-400" />
-                      <span>{isProcessingImage ? 'Uploading...' : 'Change Image'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="text-xs text-red-400/90 hover:text-red-300 flex items-center gap-1 px-2.5 py-1.5 rounded-xl hover:bg-red-950/40 border border-transparent hover:border-red-500/30 transition-all cursor-pointer font-semibold"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Remove</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : onUpdateQuestionImage && question.type !== 'mystery_card' ? (
-              <div className="flex justify-end -mt-2 mb-3">
-                <button
-                  type="button"
-                  disabled={isProcessingImage}
-                  onClick={() => fileUploadRef.current?.click()}
-                  className="text-xs text-indigo-200 hover:text-white flex items-center gap-1.5 bg-indigo-950/60 hover:bg-indigo-900/80 px-3 py-1.5 rounded-xl border border-indigo-400/40 transition-all cursor-pointer font-semibold shadow-sm"
-                >
-                  <ImageIcon className="w-4 h-4 text-amber-400" />
-                  <span>{isProcessingImage ? 'Processing...' : 'Upload Image Clue'}</span>
-                </button>
-              </div>
-            ) : null}
-
-            {/* Hidden Presenter File Input */}
-            <input
-              ref={fileUploadRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-
-            {/* Question Type 1: Multiple Choice */}
-            {question.type === 'multiple_choice' && (
-              <div className="space-y-4 mt-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-                  {shuffledOptions.map((opt, idx) => {
-                    const isSelected = selectedOption === idx;
-                    const isCorrectOption = opt.isCorrect;
-                    const isEliminated = eliminatedOptions.includes(idx);
-
-                    let btnStyle = 'bg-slate-800/90 hover:bg-slate-750/95 border-white/20 text-white hover:border-indigo-400/60 shadow-md';
-                    if (isAnswerRevealed) {
-                      if (isCorrectOption) {
-                        btnStyle = 'bg-emerald-600 border-emerald-300 text-white font-black scale-102 ring-4 ring-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.5)]';
-                      } else if (isSelected && !isCorrectOption) {
-                        btnStyle = 'bg-red-700 border-red-500 text-white/90 line-through opacity-60';
-                      } else {
-                        btnStyle = 'bg-slate-900/40 border-white/10 text-slate-400 opacity-50';
-                      }
-                    } else if (isEliminated) {
-                      btnStyle = 'bg-red-950/70 border-red-500/50 text-red-300/70 line-through cursor-not-allowed opacity-50 scale-98';
-                    }
-
-                    return (
-                      <button
-                        key={idx}
-                        disabled={isAnswerRevealed || isEliminated}
-                        onClick={() => handleSelectOption(idx)}
-                        className={`p-4 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl border-2 text-left text-lg sm:text-xl md:text-2xl font-bold transition-all flex items-center justify-between shadow-xl cursor-pointer min-h-[76px] sm:min-h-[88px] ${btnStyle}`}
-                      >
-                        <div className="flex items-center gap-3.5 sm:gap-4">
-                          <span className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-2xl border-2 flex items-center justify-center text-base sm:text-xl md:text-2xl font-black shrink-0 ${
-                            isEliminated 
-                              ? 'bg-red-900/70 border-red-500/50 text-red-300' 
-                              : 'bg-black/50 border-white/20 text-yellow-300'
-                          }`}>
-                            {['A', 'B', 'C', 'D'][idx]}
-                          </span>
-                          <span className="leading-snug">{opt.text}</span>
-                        </div>
-                        {isAnswerRevealed && isCorrectOption && (
-                          <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-300 shrink-0 ml-2 drop-shadow" />
-                        )}
-                        {!isAnswerRevealed && isEliminated && (
-                          <span className="text-xs sm:text-sm font-bold text-red-300 uppercase bg-red-950/90 px-2.5 py-1 rounded-lg border border-red-500/50 shrink-0 ml-2">
-                            Incorrect
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Question Type 2: Open Trivia */}
-            {question.type === 'open_trivia' && (
-              <div className="space-y-4 mt-5">
-                {question.hint && (
-                  <div className="flex flex-wrap items-center gap-3 p-3 sm:p-4 bg-indigo-950/70 border-2 border-indigo-500/40 rounded-2xl sm:rounded-3xl shadow-inner">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setIsHintVisible(prev => !prev);
-                      }}
-                      className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-indigo-800 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm border-2 border-indigo-400/50 cursor-pointer shadow-md transition-all active:scale-95 shrink-0"
-                      title={isHintVisible ? "Hide hint" : "Show hint"}
-                    >
-                      {isHintVisible ? (
-                        <>
-                          <EyeOff className="w-4 h-4 text-amber-300 shrink-0" />
-                          <span>Hide Hint</span>
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-4 h-4 text-amber-300 shrink-0" />
-                          <span>Show Clue / Hint</span>
-                        </>
-                      )}
-                    </button>
-
-                    {isHintVisible ? (
-                      <motion.div
-                        initial={{ opacity: 0, x: -6 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="text-sm sm:text-base md:text-lg text-indigo-100 font-medium italic flex items-center gap-2 flex-1"
-                      >
-                        <HelpCircle className="w-5 h-5 text-amber-400 shrink-0" />
-                        <span><strong className="text-amber-300 not-italic">Hint:</strong> {question.hint}</span>
-                      </motion.div>
-                    ) : (
-                      <span className="text-xs sm:text-sm text-indigo-300/80 italic">
-                        Hint is hidden so students can guess first! Click the eye button to reveal.
-                      </span>
-                    )}
-                  </div>
-                )}
-
+              <div className="flex-1 min-h-0 flex items-center">
                 {!isAnswerRevealed ? (
                   <button
                     onClick={() => {
@@ -434,109 +417,81 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                       setIsAnswerRevealed(true);
                       setStatus('correct');
                     }}
-                    className="w-full py-5 sm:py-6 md:py-7 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-mario text-xl sm:text-2xl md:text-3xl rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-2 border-indigo-400/60 transition-all cursor-pointer glass-glow-indigo"
+                    className="w-full py-5 sm:py-7 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-mario text-xl sm:text-3xl rounded-3xl shadow-2xl flex items-center justify-center gap-3 border-2 border-indigo-400/60 cursor-pointer"
                   >
-                    <Eye className="w-6 h-6 sm:w-7 sm:h-7" />
-                    REVEAL CORRECT ANSWER
+                    <Eye className="w-7 h-7" />
+                    REVEAL ANSWER
                   </button>
                 ) : (
-                  <div className="p-6 sm:p-8 bg-black/70 rounded-3xl border-2 border-white/25 text-center space-y-3 shadow-inner">
-                    <span className="text-sm sm:text-base uppercase font-bold text-indigo-300 tracking-wider">Answer:</span>
-                    <h3 className="font-mario text-3xl sm:text-4xl md:text-5xl text-emerald-300 drop-shadow-md">
+                  <div className="w-full p-5 sm:p-8 bg-black/70 rounded-3xl border-2 border-white/25 text-center space-y-2 shadow-inner">
+                    <span className="text-sm uppercase font-bold text-indigo-300 tracking-wider">Answer</span>
+                    <h3 className="font-mario text-3xl sm:text-4xl md:text-5xl text-emerald-300 leading-tight">
                       {question.answer}
                     </h3>
-                    <p className="text-xs sm:text-sm text-amber-300 font-semibold flex items-center justify-center gap-2 pt-1">
-                      <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
-                      Answer revealed! Click "CORRECT!" below to award coins or "Wrong" to pass.
-                    </p>
                   </div>
                 )}
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Question Type 3: Unscramble Spelling (Classroom Distance Optimized) */}
-            {question.type === 'unscramble' && (
-              <div className="space-y-6 mt-5">
-                {/* Spelled letters target box */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between px-1 text-xs sm:text-sm text-indigo-200 font-bold uppercase tracking-wider">
-                    <span>Your Spelled Word:</span>
-                    {spelledLetters.length > 0 && status !== 'correct' && (
-                      <span className="text-amber-300/80 font-normal">Click letter to remove</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 md:gap-4 p-4 sm:p-6 bg-black/75 rounded-3xl border-2 border-white/25 min-h-[90px] sm:min-h-[110px] md:min-h-[120px] shadow-inner">
-                    {spelledLetters.length === 0 ? (
-                      <span className="text-slate-400 text-base sm:text-xl md:text-2xl font-bold italic tracking-wide">
-                        Click letter tiles below to spell the word!
-                      </span>
-                    ) : (
-                      spelledLetters.map((char, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleRemoveLetter(i)}
-                          className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-gradient-to-b from-amber-300 via-amber-400 to-yellow-500 text-slate-950 font-mario text-2xl sm:text-4xl md:text-5xl font-black rounded-2xl shadow-xl border-2 border-yellow-100 hover:scale-105 active:scale-95 transition-all cursor-pointer flex items-center justify-center drop-shadow"
-                          title="Click to remove"
-                        >
-                          {char}
-                        </button>
-                      ))
-                    )}
-                  </div>
+          {question.type === 'unscramble' && (
+            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+              {currentImage && (
+                <div className="shrink-0 max-h-28 sm:max-h-36 flex justify-center">
+                  {renderImagePanel(false)}
                 </div>
+              )}
 
-                {/* Available letter tiles to click */}
-                <div className="space-y-1.5">
-                  <div className="px-1 text-xs sm:text-sm text-indigo-200 font-bold uppercase tracking-wider text-center">
-                    Available Letters:
-                  </div>
-                  <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3.5 md:gap-4">
-                    {availableLetters.map(item => (
+              <div className="flex-1 min-h-0 flex flex-col justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 bg-black/75 rounded-3xl border-2 border-white/25 min-h-[72px]">
+                  {spelledLetters.length === 0 ? (
+                    <span className="text-slate-400 text-sm sm:text-lg font-bold italic">
+                      Tap letters to spell the word
+                    </span>
+                  ) : (
+                    spelledLetters.map((char, i) => (
                       <button
-                        key={item.id}
-                        disabled={item.isUsed || status === 'correct'}
-                        onClick={() => handleLetterClick(item)}
-                        className={`w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 font-mario text-2xl sm:text-4xl md:text-5xl font-black rounded-2xl border-2 transition-all flex items-center justify-center shadow-xl cursor-pointer ${
-                          item.isUsed
-                            ? 'bg-slate-900/60 border-white/10 text-white/20 scale-90 cursor-not-allowed shadow-none'
-                            : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-300/70 hover:scale-110 active:scale-95 shadow-indigo-950/60 ring-2 ring-indigo-400/40'
-                        }`}
+                        key={i}
+                        onClick={() => handleRemoveLetter(i)}
+                        className="w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gradient-to-b from-amber-300 via-amber-400 to-yellow-500 text-slate-950 font-mario text-2xl sm:text-4xl rounded-xl shadow-xl border-2 border-yellow-100 cursor-pointer"
                       >
-                        {item.char}
+                        {char}
                       </button>
-                    ))}
-                  </div>
+                    ))
+                  )}
                 </div>
 
-                {/* Status Announcement if checked */}
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+                  {availableLetters.map(item => (
+                    <button
+                      key={item.id}
+                      disabled={item.isUsed || status === 'correct'}
+                      onClick={() => handleLetterClick(item)}
+                      className={`w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16 font-mario text-2xl sm:text-4xl rounded-xl border-2 flex items-center justify-center shadow-xl cursor-pointer ${
+                        item.isUsed
+                          ? 'bg-slate-900/60 border-white/10 text-white/20'
+                          : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-300/70'
+                      }`}
+                    >
+                      {item.char}
+                    </button>
+                  ))}
+                </div>
+
                 {isAnswerRevealed && status === 'correct' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-3.5 bg-emerald-950/80 border-2 border-emerald-400/60 rounded-2xl text-center shadow-lg"
-                  >
-                    <span className="font-mario text-xl sm:text-2xl text-emerald-300 flex items-center justify-center gap-2">
-                      <CheckCircle className="w-6 h-6 text-emerald-400" />
-                      CORRECT SPELLING: {question.targetWord.toUpperCase()}!
+                  <div className="p-2.5 bg-emerald-950/80 border-2 border-emerald-400/60 rounded-2xl text-center">
+                    <span className="font-mario text-lg sm:text-2xl text-emerald-300">
+                      {question.targetWord.toUpperCase()}
                     </span>
-                  </motion.div>
+                  </div>
                 )}
-
                 {isAnswerRevealed && status === 'incorrect' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="p-3.5 bg-red-950/80 border-2 border-red-500/60 rounded-2xl text-center shadow-lg"
-                  >
-                    <span className="font-mario text-lg sm:text-xl text-red-300 flex items-center justify-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-400" />
-                      NOT QUITE! TRY AGAIN OR REVEAL
-                    </span>
-                  </motion.div>
+                  <div className="p-2.5 bg-red-950/80 border-2 border-red-500/60 rounded-2xl text-center font-mario text-red-300">
+                    Not quite — try again or reveal
+                  </div>
                 )}
 
-                {/* Action buttons for spelling */}
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 shrink-0">
                   <button
                     onClick={() => {
                       sounds.playCardFlip();
@@ -544,18 +499,16 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                       setAvailableLetters(prev => prev.map(l => ({ ...l, isUsed: false })));
                       setStatus('idle');
                     }}
-                    className="px-4 sm:px-6 py-3 sm:py-3.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-2xl text-sm sm:text-base font-bold border border-white/25 flex items-center gap-2 transition-all cursor-pointer shadow-md"
+                    className="px-4 py-2.5 bg-slate-800 text-slate-200 rounded-xl text-sm font-bold border border-white/25 cursor-pointer flex items-center gap-2"
                   >
-                    <RefreshCw className="w-4 h-4" /> Reset Letters
+                    <RefreshCw className="w-4 h-4" /> Reset
                   </button>
-
                   <button
                     onClick={handleCheckSpelling}
-                    className="px-6 sm:px-8 py-3 sm:py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mario text-lg sm:text-xl md:text-2xl rounded-2xl shadow-xl border-2 border-emerald-300/80 flex items-center gap-2.5 transition-all cursor-pointer shadow-emerald-950/50"
+                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-mario text-lg sm:text-xl rounded-xl border-2 border-emerald-300/80 cursor-pointer flex items-center gap-2"
                   >
-                    <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" /> CHECK SPELLING
+                    <CheckCircle className="w-5 h-5" /> CHECK
                   </button>
-
                   <button
                     onClick={() => {
                       sounds.playCardFlip();
@@ -563,82 +516,72 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                       setStatus('correct');
                       setSpelledLetters(question.targetWord.replace(/\s+/g, '').split(''));
                     }}
-                    className="px-4 sm:px-6 py-3 sm:py-3.5 bg-slate-800 hover:bg-slate-750 text-amber-300 rounded-2xl text-sm sm:text-base font-bold border border-white/25 transition-all cursor-pointer shadow-md"
+                    className="px-4 py-2.5 bg-slate-800 text-amber-300 rounded-xl text-sm font-bold border border-white/25 cursor-pointer"
                   >
-                    Reveal Answer
+                    Reveal
                   </button>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Question Type 4: Mystery Card */}
-            {question.type === 'mystery_card' && (
-              <div className="text-center py-6 sm:py-8 space-y-6">
-                <p className="text-slate-200 text-lg sm:text-xl md:text-2xl font-bold">
-                  {question.description}
-                </p>
-                <button
-                  onClick={onTriggerRoulette}
-                  className="px-8 sm:px-10 py-5 sm:py-6 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-2xl sm:text-3xl md:text-4xl rounded-3xl shadow-2xl border-2 border-yellow-200 flex items-center gap-3 mx-auto animate-pulse transition-all cursor-pointer glass-glow-gold"
-                >
-                  <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-950" />
-                  OPEN 6-CARD MYSTERY ROULETTE!
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Scoring & Decision Footer (For Host / Teacher & Players) */}
-          {question.type !== 'mystery_card' && (
-            <div className="bg-slate-800/95 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-white/20 flex flex-wrap items-center justify-between gap-4 shadow-xl shrink-0">
-              <div className="flex items-center gap-2.5 text-base sm:text-lg font-semibold">
-                <span className="text-slate-300">Block Reward:</span>
-                <span className="font-mario text-2xl sm:text-3xl text-yellow-300 text-shadow-gold flex items-center gap-2">
-                  +{currentTeam.hasDoubleTurn ? question.rewardCoins * 2 : question.rewardCoins}
-                  <MarioCoin size="md" /> Coins
-                </span>
-                {currentTeam.hasDoubleTurn && (
-                  <span className="text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2.5 py-1 rounded-xl font-bold border border-yellow-300/80 animate-pulse flex items-center gap-1 shadow-md">
-                    ⭐ 2x Bonus Active! (+Double Coins)
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    sounds.playWrong();
-                    onAnswerIncorrect();
-                  }}
-                  className="px-5 sm:px-6 py-3 sm:py-3.5 bg-red-900/70 hover:bg-red-800/90 text-red-200 hover:text-white rounded-xl font-bold text-sm sm:text-base transition-all border border-red-500/50 cursor-pointer flex items-center gap-2 shadow-md"
-                  title="Mark this block as missed with an X and pass turn to next team"
-                >
-                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-red-300" />
-                  Wrong (Pass)
-                </button>
-
-                {(() => {
-                  const isCorrectClickable = isAnswerRevealed && (status === 'correct' || question.type === 'open_trivia');
-                  return (
-                    <button
-                      disabled={!isCorrectClickable}
-                      onClick={handleClaimReward}
-                      className={`px-6 sm:px-8 py-3 sm:py-3.5 font-mario text-base sm:text-xl rounded-xl shadow-xl border-2 flex items-center gap-2 transition-all ${
-                        isCorrectClickable
-                          ? 'bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white border-emerald-300 cursor-pointer shadow-emerald-900/50 animate-pulse'
-                          : 'bg-white/5 border-white/10 text-slate-500 cursor-not-allowed opacity-50'
-                      }`}
-                      title={!isCorrectClickable ? 'Revealing or picking the correct answer unlocks this button' : 'Award coins to current team'}
-                    >
-                      <CheckCircle className={`w-5 h-5 ${isCorrectClickable ? 'text-white' : 'text-slate-500'}`} />
-                      CORRECT! CLAIM +{currentTeam.hasDoubleTurn ? question.rewardCoins * 2 : question.rewardCoins} COINS
-                    </button>
-                  );
-                })()}
-              </div>
+          {question.type === 'mystery_card' && (
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center gap-6">
+              <p className="text-slate-200 text-lg sm:text-2xl font-bold max-w-2xl">
+                {question.description}
+              </p>
+              <button
+                onClick={onTriggerRoulette}
+                className="px-8 py-5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-mario text-2xl sm:text-3xl rounded-3xl shadow-2xl border-2 border-yellow-200 flex items-center gap-3 cursor-pointer"
+              >
+                <Sparkles className="w-8 h-8" />
+                OPEN MYSTERY CARDS
+              </button>
             </div>
           )}
         </div>
+
+        {question.type !== 'mystery_card' && (
+          <div className="shrink-0 bg-slate-800/95 px-3 sm:px-5 py-3 border-t-2 border-white/20 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+              <span className="text-slate-300">Reward</span>
+              <span className="font-mario text-2xl sm:text-3xl text-yellow-300 text-shadow-gold flex items-center gap-2">
+                +{rewardCoins}
+                <MarioCoin size="md" />
+              </span>
+              {currentTeam.hasDoubleTurn && (
+                <span className="text-[11px] bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2 py-1 rounded-lg font-bold border border-yellow-300/80">
+                  2x
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => {
+                  sounds.playWrong();
+                  onAnswerIncorrect();
+                }}
+                className="px-4 sm:px-5 py-2.5 sm:py-3 bg-red-900/70 hover:bg-red-800 text-red-200 rounded-xl font-bold text-sm border border-red-500/50 cursor-pointer flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Wrong
+              </button>
+              <button
+                disabled={!isCorrectClickable}
+                onClick={handleClaimReward}
+                className={`px-5 sm:px-7 py-2.5 sm:py-3 font-mario text-sm sm:text-lg rounded-xl border-2 flex items-center gap-2 ${
+                  isCorrectClickable
+                    ? 'bg-gradient-to-r from-emerald-600 to-green-500 text-white border-emerald-300 cursor-pointer animate-pulse'
+                    : 'bg-white/5 border-white/10 text-slate-500 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <CheckCircle className="w-5 h-5" />
+                CORRECT +{rewardCoins}
+              </button>
+            </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

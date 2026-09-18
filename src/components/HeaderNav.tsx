@@ -71,7 +71,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const character = CHARACTERS[currentTeam.characterId];
 
   return (
-    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 py-2 shadow-xl shrink-0">
+    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 py-1.5 shadow-xl shrink-0">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
         {/* Left: Brand & Active Team Turn Indicator */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -99,7 +99,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             <TeamAvatar
               characterId={currentTeam.characterId}
               size="sm"
-              avatarUrl={currentTeam.avatarUrl}
+              customUrl={currentTeam.customImageUrl}
               className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
             />
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap leading-none">
@@ -376,7 +376,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       <TeamAvatar
                         characterId={currentTeam.characterId}
                         size="sm"
-                        avatarUrl={currentTeam.avatarUrl}
+                        customUrl={currentTeam.customImageUrl}
                         className="w-5 h-5 shrink-0"
                       />
                       <span className="truncate">{currentTeam.name}</span>

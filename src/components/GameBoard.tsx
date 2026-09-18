@@ -22,9 +22,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   onOpenLeaderboard,
 }) => {
   return (
-    <div className="w-full h-full flex-1 flex flex-col items-center justify-center min-h-0 px-2 sm:px-4 py-1">
+    <div className="w-full h-full flex-1 flex flex-col items-center justify-center min-h-0 px-2 sm:px-3 py-0">
       {/* Container */}
-      <div className="relative w-full max-w-[1600px] mx-auto p-2 sm:p-4 flex flex-col items-center justify-center">
+      <div className="relative w-full max-w-[1600px] mx-auto p-1.5 sm:p-2 flex flex-col items-center justify-center min-h-0">
         {/* Game Over Leaderboard Banner mirroring the Superstar reveal */}
         {isGameOver && (
           <div className="w-full max-w-3xl mx-auto mb-3 sm:mb-4 px-1">
