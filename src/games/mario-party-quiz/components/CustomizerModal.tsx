@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
+import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
@@ -10,6 +10,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avat
 import { ImageUploader } from './ImageUploader';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { shuffleWordLetters } from '@/shared/utils/shuffle';
+import {
+  CLASSIC_LESSON_GOAL_PRESETS,
+  DEFAULT_CLASSIC_LESSON_GOAL,
+} from '@/games/mario-blast-classic/data/classicLesson';
 
 interface CustomizerModalProps {
   theme: GameTheme;
@@ -21,6 +25,9 @@ interface CustomizerModalProps {
   onClose: () => void;
   showCatchUpNote?: boolean;
   onToggleCatchUpNote?: () => void;
+  lessonGoal?: string;
+  onLessonGoalChange?: (goal: string) => void;
+  onLessonGoalCommit?: (goal: string) => void;
 }
 
 export const CustomizerModal: React.FC<CustomizerModalProps> = ({
@@ -33,6 +40,9 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   onClose,
   showCatchUpNote = false,
   onToggleCatchUpNote,
+  lessonGoal,
+  onLessonGoalChange,
+  onLessonGoalCommit,
 }) => {
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
@@ -177,14 +187,28 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     if (editingQuestion.type === 'open_trivia') {
       const q = editingQuestion as OpenTriviaQuestion;
       return (
-        <div>
-          <label className="text-xs font-bold text-indigo-200 block mb-1">Correct Answer:</label>
-          <input
-            type="text"
-            value={q.answer}
-            onChange={(e) => setEditingQuestion({ ...q, answer: e.target.value })}
-            className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
-          />
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-bold text-indigo-200 block mb-1">Correct Answer:</label>
+            <input
+              type="text"
+              value={q.answer}
+              onChange={(e) => setEditingQuestion({ ...q, answer: e.target.value })}
+              className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+            />
+          </div>
+          {theme !== 'classic' && (
+            <div>
+              <label className="text-xs font-bold text-indigo-200 block mb-1">Hint (optional):</label>
+              <input
+                type="text"
+                value={q.hint || ''}
+                onChange={(e) => setEditingQuestion({ ...q, hint: e.target.value })}
+                placeholder="e.g. eat → eaten"
+                className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+              />
+            </div>
+          )}
         </div>
       );
     }
@@ -303,6 +327,54 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
           </div>
         </div>
 
+        {onLessonGoalChange && (
+          <div className="bg-slate-900/90 px-4 py-3 border-b border-white/10 space-y-2">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-rose-300 shrink-0" />
+              <span className="text-xs font-bold text-rose-200 uppercase tracking-wider">
+                Lesson Goal
+              </span>
+              <span className="text-[11px] text-slate-400">Shown on every block</span>
+            </div>
+            <input
+              type="text"
+              value={lessonGoal ?? ''}
+              onChange={(e) => onLessonGoalChange(e.target.value)}
+              onBlur={() => onLessonGoalCommit?.(lessonGoal ?? DEFAULT_CLASSIC_LESSON_GOAL)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  onLessonGoalCommit?.(lessonGoal ?? DEFAULT_CLASSIC_LESSON_GOAL);
+                }
+              }}
+              placeholder={DEFAULT_CLASSIC_LESSON_GOAL}
+              className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              {CLASSIC_LESSON_GOAL_PRESETS.map(preset => {
+                const selected = (lessonGoal ?? '').trim() === preset;
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onLessonGoalChange(preset);
+                      onLessonGoalCommit?.(preset);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${
+                      selected
+                        ? 'bg-rose-500/30 text-rose-100 border-rose-300/50'
+                        : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {onToggleCatchUpNote && (
           <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
@@ -425,7 +497,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 />
               </div>
 
-              {editingQuestion.type !== 'mystery_card' && (
+              {editingQuestion.type !== 'mystery_card' && theme !== 'classic' && (
                 <div>
                   <label className="text-xs font-bold text-indigo-200 block mb-1">
                     Description / Clue (Optional):

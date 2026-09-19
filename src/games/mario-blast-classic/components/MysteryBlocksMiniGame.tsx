@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bug, Coins, Sparkles } from 'lucide-react';
+import { Bug, Coins, Sparkles, X } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { MysteryBlockOutcome } from '@/games/mario-blast-classic/data/classicRewards';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
+import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
@@ -14,8 +15,11 @@ interface MysteryBlocksMiniGameProps {
   onResolved: (outcome: MysteryBlockOutcome) => void;
 }
 
-function outcomeLabel(outcome: MysteryBlockOutcome) {
-  if (outcome.kind === 'treasure') return `Treasure Block! +${outcome.coins}`;
+function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean) {
+  if (outcome.kind === 'treasure') {
+    const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
+    return `Treasure Block! +${coins}`;
+  }
   if (outcome.kind === 'bust') return 'Empty Block… 0 coins';
   return 'Piranha Plant! Round Over!';
 }
@@ -29,6 +33,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   const char = CHARACTERS[currentTeam.characterId];
 
   const picked = pickedIndex !== null ? outcomes[pickedIndex] : null;
+  const mushroomBoost = Boolean(currentTeam.doubleNextCoinReward);
 
   const handlePick = (idx: number) => {
     if (pickedIndex !== null) return;
@@ -36,21 +41,25 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     setPickedIndex(idx);
     const outcome = outcomes[idx];
     window.setTimeout(() => {
-      if (outcome.kind === 'treasure') sounds.playStarCoin();
-      else if (outcome.kind === 'piranha') sounds.playWrong();
+      if (outcome.kind === 'treasure') {
+        if (mushroomBoost) sounds.playPowerUp();
+        else sounds.playStarCoin();
+      } else if (outcome.kind === 'piranha') sounds.playWrong();
       else sounds.playPop();
     }, 420);
   };
 
   const faces = useMemo(
     () =>
-      outcomes.map((outcome, idx) => {
+      outcomes.map(outcome => {
         if (outcome.kind === 'treasure') {
+          const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
           return {
             shell: 'from-amber-300 via-yellow-500 to-orange-700',
             icon: <Coins className="w-14 h-14 text-yellow-100 fill-yellow-300" />,
-            title: 'TREASURE!',
-            sub: `+${outcome.coins} Coins`,
+            title: mushroomBoost ? 'TREASURE ×2!' : 'TREASURE!',
+            sub: `+${coins} Coins`,
+            mushroom: mushroomBoost,
           };
         }
         if (outcome.kind === 'bust') {
@@ -59,6 +68,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             icon: <span className="font-mario text-5xl text-slate-200">0</span>,
             title: 'EMPTY',
             sub: '0 Coins',
+            mushroom: false,
           };
         }
         return {
@@ -66,9 +76,10 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           icon: <Bug className="w-14 h-14 text-lime-200" />,
           title: 'PIRANHA!',
           sub: 'Round Over',
+          mushroom: false,
         };
       }),
-    [outcomes]
+    [outcomes, mushroomBoost]
   );
 
   return (
@@ -83,6 +94,16 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-2xl ${char.bgColor} bg-opacity-50 border border-white/20`}>
             <TeamAvatar characterId={currentTeam.characterId} size="sm" customUrl={currentTeam.customImageUrl} />
             <span className="text-sm font-bold text-white">{currentTeam.name}</span>
+            {mushroomBoost && (
+              <span className="flex items-center gap-0.5 rounded-full bg-red-700 border border-yellow-300 pl-0.5 pr-1.5 py-0.5">
+                <img
+                  src={getRevealArt('mushroom_x2')}
+                  alt=""
+                  className="w-5 h-5 rounded-full object-cover"
+                />
+                <span className="font-mario text-[11px] text-yellow-200 leading-none">×2</span>
+              </span>
+            )}
           </div>
           <div className="text-center">
             <h2 className="font-mario text-xl sm:text-3xl text-yellow-300 text-shadow-mario">MYSTERY BLOCKS</h2>
@@ -94,19 +115,26 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         <div className="p-4 sm:p-6">
           <div className="grid grid-cols-3 gap-3 sm:gap-5">
             {outcomes.map((_, idx) => {
-              const flipped = pickedIndex === idx;
+              const isChosen = pickedIndex === idx;
+              const revealing = pickedIndex !== null;
               const face = faces[idx];
               return (
                 <button
                   key={idx}
                   type="button"
-                  disabled={pickedIndex !== null}
+                  disabled={revealing}
                   onClick={() => handlePick(idx)}
-                  className="relative aspect-[3/4] [perspective:900px] cursor-pointer disabled:cursor-default"
+                  className={`relative aspect-[3/4] [perspective:900px] cursor-pointer disabled:cursor-default ${
+                    isChosen ? 'z-[1]' : ''
+                  }`}
                 >
                   <motion.div
-                    animate={{ rotateY: flipped ? 180 : 0 }}
-                    transition={{ duration: 0.55, ease: [0.34, 1.2, 0.64, 1] }}
+                    animate={{ rotateY: revealing ? 180 : 0 }}
+                    transition={{
+                      duration: 0.55,
+                      delay: revealing && !isChosen ? 0.5 : 0,
+                      ease: [0.34, 1.2, 0.64, 1],
+                    }}
                     style={{ transformStyle: 'preserve-3d' }}
                     className="relative w-full h-full"
                   >
@@ -121,11 +149,31 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                     </div>
                     <div
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                      className={`absolute inset-0 rounded-2xl border-2 border-white/40 bg-gradient-to-b ${face.shell} flex flex-col items-center justify-center gap-2 p-3`}
+                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 p-3 ${
+                        isChosen
+                          ? `border-yellow-200 bg-gradient-to-b ${face.shell}`
+                          : `border-white/25 bg-gradient-to-b ${face.shell}`
+                      }`}
                     >
                       {face.icon}
                       <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
                       <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                      {face.mushroom && (
+                        <img
+                          src={getRevealArt('mushroom_x2')}
+                          alt=""
+                          className="absolute top-2 right-2 w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-yellow-300"
+                        />
+                      )}
+                      {revealing && !isChosen && (
+                        <div className="absolute inset-0 rounded-2xl bg-black/25 flex items-center justify-center pointer-events-none">
+                          <X
+                            className="w-20 h-20 sm:w-28 sm:h-28 text-rose-400 drop-shadow-[0_0_8px_rgba(0,0,0,0.9)]"
+                            strokeWidth={5}
+                            aria-hidden
+                          />
+                        </div>
+                      )}
                     </div>
                   </motion.div>
                 </button>
@@ -136,7 +184,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           {picked && (
             <div className="mt-5 flex flex-col items-center gap-3">
               <p className="font-mario text-lg sm:text-2xl text-yellow-300 text-center">
-                {outcomeLabel(picked)}
+                {outcomeLabel(picked, mushroomBoost)}
               </p>
               <button
                 type="button"

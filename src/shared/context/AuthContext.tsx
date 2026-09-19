@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
-import { auth, loginWithGoogle, loginAnonymouslyUser, logoutUser, saveQuestionsToFirestore, loadQuestionsFromFirestore } from '@/shared/utils/firebase';
+import { auth, loginWithGoogle, loginAnonymouslyUser, logoutUser, saveQuestionsToFirestore, loadQuestionsFromFirestore, SavedQuestionSet } from '@/shared/utils/firebase';
 import { Question, GameTheme } from '@/shared/types';
 
 interface AuthContextType {
@@ -12,8 +12,8 @@ interface AuthContextType {
   loginWithGoogle: () => Promise<void>;
   loginAsGuest: () => Promise<void>;
   logout: () => Promise<void>;
-  saveQuestionsCloud: (theme: GameTheme, questions: Question[]) => Promise<boolean>;
-  loadQuestionsCloud: (theme: GameTheme) => Promise<Question[] | null>;
+  saveQuestionsCloud: (theme: GameTheme, questions: Question[], extras?: { lessonGoal?: string }) => Promise<boolean>;
+  loadQuestionsCloud: (theme: GameTheme) => Promise<SavedQuestionSet | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -61,11 +61,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleSaveQuestions = async (theme: GameTheme, questions: Question[]): Promise<boolean> => {
+  const handleSaveQuestions = async (
+    theme: GameTheme,
+    questions: Question[],
+    extras?: { lessonGoal?: string }
+  ): Promise<boolean> => {
     if (!user) return false;
     setSyncStatus('syncing');
     try {
-      const success = await saveQuestionsToFirestore(user.uid, theme, questions);
+      const success = await saveQuestionsToFirestore(user.uid, theme, questions, extras);
       if (success) {
         setSyncStatus('synced');
         setLastSyncedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -80,15 +84,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const handleLoadQuestions = async (theme: GameTheme): Promise<Question[] | null> => {
+  const handleLoadQuestions = async (theme: GameTheme): Promise<SavedQuestionSet | null> => {
     if (!user) return null;
     setSyncStatus('syncing');
     try {
-      const questions = await loadQuestionsFromFirestore(user.uid, theme);
-      if (questions) {
+      const deck = await loadQuestionsFromFirestore(user.uid, theme);
+      if (deck) {
         setSyncStatus('synced');
         setLastSyncedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-        return questions;
+        return deck;
       }
       setSyncStatus('idle');
       return null;

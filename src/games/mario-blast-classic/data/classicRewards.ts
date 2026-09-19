@@ -1,32 +1,37 @@
 import { RewardCard, RewardCardType, Team } from '@/shared/types';
 import { REWARD_CARDS, isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/data/rewards';
 
-export const CLASSIC_ROUND_ENDER_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution'];
-export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'mystery_blocks'];
+export const CLASSIC_ROUND_ENDER_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury'];
+export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury', 'mystery_blocks'];
 
 const CLASSIC_OVERRIDES: Partial<Record<RewardCardType, Partial<RewardCard>>> = {
   super_star_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Reward!',
+    subtitle: 'Double Your Next Coin Card!',
     description:
-      'Queue a Mega Mushroom! The next time this team earns coins from a card, that payout is doubled — then the boost is used up.',
+      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
   },
   mushroom_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Reward!',
+    subtitle: 'Double Your Next Coin Card!',
     description:
-      'Queue a Mega Mushroom! The next time this team earns coins from a card, that payout is doubled — then the boost is used up.',
+      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
   },
   blue_shell: {
     title: 'Blue Shell',
     subtitle: '1st Place Skips Next Coin Reward!',
     description:
       'Catch-up item (rare for 1st place). Launch a Blue Shell at the leading team! They skip their next coin payout.',
-  },
+  }, // parked copy — Classic pool currently excludes this type
   bowser_revolution: {
     subtitle: 'Swap Coins — Then Round Over!',
     description:
       'Catch-up Action Card. Choose any rival and swap your total coins with theirs. After the swap, the round ends!',
+  },
+  bowser_fury: {
+    subtitle: '-5 to Rivals — Then Round Over!',
+    description:
+      "Catch-up Action Card. Bowser scorches every rival for -5 coins. After the blast, the round ends!",
   },
 };
 
@@ -53,8 +58,11 @@ const MYSTERY_BLOCKS: RewardCard = {
   badgeColor: 'from-amber-500 via-yellow-600 to-orange-800 text-amber-50',
 };
 
+/** Classic pool only — Party Quiz still draws Blue Shell. */
+const CLASSIC_DISABLED_TYPES: RewardCardType[] = ['blue_shell'];
+
 export const CLASSIC_REWARD_CARDS: RewardCard[] = [
-  ...REWARD_CARDS.map(card => {
+  ...REWARD_CARDS.filter(card => !CLASSIC_DISABLED_TYPES.includes(card.type)).map(card => {
     const override = CLASSIC_OVERRIDES[card.type];
     return override ? { ...card, ...override } : card;
   }),
@@ -77,7 +85,6 @@ const BASE_WEIGHTS: Partial<Record<RewardCardType, number>> = {
   boo_steal_10: 6,
   super_star_x2: 12,
   mushroom_x2: 12,
-  blue_shell: 8,
   bowser_fury: 6,
   bowser_revolution: 4,
   mystery_blocks: 4,
@@ -85,10 +92,11 @@ const BASE_WEIGHTS: Partial<Record<RewardCardType, number>> = {
 };
 
 function weightFor(type: RewardCardType, isFirstPlace: boolean): number {
+  if (CLASSIC_DISABLED_TYPES.includes(type)) return 0;
   const base = BASE_WEIGHTS[type] ?? 8;
   if (!isFirstPlace) return base;
 
-  if (type === 'blue_shell' || type === 'bowser_fury') return 0;
+  if (type === 'bowser_fury') return 0;
   if (CLASSIC_ACTION_TYPES.includes(type)) {
     return Math.max(1, Math.round(base * 0.25));
   }

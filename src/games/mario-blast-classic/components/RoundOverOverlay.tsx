@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Sparkles } from 'lucide-react';
 import { sounds } from '@/shared/utils/sound';
 
-export type RoundOverReason = 'cards' | 'gold_star' | 'bowser_revolution' | 'piranha' | 'host';
+export type RoundOverReason = 'cards' | 'gold_star' | 'bowser_revolution' | 'bowser_fury' | 'piranha' | 'host';
 
 interface RoundOverOverlayProps {
   reason: RoundOverReason;
@@ -22,6 +22,10 @@ const COPY: Record<RoundOverReason, { title: string; body: string }> = {
   bowser_revolution: {
     title: 'ROUND OVER!',
     body: "Bowser's Revolution shook the scores — this question round is done!",
+  },
+  bowser_fury: {
+    title: 'ROUND OVER!',
+    body: "Bowser's Fury scorched the rivals — this question round is done!",
   },
   piranha: {
     title: 'ROUND OVER!',

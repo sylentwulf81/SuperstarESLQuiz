@@ -60,7 +60,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Sun',
       coverArtEmoji: '🏖️',
       patternType: 'palm',
-      backgroundImage: '/assets/boxart/super-summer-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_supersummerblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -97,7 +97,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Snowflake',
       coverArtEmoji: '❄️',
       patternType: 'snow',
-      backgroundImage: '/assets/boxart/super-winter-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_superwinterblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -120,7 +120,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Mario Blast Classic',
     tagline: 'Have You Ever…? Live Classroom Race & Mystery Cards',
     description:
-      'The original Blast loop, rebuilt. One team picks the block, the whole class can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser Revolutions can slam the round shut.',
+      'The original Blast loop, rebuilt. One team picks the block, the whole class can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser cards can slam the round shut.',
     category: 'board',
     badge: 'NEW',
     badgeColor: 'bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950 shadow-rose-500/30',
@@ -136,7 +136,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Star',
       coverArtEmoji: '⭐',
       patternType: 'gold',
-      backgroundImage: '/assets/boxart/super-quiz-classic.jpg',
+      backgroundImage: '/assets/boxart/boxart_superquizclassic.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -147,7 +147,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     features: [
       'Any team can answer — host clicks the winner, then a card',
       'Six mystery cards per question; one draw per team',
-      'Rare round-enders: Gold Star, Bowser Revolution, Piranha Plant',
+      'Rare round-enders: Gold Star, Bowser Revolution, Bowser’s Fury, Piranha Plant',
       'Same Mario Party items as Summer & Holiday, remapped for live play',
     ],
     powerpointInspiration: 'Recreates the original Have You Ever Mario Party PPT with live multi-team answering',
@@ -171,7 +171,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Ghost',
       coverArtEmoji: '🎃',
       patternType: 'castle',
-      backgroundImage: '/assets/boxart/super-halloween-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_superhalloweenblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',

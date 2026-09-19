@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Eye, X, SkipForward } from 'lucide-react';
+import { Eye, EyeOff, X, Check, OctagonX } from 'lucide-react';
 import { GameQuestion, RewardCard, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
@@ -14,6 +14,7 @@ export interface ClassicCardSlot {
 
 interface ClassicRoundModalProps {
   question: GameQuestion;
+  lessonGoal: string;
   pickingTeam: Team;
   teams: Team[];
   slots: ClassicCardSlot[];
@@ -28,6 +29,7 @@ interface ClassicRoundModalProps {
 
 export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
   question,
+  lessonGoal,
   pickingTeam,
   teams,
   slots,
@@ -41,9 +43,9 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
 }) => {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const pickChar = CHARACTERS[pickingTeam.characterId];
-  const selectedTeam = teams.find(t => t.id === selectedTeamId) || null;
   const anyClaimed = slots.some(s => s.claimedByTeamId);
-  const answerText = question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
+  const answerText =
+    question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-slate-950/88">
@@ -51,7 +53,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
         initial={{ scale: 0.94, opacity: 0, y: 16 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.94, opacity: 0 }}
-        className="relative w-full max-w-6xl h-[min(94dvh,980px)] max-h-[94dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-[1600px] h-[min(96dvh,1080px)] max-h-[96dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
       >
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-yellow-300" />
 
@@ -60,16 +62,15 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             <span className="font-mario text-lg sm:text-2xl text-yellow-300 text-shadow-mario whitespace-nowrap">
               BLOCK #{question.blockNumber}
             </span>
-            <span className="hidden sm:inline bg-rose-500/20 text-rose-100 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border border-rose-300/40">
-              Live answer — any team
-            </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <div className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl ${pickChar.bgColor} bg-opacity-50 border border-white/20 text-xs font-bold text-white`}>
+            <div
+              className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl ${pickChar.bgColor} bg-opacity-50 border border-white/20 text-xs font-bold text-white`}
+            >
               <TeamAvatar characterId={pickingTeam.characterId} size="xs" customUrl={pickingTeam.customImageUrl} />
-              <span className="max-w-[120px] truncate">Picked by {pickingTeam.name}</span>
+              <span className="max-w-[120px] truncate">{pickingTeam.name}</span>
             </div>
-            <span className="font-mario text-sm text-amber-200">{cardsRemaining}/6 cards</span>
+            <span className="font-mario text-sm text-amber-200">{cardsRemaining}/6</span>
             <button
               type="button"
               onClick={() => {
@@ -85,46 +86,58 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 sm:px-5 py-3 flex flex-col gap-3">
-          <div className="shrink-0 space-y-2">
-            <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-rose-200">
-              Make this into a “Have you ever…?” question
+        <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-5 py-3">
+          <div className="shrink-0 text-center px-2 sm:px-6 pb-1">
+            <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1.5">
+              {lessonGoal}
             </p>
-            <h2 className="font-mario text-xl sm:text-3xl lg:text-4xl text-yellow-300 leading-tight drop-shadow-md">
+            <h2 className="font-mario text-[clamp(1.7rem,3.6vw,3.35rem)] text-yellow-300 leading-tight text-shadow-mario">
               {question.title}
             </h2>
-            {question.type === 'open_trivia' && question.hint && !answerRevealed && (
-              <p className="text-xs sm:text-sm text-indigo-200">Hint: {question.hint}</p>
-            )}
             {answerText && (
-              answerRevealed ? (
-                <div className="p-3 sm:p-4 rounded-2xl bg-black/70 border border-white/20 text-center">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300 block">Model answer</span>
-                  <p className="font-mario text-lg sm:text-2xl text-white mt-1">{answerText}</p>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playCardFlip();
-                    setAnswerRevealed(true);
-                  }}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm border border-indigo-300/40 cursor-pointer inline-flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4 text-yellow-300" />
-                  Reveal answer
-                </button>
-              )
+              <div
+                className={`relative mt-3 mx-auto w-full min-h-[4.75rem] px-5 rounded-2xl border-2 flex items-center justify-center ${
+                  answerRevealed
+                    ? 'bg-black/75 border-white/25 py-3 pr-14'
+                    : 'h-[4.75rem] overflow-hidden bg-indigo-700/75 border-indigo-300/50'
+                }`}
+              >
+                {answerRevealed ? (
+                  <>
+                    <p className="font-mario text-[clamp(1.35rem,3vw,2.75rem)] text-white leading-snug text-center text-balance break-words w-full">
+                      {answerText}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playClick();
+                        setAnswerRevealed(false);
+                      }}
+                      className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-black/55 hover:bg-white/20 text-indigo-100 border border-white/20 cursor-pointer"
+                      aria-label="Hide"
+                    >
+                      <EyeOff className="w-3.5 h-3.5" />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playCardFlip();
+                      setAnswerRevealed(true);
+                    }}
+                    className="absolute inset-0 w-full h-full rounded-[14px] hover:bg-indigo-600/80 text-white font-mario text-[clamp(1.15rem,2.2vw,1.85rem)] cursor-pointer inline-flex items-center justify-center gap-2.5"
+                  >
+                    <Eye className="w-6 h-6 text-yellow-300" />
+                    Reveal answer
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
-          <div className="shrink-0">
-            <p className="text-xs font-black uppercase tracking-wider text-amber-200 mb-2">
-              {selectedTeam
-                ? `Card for ${selectedTeam.name} — tap a remaining mystery card`
-                : '1. Click the team that answered correctly'}
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div className="mt-auto shrink-0 rounded-3xl bg-black/30 border-t-2 border-t-amber-300/45 border-x border-b border-white/10 px-3 sm:px-4 py-4">
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
               {teams.map(team => {
                 const char = CHARACTERS[team.characterId];
                 const alreadyDrew = drawnTeamIds.includes(team.id);
@@ -134,36 +147,59 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                     key={team.id}
                     type="button"
                     disabled={alreadyDrew}
+                    aria-pressed={isSelected}
+                    aria-label={team.name}
                     onClick={() => {
                       if (alreadyDrew) return;
                       sounds.playPop();
                       onSelectTeam(team.id);
                     }}
-                    className={`p-2 rounded-xl border text-white flex items-center gap-2 transition-all ${
+                    className={`relative flex flex-col items-center justify-center gap-1.5 p-2.5 sm:p-3 w-[8.5rem] sm:w-[10rem] min-h-[7.25rem] rounded-2xl border-2 text-white transition-all ${
                       alreadyDrew
-                        ? 'opacity-40 cursor-not-allowed bg-slate-800 border-white/10'
+                        ? 'bg-emerald-950/80 border-emerald-400 cursor-default'
                         : isSelected
-                          ? `${char.bgColor} bg-opacity-60 border-yellow-300 ring-2 ring-yellow-400 cursor-pointer`
+                          ? `${char.bgColor} bg-opacity-80 border-yellow-300 ring-4 ring-yellow-400/80 cursor-pointer`
                           : 'bg-slate-800/80 border-white/15 hover:border-white/40 cursor-pointer'
                     }`}
                   >
-                    <TeamAvatar characterId={team.characterId} size="sm" customUrl={team.customImageUrl} />
-                    <div className="min-w-0 text-left">
-                      <div className="text-xs font-bold truncate">{team.name}</div>
-                      <div className="flex items-center gap-1 text-[10px] text-amber-200">
-                        <MarioCoin size="xs" />
-                        {team.coins}
-                        {alreadyDrew && <span className="text-slate-400">· drawn</span>}
+                    {alreadyDrew && (
+                      <span
+                        className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_12px_rgba(16,185,129,0.9)]"
+                        aria-hidden
+                      >
+                        <Check className="w-4 h-4 text-white" strokeWidth={3.5} />
+                      </span>
+                    )}
+                    <div className="relative">
+                      <TeamAvatar characterId={team.characterId} size="xl" customUrl={team.customImageUrl} />
+                      {team.doubleNextCoinReward && (
+                        <span
+                          className="absolute -top-1.5 -left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-red-700 border-2 border-yellow-300 pl-0.5 pr-1.5 py-0.5 shadow-[0_0_14px_rgba(250,204,21,0.6)]"
+                          aria-hidden
+                        >
+                          <img
+                            src="/assets/effects/reveal_mariosupermushroom.jpeg"
+                            alt=""
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <span className="font-mario text-xs text-yellow-200 leading-none">×2</span>
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 w-full text-center leading-tight">
+                      <div className="text-sm font-black truncate">{team.name}</div>
+                      <div className="flex items-center justify-center gap-1 text-amber-200 mt-0.5">
+                        <MarioCoin size="sm" />
+                        <span className="font-mario text-base leading-none">{team.coins}</span>
                       </div>
                     </div>
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          <div className="flex-1 min-h-[180px] flex flex-col justify-center">
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            <div className="mt-2">
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-3 max-w-5xl mx-auto">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
@@ -187,15 +223,19 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                           {slot.card.title}
                         </span>
                         {claimedTeam && (
-                          <TeamAvatar characterId={claimedTeam.characterId} size="xs" customUrl={claimedTeam.customImageUrl} />
+                          <TeamAvatar
+                            characterId={claimedTeam.characterId}
+                            size="xs"
+                            customUrl={claimedTeam.customImageUrl}
+                          />
                         )}
                       </div>
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-red-700 via-rose-900 to-red-950 flex flex-col items-center justify-between p-2">
-                        <span className="font-mario text-[9px] text-yellow-300 bg-black/50 px-1.5 py-0.5 rounded-full">
-                          ★ MYSTERY ★
+                        <span className="font-mario text-[8px] sm:text-[10px] text-yellow-300 bg-black/50 px-1.5 py-0.5 rounded-full">
+                          ★
                         </span>
-                        <span className="font-mario text-4xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
+                        <span className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
                         <span className="text-[9px] font-black text-amber-200">{idx + 1}</span>
                       </div>
                     )}
@@ -205,21 +245,19 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             </div>
           </div>
 
-          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 pt-1">
-            <p className="text-[11px] text-slate-300 font-semibold">
-              One card per team. Faster answers get first pick from the remaining cards.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                onEndRound();
-              }}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-200 font-bold text-xs border border-amber-400/40 cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <SkipForward className="w-3.5 h-3.5" />
-              End round
-            </button>
+            <div className="flex justify-end mt-3">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  onEndRound();
+                }}
+                className="px-5 py-2.5 rounded-xl bg-rose-800/90 hover:bg-rose-700 text-white font-bold text-sm sm:text-base border-2 border-rose-300/50 cursor-pointer inline-flex items-center gap-2 shadow-[0_0_16px_rgba(244,63,94,0.25)]"
+              >
+                <OctagonX className="w-5 h-5 sm:w-6 sm:h-6" strokeWidth={2.4} />
+                End round
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>

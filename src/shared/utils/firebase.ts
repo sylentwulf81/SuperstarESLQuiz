@@ -21,6 +21,11 @@ import firebaseConfig from '../../../firebase-applet-config.json';
 import { GameTheme, Question } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
 
+export interface SavedQuestionSet {
+  questions: Question[];
+  lessonGoal?: string;
+}
+
 // Initialize Firebase App
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
@@ -120,7 +125,8 @@ async function syncUserProfile(user: User) {
 export async function saveQuestionsToFirestore(
   userId: string,
   theme: string,
-  questions: Question[]
+  questions: Question[],
+  extras?: { lessonGoal?: string }
 ): Promise<boolean> {
   if (!userId) return false;
   try {
@@ -133,7 +139,8 @@ export async function saveQuestionsToFirestore(
         title: THEME_UI[(theme as GameTheme)]?.firebaseTitle || `${theme} Custom Questions`,
         theme,
         questionsData: JSON.stringify(questions),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        ...(extras?.lessonGoal !== undefined ? { lessonGoal: extras.lessonGoal } : {}),
       },
       { merge: true }
     );
@@ -150,7 +157,7 @@ export async function saveQuestionsToFirestore(
 export async function loadQuestionsFromFirestore(
   userId: string,
   theme: string
-): Promise<Question[] | null> {
+): Promise<SavedQuestionSet | null> {
   if (!userId) return null;
   try {
     const deckRef = doc(db, 'users', userId, 'questionSets', theme);
@@ -160,7 +167,10 @@ export async function loadQuestionsFromFirestore(
       if (data.questionsData) {
         const parsed = JSON.parse(data.questionsData);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return {
+            questions: parsed,
+            lessonGoal: typeof data.lessonGoal === 'string' ? data.lessonGoal : undefined,
+          };
         }
       }
     }

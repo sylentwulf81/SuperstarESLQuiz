@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Play, Check, Sun, Snowflake, Shuffle,
-  BookOpen, ArrowLeft, Settings2, Star
+  BookOpen, ArrowLeft, Settings2, Star, Calculator
 } from 'lucide-react';
 import { CharacterId, Team, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
@@ -11,9 +11,11 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { TeamAvatar } from './TeamAvatar';
+import { TeamCalculatorModal } from './TeamCalculatorModal';
 
 interface SetupScreenProps {
   theme: GameTheme;
+  lessonGoal?: string;
   onStartGame: (teams: Team[], startingCoins: number) => void;
   onOpenRules: () => void;
   onOpenStudio: () => void;
@@ -22,6 +24,7 @@ interface SetupScreenProps {
 
 export const SetupScreen: React.FC<SetupScreenProps> = ({
   theme,
+  lessonGoal,
   onStartGame,
   onOpenRules,
   onOpenStudio,
@@ -39,6 +42,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
   });
 
   const [startingCoins, setStartingCoins] = useState<number>(0);
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   const readStoredAvatar = (charId: CharacterId) => {
     try {
@@ -131,7 +135,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 ) : theme === 'classic' ? (
                   <>
                     <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>Classic Edition (Have You Ever)</span>
+                    <span>Classic Edition</span>
                   </>
                 ) : (
                   <>
@@ -140,6 +144,11 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                   </>
                 )}
               </div>
+              {theme === 'classic' && lessonGoal && (
+                <p className="mt-2 text-xs sm:text-sm font-bold text-rose-100/90 max-w-xl">
+                  {lessonGoal}
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -234,7 +243,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
               </div>
             </div>
 
-            <div className="p-3 bg-slate-800/60 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex flex-col lg:flex-row gap-2.5">
+            <div className="flex-1 p-3 bg-slate-800/60 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <div>
                 <span className="font-mario text-sm sm:text-base text-yellow-300 block">
                   STARTING COINS PER TEAM
@@ -271,6 +281,22 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
               </div>
             </div>
 
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setCalculatorOpen(true);
+              }}
+              className="lg:w-[11.5rem] shrink-0 p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all"
+            >
+              <span className="font-mario text-sm sm:text-base text-yellow-300 flex items-center gap-2">
+                <Calculator className="w-4 h-4 text-amber-300" />
+                Team size
+              </span>
+              <span className="text-xs text-indigo-200 mt-1 block">Class → groups</span>
+            </button>
+            </div>
+
             <div className="flex flex-col items-center gap-2 pt-2">
               <button
                 disabled={!isStartReady}
@@ -291,7 +317,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 <Shuffle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
-                    ? 'All 60 Have You Ever prompts are shuffled on game start. Any team can answer each question!'
+                    ? 'All 60 prompts shuffle on game start. Any team can answer!'
                     : 'All 60 question & mystery card locations are automatically randomized on game start!'}
                 </span>
               </div>
@@ -299,6 +325,16 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
           </div>
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {calculatorOpen && (
+          <TeamCalculatorModal
+            theme={theme}
+            suggestedGroups={selectedChars.length >= 2 ? selectedChars.length : 4}
+            onClose={() => setCalculatorOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
