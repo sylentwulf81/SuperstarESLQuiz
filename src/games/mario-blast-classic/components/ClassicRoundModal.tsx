@@ -96,15 +96,15 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             </h2>
             {answerText && (
               <div
-                className={`relative mt-3 mx-auto w-full h-[4.75rem] px-5 rounded-2xl border-2 flex items-center justify-center overflow-hidden ${
+                className={`relative mt-3 mx-auto w-full min-h-[4.75rem] px-5 rounded-2xl border-2 flex items-center justify-center ${
                   answerRevealed
-                    ? 'bg-black/75 border-white/25'
-                    : 'bg-indigo-700/75 border-indigo-300/50'
+                    ? 'bg-black/75 border-white/25 py-3 pr-14'
+                    : 'h-[4.75rem] overflow-hidden bg-indigo-700/75 border-indigo-300/50'
                 }`}
               >
                 {answerRevealed ? (
                   <>
-                    <p className="font-mario text-[clamp(1.45rem,3.4vw,3.1rem)] text-white leading-tight">
+                    <p className="font-mario text-[clamp(1.35rem,3vw,2.75rem)] text-white leading-snug text-center text-balance break-words w-full">
                       {answerText}
                     </p>
                     <button
@@ -164,13 +164,28 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                   >
                     {alreadyDrew && (
                       <span
-                        className="absolute top-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_12px_rgba(16,185,129,0.9)]"
+                        className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_12px_rgba(16,185,129,0.9)]"
                         aria-hidden
                       >
                         <Check className="w-4 h-4 text-white" strokeWidth={3.5} />
                       </span>
                     )}
-                    <TeamAvatar characterId={team.characterId} size="xl" customUrl={team.customImageUrl} />
+                    <div className="relative">
+                      <TeamAvatar characterId={team.characterId} size="xl" customUrl={team.customImageUrl} />
+                      {team.doubleNextCoinReward && (
+                        <span
+                          className="absolute -top-1.5 -left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-red-700 border-2 border-yellow-300 pl-0.5 pr-1.5 py-0.5 shadow-[0_0_14px_rgba(250,204,21,0.6)]"
+                          aria-hidden
+                        >
+                          <img
+                            src="/assets/effects/reveal_mariosupermushroom.jpeg"
+                            alt=""
+                            className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <span className="font-mario text-xs text-yellow-200 leading-none">×2</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="min-w-0 w-full text-center leading-tight">
                       <div className="text-sm font-black truncate">{team.name}</div>
                       <div className="flex items-center justify-center gap-1 text-amber-200 mt-0.5">

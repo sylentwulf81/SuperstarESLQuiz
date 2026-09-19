@@ -255,7 +255,8 @@ export function MarioBlastClassic({
           sounds.playBlueShell();
           showToast(`🐢 ${drawingTeam.name}'s coin reward was skipped by Blue Shell!`);
         } else {
-          sounds.playCoin();
+          if (payout.doubled) sounds.playPowerUp();
+          else sounds.playCoin();
           showToast(
             `${payout.doubled ? '🍄 2x! ' : ''}🪙 ${drawingTeam.name} gained +${payout.awarded} coins!`
           );
@@ -431,6 +432,7 @@ export function MarioBlastClassic({
         sounds.playBlueShell();
         showToast(`🐢 Treasure skipped by Blue Shell!`);
       } else {
+        if (payout.doubled) sounds.playPowerUp();
         showToast(`${payout.doubled ? '🍄 2x! ' : ''}💎 Treasure Block! ${drawingTeam.name} +${payout.awarded} coins!`);
       }
     } else if (outcome.kind === 'bust') {

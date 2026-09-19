@@ -7,15 +7,15 @@ export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revo
 const CLASSIC_OVERRIDES: Partial<Record<RewardCardType, Partial<RewardCard>>> = {
   super_star_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Reward!',
+    subtitle: 'Double Your Next Coin Card!',
     description:
-      'Queue a Mega Mushroom! The next time this team earns coins from a card, that payout is doubled — then the boost is used up.',
+      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
   },
   mushroom_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Reward!',
+    subtitle: 'Double Your Next Coin Card!',
     description:
-      'Queue a Mega Mushroom! The next time this team earns coins from a card, that payout is doubled — then the boost is used up.',
+      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
   },
   blue_shell: {
     title: 'Blue Shell',
