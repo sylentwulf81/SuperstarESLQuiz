@@ -6,6 +6,7 @@ import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 export interface ClassicCardSlot {
   claimedByTeamId?: string;
@@ -25,6 +26,7 @@ interface ClassicRoundModalProps {
   onPickSlot: (slotIndex: number) => void;
   onEndRound: () => void;
   onCancelIfEmpty: () => void;
+  testGame?: boolean;
 }
 
 export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
@@ -40,7 +42,9 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
   onPickSlot,
   onEndRound,
   onCancelIfEmpty,
+  testGame = false,
 }) => {
+  useBodyScrollLock();
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
@@ -55,22 +59,32 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
         exit={{ scale: 0.94, opacity: 0 }}
         className="relative w-full max-w-[1600px] h-[min(96dvh,1080px)] max-h-[96dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-rose-500 via-amber-400 to-yellow-300" />
+        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: pickChar.accentColor }} />
 
-        <div className="bg-slate-800/95 px-3 sm:px-5 py-2.5 flex items-center justify-between border-b border-white/15 shrink-0 gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-mario text-lg sm:text-2xl text-yellow-300 text-shadow-mario whitespace-nowrap">
-              BLOCK #{question.blockNumber}
-            </span>
+        <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2.5 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <TeamAvatar
+              characterId={pickingTeam.characterId}
+              size="md"
+              customUrl={pickingTeam.customImageUrl}
+              className="ring-2 ring-white/80 shadow-lg"
+            />
+            <div className="min-w-0 leading-tight">
+              <span className="font-mario text-lg sm:text-2xl text-white text-shadow-mario whitespace-nowrap block">
+                BLOCK #{question.blockNumber}
+              </span>
+              <span className="text-[11px] font-black uppercase tracking-wider text-white/90 truncate block">
+                {pickingTeam.name}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <div
-              className={`hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-xl ${pickChar.bgColor} bg-opacity-50 border border-white/20 text-xs font-bold text-white`}
-            >
-              <TeamAvatar characterId={pickingTeam.characterId} size="xs" customUrl={pickingTeam.customImageUrl} />
-              <span className="max-w-[120px] truncate">{pickingTeam.name}</span>
-            </div>
-            <span className="font-mario text-sm text-amber-200">{cardsRemaining}/6</span>
+            {testGame && (
+              <span className="hidden sm:inline-flex px-2 py-1 rounded-lg bg-red-700 border border-yellow-300 text-[10px] font-black uppercase tracking-widest text-yellow-200">
+                Test
+              </span>
+            )}
+            <span className="font-mario text-sm text-white/95">{cardsRemaining}/6</span>
             <button
               type="button"
               onClick={() => {
@@ -136,8 +150,8 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             )}
           </div>
 
-          <div className="mt-auto shrink-0 rounded-3xl bg-black/30 border-t-2 border-t-amber-300/45 border-x border-b border-white/10 px-3 sm:px-4 py-4">
-            <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
+          <div className="mt-2 flex-1 min-h-0 rounded-3xl bg-black/30 border-t-2 border-t-amber-300/45 border-x border-b border-white/10 px-3 sm:px-4 py-3 flex flex-col">
+            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 shrink-0">
               {teams.map(team => {
                 const char = CHARACTERS[team.characterId];
                 const alreadyDrew = drawnTeamIds.includes(team.id);
@@ -154,7 +168,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                       sounds.playPop();
                       onSelectTeam(team.id);
                     }}
-                    className={`relative flex flex-col items-center justify-center gap-1.5 p-2.5 sm:p-3 w-[8.5rem] sm:w-[10rem] min-h-[7.25rem] rounded-2xl border-2 text-white transition-all ${
+                    className={`relative flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-[7.25rem] max-w-[11rem] rounded-2xl border-2 text-white transition-all ${
                       alreadyDrew
                         ? 'bg-emerald-950/80 border-emerald-400 cursor-default'
                         : isSelected
@@ -164,33 +178,41 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                   >
                     {alreadyDrew && (
                       <span
-                        className="absolute top-1.5 right-1.5 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_12px_rgba(16,185,129,0.9)]"
+                        className="absolute -top-1.5 -right-1.5 z-20 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 border-2 border-white shadow-[0_0_12px_rgba(16,185,129,0.9)]"
                         aria-hidden
                       >
-                        <Check className="w-4 h-4 text-white" strokeWidth={3.5} />
+                        <Check className="w-3.5 h-3.5 text-white" strokeWidth={3.5} />
                       </span>
                     )}
-                    <div className="relative">
-                      <TeamAvatar characterId={team.characterId} size="xl" customUrl={team.customImageUrl} />
+                    <div className="relative shrink-0">
+                      <TeamAvatar characterId={team.characterId} size="lg" customUrl={team.customImageUrl} />
                       {team.doubleNextCoinReward && (
                         <span
-                          className="absolute -top-1.5 -left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-red-700 border-2 border-yellow-300 pl-0.5 pr-1.5 py-0.5 shadow-[0_0_14px_rgba(250,204,21,0.6)]"
+                          className="absolute -top-1.5 -left-1.5 z-10 flex items-center gap-0.5 rounded-full bg-red-700 border-2 border-yellow-300 pl-0.5 pr-1 py-0.5 shadow-[0_0_14px_rgba(250,204,21,0.6)]"
                           aria-hidden
                         >
                           <img
                             src="/assets/effects/reveal_mariosupermushroom.jpeg"
                             alt=""
-                            className="w-6 h-6 rounded-full object-cover"
+                            className="w-5 h-5 rounded-full object-cover"
                           />
-                          <span className="font-mario text-xs text-yellow-200 leading-none">×2</span>
+                          <span className="font-mario text-[10px] text-yellow-200 leading-none">×2</span>
+                        </span>
+                      )}
+                      {team.blooperNextCoin && (
+                        <span
+                          className="absolute -bottom-1.5 -right-1.5 z-10 rounded-full bg-indigo-900 border-2 border-indigo-200 px-1 py-0.5 font-mario text-[10px] text-indigo-100 leading-none"
+                          aria-hidden
+                        >
+                          🦑1
                         </span>
                       )}
                     </div>
-                    <div className="min-w-0 w-full text-center leading-tight">
-                      <div className="text-sm font-black truncate">{team.name}</div>
-                      <div className="flex items-center justify-center gap-1 text-amber-200 mt-0.5">
+                    <div className="min-w-0 flex-1 text-left leading-tight">
+                      <div className="text-xs sm:text-sm font-black truncate">{team.name}</div>
+                      <div className="flex items-center gap-1 text-amber-200 mt-0.5">
                         <MarioCoin size="sm" />
-                        <span className="font-mario text-base leading-none">{team.coins}</span>
+                        <span className="font-mario text-base sm:text-lg leading-none">{team.coins}</span>
                       </div>
                     </div>
                   </button>
@@ -198,18 +220,19 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
               })}
             </div>
 
-            <div className="mt-2">
-              <div className="grid grid-cols-6 gap-1.5 sm:gap-3 max-w-5xl mx-auto">
+            <div className="mt-2 flex-1 min-h-0">
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-3 max-w-5xl mx-auto h-full">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
+                const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
                 return (
                   <button
                     key={idx}
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative aspect-[2/3] rounded-2xl border-2 overflow-hidden transition-all ${
+                    className={`relative h-full max-h-full mx-auto aspect-[2/3] rounded-2xl border-2 overflow-hidden transition-all ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
@@ -217,11 +240,18 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                           : 'border-white/15 opacity-70 cursor-not-allowed'
                     }`}
                   >
-                    {slot.card ? (
+                    {slot.claimedByTeamId && slot.card ? (
                       <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center gap-1 p-2">
                         <span className="font-mario text-[10px] sm:text-xs text-yellow-200 text-center leading-tight">
                           {slot.card.title}
                         </span>
+                        {(slot.card.type === 'gold_star' ||
+                          slot.card.type === 'bowser_revolution' ||
+                          slot.card.type === 'bowser_fury') && (
+                          <span className="text-[8px] font-black uppercase tracking-wider text-red-300">
+                            Round over
+                          </span>
+                        )}
                         {claimedTeam && (
                           <TeamAvatar
                             characterId={claimedTeam.characterId}
@@ -231,11 +261,17 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                         )}
                       </div>
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-700 via-rose-900 to-red-950 flex flex-col items-center justify-between p-2">
+                      <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-rose-900 to-red-950 flex flex-col items-center justify-between p-1.5 sm:p-2">
                         <span className="font-mario text-[8px] sm:text-[10px] text-yellow-300 bg-black/50 px-1.5 py-0.5 rounded-full">
-                          ★
+                          {previewUnclaimed ? 'TEST' : '★'}
                         </span>
-                        <span className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
+                        {previewUnclaimed ? (
+                          <span className="font-mario text-[10px] sm:text-xs text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
+                            {slot.card?.title}
+                          </span>
+                        ) : (
+                          <span className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
+                        )}
                         <span className="text-[9px] font-black text-amber-200">{idx + 1}</span>
                       </div>
                     )}

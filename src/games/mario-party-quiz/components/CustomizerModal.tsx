@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target } from 'lucide-react';
+import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target, FlaskConical } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
@@ -14,6 +14,7 @@ import {
   CLASSIC_LESSON_GOAL_PRESETS,
   DEFAULT_CLASSIC_LESSON_GOAL,
 } from '@/games/mario-blast-classic/data/classicLesson';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface CustomizerModalProps {
   theme: GameTheme;
@@ -28,6 +29,8 @@ interface CustomizerModalProps {
   lessonGoal?: string;
   onLessonGoalChange?: (goal: string) => void;
   onLessonGoalCommit?: (goal: string) => void;
+  testGame?: boolean;
+  onToggleTestGame?: () => void;
 }
 
 export const CustomizerModal: React.FC<CustomizerModalProps> = ({
@@ -43,7 +46,10 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   lessonGoal,
   onLessonGoalChange,
   onLessonGoalCommit,
+  testGame = false,
+  onToggleTestGame,
 }) => {
+  useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
   const currentBlock = blocks.find(b => b.id === selectedBlockId) || blocks[0];
@@ -373,6 +379,33 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+        {theme === 'classic' && onToggleTestGame && (
+          <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-red-200 uppercase tracking-wider block">
+                Test Game
+              </span>
+              <span className="text-[11px] text-slate-400 leading-snug">
+                Mystery cards turn red and show their names so you can rehearse Boo, Blooper, Bowser, Gold Star, and Mystery Blocks.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onToggleTestGame();
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                testGame
+                  ? 'bg-red-600/30 text-red-100 border-red-400/50 hover:bg-red-600/40'
+                  : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
+              }`}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              <span>{testGame ? 'Test Game: On' : 'Test Game: Off'}</span>
+            </button>
           </div>
         )}
         {onToggleCatchUpNote && (

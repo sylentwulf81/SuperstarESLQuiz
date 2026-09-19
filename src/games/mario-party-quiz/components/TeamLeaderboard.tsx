@@ -121,6 +121,11 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                         Skip$
                       </span>
                     )}
+                    {team.blooperNextCoin && (
+                      <span className="shrink-0 bg-indigo-800 text-indigo-100 px-1.5 py-px rounded-full text-[9px] font-black shadow-sm">
+                        🦑1
+                      </span>
+                    )}
                     {isStunned && (
                       <span className="shrink-0 bg-sky-600 text-white px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />

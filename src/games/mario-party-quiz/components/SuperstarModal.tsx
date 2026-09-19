@@ -7,6 +7,7 @@ import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface SuperstarModalProps {
   teams: Team[];
@@ -21,6 +22,7 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
   onClose,
   onExitToLauncher,
 }) => {
+  useBodyScrollLock();
   // Determine winner (highest coins)
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const winner = sortedTeams[0] || teams[0];
@@ -57,12 +59,12 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
   }, [winner]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 overflow-hidden">
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
-        className="relative w-full max-w-4xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto text-center"
+        className="relative w-full max-w-4xl max-h-[94vh] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-y-auto my-auto text-center"
       >
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 opacity-90 shadow-[0_0_20px_rgba(250,204,21,0.6)]" />

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ShieldAlert, SkipForward, Sparkles, Snowflake, CheckCircle } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { TeamAvatar } from './TeamAvatar';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface BlueShellSkipOverlayProps {
   skippedTeam: Team;
@@ -15,6 +16,7 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
   nextTeam,
   onClose,
 }) => {
+  useBodyScrollLock();
   const [secondsLeft, setSecondsLeft] = useState(4);
 
   useEffect(() => {

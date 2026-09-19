@@ -8,6 +8,7 @@ import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
 import { compressImageFile } from '@/shared/utils/imageUtils';
 import { shuffleWordLetters } from '@/shared/utils/shuffle';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface QuestionModalProps {
   question: GameQuestion;
@@ -48,6 +49,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   onUpdateQuestionImage,
   onAdjustCoins,
 }) => {
+  useBodyScrollLock();
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>(() => getShuffledOptions(question));
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);

@@ -734,6 +734,58 @@ class SoundEngine {
     }, 240);
   }
 
+  /** Classroom-loud round-ender sting — students look up. */
+  playRoundOver() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const boom = ctx.createOscillator();
+    const boomGain = ctx.createGain();
+    boom.type = 'sawtooth';
+    boom.frequency.setValueAtTime(90, now);
+    boom.frequency.exponentialRampToValueAtTime(38, now + 0.45);
+    boomGain.gain.setValueAtTime(0.42, now);
+    boomGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    boom.connect(boomGain);
+    boomGain.connect(ctx.destination);
+    boom.start(now);
+    boom.stop(now + 0.55);
+
+    const sting = [
+      { f: 392.0, d: 0.18, t: 80 },
+      { f: 523.25, d: 0.18, t: 220 },
+      { f: 659.25, d: 0.22, t: 360 },
+      { f: 783.99, d: 0.55, t: 520 },
+      { f: 1046.5, d: 0.7, t: 780 },
+    ];
+    sting.forEach(n => {
+      setTimeout(() => {
+        this.playNote(n.f, n.d, 'triangle', 0.34);
+      }, n.t);
+    });
+  }
+
+  playBlooper() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(420, now);
+    osc.frequency.exponentialRampToValueAtTime(90, now + 0.38);
+    gain.gain.setValueAtTime(0.28, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.42);
+    setTimeout(() => {
+      this.playNote(196, 0.2, 'sine', 0.18);
+    }, 120);
+  }
+
   // Helper note player
   private playNote(freq: number, duration: number, type: OscillatorType = 'sine', volume: number = 0.2) {
     const ctx = this.getContext();

@@ -9,6 +9,7 @@ import {
 import { REWARD_CARDS } from '@/games/mario-party-quiz/data/rewards';
 import { RewardCard } from '@/shared/types';
 import { GUIDE_TRANSLATIONS, GuideLanguage } from '@/games/mario-party-quiz/data/guideContent';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface RulebookModalProps {
   onClose: () => void;
@@ -23,6 +24,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
   activeTeamName,
   initialTab = 'guide'
 }) => {
+  useBodyScrollLock();
   const [activeTab, setActiveTab] = useState<'guide' | 'rules' | 'mystery_cards'>(initialTab);
   const [language, setLanguage] = useState<GuideLanguage>(() => {
     try {
@@ -173,7 +175,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-slate-950/85 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 bg-slate-950/85 overflow-hidden">
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}

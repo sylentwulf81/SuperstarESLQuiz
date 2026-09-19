@@ -3,6 +3,7 @@ import { Check, Crop, RotateCcw, X, ZoomIn } from 'lucide-react';
 import { QuestionType } from '@/shared/types';
 import { cropAndCompressImage, loadImageElement } from '@/shared/utils/imageUtils';
 import { sounds } from '@/shared/utils/sound';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 type AspectId = 'portrait' | 'landscape' | 'square' | 'wide' | 'original';
 
@@ -33,6 +34,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
   onCancel,
   onApply,
 }) => {
+  useBodyScrollLock();
   const stageRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 

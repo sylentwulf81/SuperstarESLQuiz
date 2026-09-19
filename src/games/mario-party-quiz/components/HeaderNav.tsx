@@ -31,6 +31,7 @@ import { MusicPlayer } from './MusicPlayer';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { TeamAvatar } from './TeamAvatar';
 import { MarioCoin } from '@/shared/components/MarioCoin';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface HeaderNavProps {
   theme: GameTheme;
@@ -77,6 +78,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
 }) => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  useBodyScrollLock(isMobileMenuOpen || showResetConfirm);
 
   const character = CHARACTERS[currentTeam.characterId];
 

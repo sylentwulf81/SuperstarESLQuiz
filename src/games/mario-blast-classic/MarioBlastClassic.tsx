@@ -27,8 +27,11 @@ import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party
 import {
   applyCoinPayout,
   drawClassicCard,
+  fillClassicTestSlots,
   isClassicRoundEnder,
+  loadClassicTestGame,
   MysteryBlockOutcome,
+  persistClassicTestGame,
   shuffleMysteryBlockOutcomes,
 } from './data/classicRewards';
 import {
@@ -77,6 +80,7 @@ export function MarioBlastClassic({
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
+  const [testGame, setTestGame] = useState(loadClassicTestGame);
 
   const handleToggleCatchUpNote = useCallback(() => {
     setShowCatchUpNote(prev => {
@@ -85,6 +89,19 @@ export function MarioBlastClassic({
       return next;
     });
   }, []);
+
+  const handleToggleTestGame = useCallback(() => {
+    setTestGame(prev => {
+      const next = !prev;
+      persistClassicTestGame(next);
+      setSlots(current => {
+        if (!selectedBlockId) return current;
+        if (next) return fillClassicTestSlots(current);
+        return current.map(slot => (slot.claimedByTeamId ? slot : { ...slot, card: undefined }));
+      });
+      return next;
+    });
+  }, [selectedBlockId]);
 
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
@@ -127,7 +144,12 @@ export function MarioBlastClassic({
   };
 
   const handleStartGame = (configuredTeams: Team[]) => {
-    setTeams(configuredTeams.map(t => ({ ...t, doubleNextCoinReward: false, skipNextCoinReward: false })));
+    setTeams(configuredTeams.map(t => ({
+      ...t,
+      doubleNextCoinReward: false,
+      skipNextCoinReward: false,
+      blooperNextCoin: false,
+    })));
     setCurrentTeamIndex(0);
     setBlocks(createGameBlocks(theme, undefined, true));
     resetRound();
@@ -151,6 +173,9 @@ export function MarioBlastClassic({
     sounds.playBlockHit();
     resetRound();
     setSelectedBlockId(blockId);
+    if (testGame) {
+      setSlots(fillClassicTestSlots(emptySlots()));
+    }
   };
 
   const advanceTurn = (currentTeams?: Team[]) => {
@@ -219,15 +244,17 @@ export function MarioBlastClassic({
     let awarded = 0;
     let skipped = false;
     let doubled = false;
+    let bloopered = false;
     const next = roster.map(t => {
       if (t.id !== teamId) return t;
       const result = applyCoinPayout(t, amount);
       awarded = result.awarded;
       skipped = result.skipped;
       doubled = result.doubled;
+      bloopered = result.bloopered;
       return result.team;
     });
-    return { teams: next, awarded, skipped, doubled };
+    return { teams: next, awarded, skipped, doubled, bloopered };
   };
 
   const applyReward = (
@@ -254,12 +281,28 @@ export function MarioBlastClassic({
         if (payout.skipped) {
           sounds.playBlueShell();
           showToast(`🐢 ${drawingTeam.name}'s coin reward was skipped by Blue Shell!`);
+        } else if (payout.bloopered) {
+          sounds.playBlooper();
+          showToast(`🦑 INKED! ${drawingTeam.name} got +1 coin!`);
         } else {
           if (payout.doubled) sounds.playPowerUp();
           else sounds.playCoin();
           showToast(
             `${payout.doubled ? '🍄 2x! ' : ''}🪙 ${drawingTeam.name} gained +${payout.awarded} coins!`
           );
+        }
+        break;
+      }
+      case 'blooper': {
+        sounds.playBlooper();
+        const target = options?.targetTeamId
+          ? nextTeams.find(t => t.id === options.targetTeamId)
+          : nextTeams.find(t => t.id !== drawingTeam.id);
+        if (target) {
+          nextTeams = nextTeams.map(t =>
+            t.id === target.id ? { ...t, blooperNextCoin: true } : t
+          );
+          showToast(`🦑 BLOOPER! ${target.name}'s next coin card pays only 1!`);
         }
         break;
       }
@@ -431,6 +474,9 @@ export function MarioBlastClassic({
       if (payout.skipped) {
         sounds.playBlueShell();
         showToast(`🐢 Treasure skipped by Blue Shell!`);
+      } else if (payout.bloopered) {
+        sounds.playBlooper();
+        showToast(`🦑 INKED! Treasure became +1 for ${drawingTeam.name}!`);
       } else {
         if (payout.doubled) sounds.playPowerUp();
         showToast(`${payout.doubled ? '🍄 2x! ' : ''}💎 Treasure Block! ${drawingTeam.name} +${payout.awarded} coins!`);
@@ -455,7 +501,7 @@ export function MarioBlastClassic({
 
   const handlePickSlot = (slotIndex: number) => {
     if (!selectedAnsweringTeamId || slots[slotIndex]?.claimedByTeamId) return;
-    const card = drawClassicCard(teams, selectedAnsweringTeamId);
+    const card = slots[slotIndex]?.card ?? drawClassicCard(teams, selectedAnsweringTeamId);
     sounds.playSpecialCardFanfare();
     setPendingSlotIndex(slotIndex);
     setPendingCard(card);
@@ -612,6 +658,7 @@ export function MarioBlastClassic({
               setSelectedBlockId(null);
               resetRound();
             }}
+            testGame={testGame}
           />
         )}
       </AnimatePresence>
@@ -638,6 +685,7 @@ export function MarioBlastClassic({
             currentTeam={answeringTeam}
             outcomes={mysteryOutcomes}
             onResolved={handleMysteryResolved}
+            testMode={testGame}
           />
         )}
       </AnimatePresence>
@@ -674,6 +722,8 @@ export function MarioBlastClassic({
             lessonGoal={lessonGoal}
             onLessonGoalChange={handleLessonGoalChange}
             onLessonGoalCommit={commitLessonGoal}
+            testGame={testGame}
+            onToggleTestGame={handleToggleTestGame}
           />
         )}
       </AnimatePresence>
