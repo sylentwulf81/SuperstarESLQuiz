@@ -1053,8 +1053,6 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                       </div>
                     )}
 
-                    )}
-
                     {/* 5b. BLOOPER: Ink a rival so their next coin card pays 1 */}
                     {selectedCard.type === 'blooper' && (
                       <div className={`bg-indigo-950/85 rounded-2xl border border-indigo-400/50 flex flex-col min-h-0 ${
