@@ -7,6 +7,7 @@ import { sounds } from '@/shared/utils/sound';
 import { LauncherScreen } from '@/launcher/LauncherScreen';
 import { LauncherGame } from '@/launcher/catalog';
 import { MarioPartyQuiz, MARIO_PARTY_QUIZ_MODULE } from '@/games/mario-party-quiz';
+import { MarioBlastClassic, MARIO_BLAST_CLASSIC_MODULE } from '@/games/mario-blast-classic';
 import { RulebookModal } from '@/games/mario-party-quiz/components/RulebookModal';
 
 type ShellSession =
@@ -14,8 +15,8 @@ type ShellSession =
   | {
       kind: typeof MARIO_PARTY_QUIZ_MODULE;
       theme: GameTheme;
-      openStudio: boolean;
-    };
+    }
+  | { kind: typeof MARIO_BLAST_CLASSIC_MODULE };
 
 function AppShell() {
   const [session, setSession] = useState<ShellSession>({ kind: 'launcher' });
@@ -35,28 +36,32 @@ function AppShell() {
   }, []);
 
   const handleLaunchGame = useCallback((game: LauncherGame) => {
-    if (!game.isPlayable || game.gameModule !== MARIO_PARTY_QUIZ_MODULE) return;
+    if (!game.isPlayable) return;
+    if (game.gameModule === MARIO_BLAST_CLASSIC_MODULE) {
+      setSession({ kind: MARIO_BLAST_CLASSIC_MODULE });
+      return;
+    }
+    if (game.gameModule !== MARIO_PARTY_QUIZ_MODULE) return;
     setSession({
       kind: MARIO_PARTY_QUIZ_MODULE,
       theme: game.themeKey ?? 'summer',
-      openStudio: false,
     });
   }, []);
 
-  const handleOpenQuestionStudio = useCallback((game: LauncherGame) => {
-    if (!game.isPlayable || game.gameModule !== MARIO_PARTY_QUIZ_MODULE) return;
-    setSession({
-      kind: MARIO_PARTY_QUIZ_MODULE,
-      theme: game.themeKey ?? 'summer',
-      openStudio: true,
-    });
-  }, []);
+  if (session.kind === MARIO_BLAST_CLASSIC_MODULE) {
+    return (
+      <MarioBlastClassic
+        onExitToLauncher={exitToLauncher}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+      />
+    );
+  }
 
   if (session.kind === MARIO_PARTY_QUIZ_MODULE) {
     return (
       <MarioPartyQuiz
         initialTheme={session.theme}
-        startInStudio={session.openStudio}
         onExitToLauncher={exitToLauncher}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
@@ -68,7 +73,6 @@ function AppShell() {
     <>
       <LauncherScreen
         onLaunchGame={handleLaunchGame}
-        onOpenQuestionStudio={handleOpenQuestionStudio}
         onOpenRulebook={() => setIsRulesModalOpen(true)}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}

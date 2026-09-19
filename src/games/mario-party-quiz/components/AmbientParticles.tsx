@@ -11,6 +11,19 @@ interface AmbientParticlesProps {
  * with a high-performance, static radial lighting vignette. 0% CPU, 0 continuous repaints.
  */
 export const AmbientParticles: React.FC<AmbientParticlesProps> = ({ theme }) => {
+  if (theme === 'classic') {
+    return (
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden select-none"
+        style={{ contain: 'strict' }}
+      >
+        <div className="absolute -top-32 left-1/3 w-[620px] h-[620px] rounded-full bg-rose-400/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-40 -right-16 w-[500px] h-[500px] rounded-full bg-amber-400/10 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 -left-24 w-[380px] h-[380px] rounded-full bg-cyan-400/8 blur-3xl pointer-events-none" />
+      </div>
+    );
+  }
+
   if (theme === 'summer') {
     return (
       <div 

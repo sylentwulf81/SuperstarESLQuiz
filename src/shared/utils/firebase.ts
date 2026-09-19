@@ -18,7 +18,8 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import firebaseConfig from '../../../firebase-applet-config.json';
-import { Question } from '@/shared/types';
+import { GameTheme, Question } from '@/shared/types';
+import { THEME_UI } from '@/shared/themeMeta';
 
 // Initialize Firebase App
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -129,7 +130,7 @@ export async function saveQuestionsToFirestore(
       {
         id: theme,
         userId: userId,
-        title: `${theme === 'summer' ? 'Summer' : 'Christmas'} Custom Questions`,
+        title: THEME_UI[(theme as GameTheme)]?.firebaseTitle || `${theme} Custom Questions`,
         theme,
         questionsData: JSON.stringify(questions),
         updatedAt: new Date().toISOString()

@@ -1,5 +1,38 @@
-import { RewardCard } from '@/shared/types';
+import { RewardCard, RewardCardType, Team } from '@/shared/types';
 import { shuffleArray } from '@/shared/utils/shuffle';
+
+/** Catch-up items that 1st place cannot draw, Mario Kart-style. */
+export const CATCH_UP_RESTRICTED_TYPES: RewardCardType[] = [
+  'blue_shell',
+  'bowser_revolution',
+  'bowser_fury',
+];
+
+export function isCatchUpRestrictedTeam(teams: Team[], teamId: string): boolean {
+  if (teams.length < 2) return false;
+  const team = teams.find(t => t.id === teamId);
+  if (!team) return false;
+  const maxCoins = Math.max(...teams.map(t => t.coins));
+  return team.coins === maxCoins;
+}
+
+const CATCH_UP_NOTE_STORAGE_KEY = 'mp_show_catchup_note_v2';
+
+export function loadShowCatchUpNote(): boolean {
+  try {
+    return localStorage.getItem(CATCH_UP_NOTE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function persistShowCatchUpNote(show: boolean) {
+  try {
+    localStorage.setItem(CATCH_UP_NOTE_STORAGE_KEY, String(show));
+  } catch {
+    // LocalStorage full or blocked
+  }
+}
 
 export const REWARD_CARDS: RewardCard[] = [
   {
@@ -78,7 +111,7 @@ export const REWARD_CARDS: RewardCard[] = [
     title: 'Blue Shell',
     subtitle: '1st Place Skips 1 Round!',
     coins: 0,
-    description: 'Fires the dreaded Blue Shell at the leading team! The #1 team skips their next turn!',
+    description: 'Catch-up item (not drawn by 1st place). Fires the dreaded Blue Shell at the leading team! The #1 team skips their next turn!',
     iconName: 'ShieldAlert',
     badgeColor: 'from-sky-500 via-blue-600 to-indigo-700 text-white',
   },
@@ -88,7 +121,7 @@ export const REWARD_CARDS: RewardCard[] = [
     title: "Bowser's Revolution",
     subtitle: 'Swap Coin Totals with a Rival!',
     coins: 0,
-    description: 'Bowser causes chaos! Choose any rival team and swap your total coins with theirs!',
+    description: 'Catch-up item (not drawn by 1st place). Bowser causes chaos! Choose any rival team and swap your total coins with theirs!',
     iconName: 'Flame',
     badgeColor: 'from-red-600 via-orange-600 to-amber-700 text-white',
   },
@@ -98,15 +131,22 @@ export const REWARD_CARDS: RewardCard[] = [
     title: "Bowser's Fury",
     subtitle: '-5 Coins to All Rivals!',
     coins: 0,
-    description: 'Bowser unleashes raging fireballs across the board! -5 coins to each and every other team!',
+    description: 'Catch-up item (not drawn by 1st place). Bowser unleashes raging fireballs across the board! -5 coins to each and every other team!',
     iconName: 'Flame',
     badgeColor: 'from-amber-600 via-red-700 to-red-950 text-amber-200',
   },
 ];
 
 /**
- * Generate 6 randomized mystery cards for the reward roulette from the full 10-card pool
+ * Generate 6 randomized mystery cards for the reward roulette from the full 10-card pool.
+ * The current 1st-place team (tied or unique) cannot draw Blue Shell, Bowser's Revolution, or Bowser's Fury.
  */
-export function generateRouletteCards(): RewardCard[] {
-  return shuffleArray(REWARD_CARDS).slice(0, 6);
+export function generateRouletteCards(teams?: Team[], drawingTeamId?: string): RewardCard[] {
+  const restrictCatchUp = Boolean(
+    teams && drawingTeamId && isCatchUpRestrictedTeam(teams, drawingTeamId)
+  );
+  const pool = restrictCatchUp
+    ? REWARD_CARDS.filter(card => !CATCH_UP_RESTRICTED_TYPES.includes(card.type))
+    : REWARD_CARDS;
+  return shuffleArray(pool).slice(0, Math.min(6, pool.length));
 }

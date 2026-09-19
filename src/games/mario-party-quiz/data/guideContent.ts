@@ -74,7 +74,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'Select 2 to 6 active character teams (Mario, Luigi, Peach, Daisy, Yoshi, Donkey Kong).',
             'Choose starting coins: 0, 5, 10, 15, or 20 coins. We recommend starting with 5 or 10 coins so Boo steal cards have an immediate impact!',
-            'Select your theme: Summer Edition (60 ESL trivia questions) or Christmas Edition (60 holiday trivia questions). Both have 5 tiered rows of 12 blocks.',
+            'The board has 5 tiered rows of 12 blocks (60 total). Summer Edition uses ESL trivia; Holiday Edition uses Christmas and winter questions.',
           ],
           tip: 'Tip: You can rename any team on the setup screen by typing a custom team name!',
         },
@@ -110,7 +110,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
             'Visual & Multiple Choice: Read the prompt and examine the image. Students choose from 4 options (A, B, C, D).',
             'Letter Unscramble: Students click scrambled letter tiles to spell the vocabulary word. Use Reveal Answer or Backspace if students get stuck.',
             'Open Trivia: Knowledge and conversation questions. Click "Reveal Answer" to check, then tap "Correct (+Coins)" or "Incorrect".',
-            'Mystery Roulette: When a question mark mystery block is hit, 6 face-down cards appear. The student picks their lucky card (1–6)!',
+            'Mystery Roulette: When a question mark mystery block is hit, 6 face-down cards appear. 1st place cannot draw Blue Shell, Bowser\'s Revolution, or Bowser\'s Fury (Mario Kart catch-up).',
           ],
         },
         {
@@ -118,7 +118,8 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '5. Customizing Questions & Cloud Sync',
           icon: 'Settings2',
           points: [
-            'Click "Edit" in the top header or hamburger menu to open the Question Deck Customizer.',
+            'Open Question Studio from the team setup screen, or tap Studio in the top header / hamburger menu during a game.',
+            'In Question Studio, you can show a 1st-place catch-up note on mystery draws. It stays hidden by default so those draws remain a surprise. Blue Shell and Bowser cards are still banned for the leader.',
             'You can modify question prompts, answers, images, and coin values for all 60 blocks.',
             'Log into Google via the top-right Account menu to save your customized questions to the Cloud, making them instantly accessible from any classroom device!',
           ],
@@ -172,7 +173,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         {
           title: 'Mystery Roulette',
-          desc: 'Trigger a 6-card roulette of surprise events: Boo steals, Bowser revolutions, and bonus stars!',
+          desc: 'Trigger a 6-card roulette of surprise events. 1st place cannot draw Blue Shell or Bowser catch-up cards.',
           icon: '⭐',
           color: 'border-purple-400/40 text-purple-300',
         },
@@ -197,11 +198,11 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       cardDescriptions: {
         bowser_revolution: {
           title: "Bowser's Revolution",
-          desc: 'Bowser creates chaos! Choose any rival team and swap your total coins with theirs!',
+          desc: 'Catch-up item — 1st place cannot draw this. Choose any rival team and swap your total coins with theirs!',
         },
         bowser_fury: {
           title: "Bowser's Fury",
-          desc: 'Bowser breathes fire across the arena! Inflicts -5 coins on each and every rival team!',
+          desc: 'Catch-up item — 1st place cannot draw this. Inflicts -5 coins on each and every rival team!',
         },
         ghost_steal_5: {
           title: 'Boo',
@@ -225,7 +226,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         blue_shell: {
           title: 'Blue Shell',
-          desc: 'Target the current 1st-place team! The leading team is stunned and skips their next turn.',
+          desc: 'Catch-up item — 1st place cannot draw this. Hits the current leading team, who skips their next turn.',
         },
         super_coins_10: {
           title: '10 Gold Coins Jackpot',
@@ -273,7 +274,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             '参加するチームを2〜6チーム（マリオ、ルイージ、ピーチ、デイジー、ヨッシー、ドンキーコング）から選びます。',
             '初期コイン数を「0、5、10、15、20枚」から設定します。テレサの横取りカードを序盤から楽しむため、5〜10枚でのスタートが一番おすすめです！',
-            'テーマ選択：「Summer Edition（英語ESLクイズ60問）」または「Christmas Edition（冬・クリスマスホリデークイズ60問）」。どちらも5行×12列（計60問）のブロックで構成されています。',
+            'ボードは5行×12列（計60問）です。Summer Editionは英語ESLクイズ、Holiday Editionはクリスマス・冬のホリデークイズです。'
           ],
           tip: 'ヒント：スタート画面でチーム名を自由に日本語や班名（例：1班、Red Team）に変更できます！',
         },
@@ -308,7 +309,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
             '4択・画像クイズ：写真や問題文を見て、4つの選択肢（A, B, C, D）からチームで相談して正解を選びます。',
             'スペル並べ替え：バラバラになったアルファベットタイルを正しい順に押して英単語を完成させます。「答えを表示」や「1文字戻す」も使えます。',
             'オープン問題：知識やフリートークの問題です。「答えを表示」で正解を確認し、先生が「正解（＋コイン）」または「不正解」を押します。',
-            'サプライズルーレット：ハテナブロックを引くと、2:3比率の美しい6枚のカードが出現！手番チームが1〜6の好きなカードを選びます。',
+            'サプライズルーレット：ハテナブロックを引くと6枚のカードが出現。マリオカート同様、1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
           ],
         },
         {
@@ -316,7 +317,8 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '5. 問題のカスタマイズとクラウド保存',
           icon: 'Settings2',
           points: [
-            'ヘッダーの「Edit（編集）」ボタンから、全60問の問題文、選択肢、画像URL、配点コインを自由に編集できます。',
+            'チーム設定画面の「Question Studio」か、ゲーム中ヘッダー／メニューの「Studio」から、このエディション専用の全60問を編集できます。',
+            'Question Studioで「キャッチアップ注記」を表示にすると、1位がブルーシェル／クッパカードを引けない理由を生徒に説明できます。初期設定は非表示で、サプライズのままです。',
             '右上のアカウントメニューからGoogleログインすれば、作成したオリジナル問題をクラウドに保存可能！',
             '別の教室のパソコンや電子黒板でも、ボタン1つで同じクイズを即座に読み込んで授業ができます。',
           ],
@@ -369,7 +371,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         {
           title: 'サプライズカードルーレット',
-          desc: '6枚の裏向きカードから運命の1枚を選択！テレサの奪取やクッパ革命など大逆転のチャンス！',
+          desc: '6枚の裏向きカードから1枚を選択。1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
           icon: '⭐',
           color: 'border-purple-400/40 text-purple-300',
         },
@@ -394,11 +396,11 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       cardDescriptions: {
         bowser_revolution: {
           title: 'クッパ革命',
-          desc: 'クッパが登場！相手チームを1つ選び、そのチームと所持コイン総数を入れ替えます！',
+          desc: 'キャッチアップ専用（1位は引けません）。相手チームを1つ選び、所持コイン総数を入れ替えます！',
         },
         bowser_fury: {
           title: 'クッパの怒り',
-          desc: 'クッパの猛火が炸裂！自チーム以外のすべてのライバルチームからコインを5枚ずつ減らします！',
+          desc: 'キャッチアップ専用（1位は引けません）。自チーム以外のすべてのライバルからコインを5枚ずつ減らします！',
         },
         ghost_steal_5: {
           title: 'テレサ',
@@ -422,7 +424,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         blue_shell: {
           title: 'ブルーシェル（トゲゾー）',
-          desc: '現在1位を走るトップチームに直撃！トップチームは1回休みとなります。',
+          desc: 'キャッチアップ専用（1位は引けません）。現在1位のチームに直撃し、そのチームは1回休みとなります。',
         },
         super_coins_10: {
           title: 'ゴールドコイン10枚ジャックポット',

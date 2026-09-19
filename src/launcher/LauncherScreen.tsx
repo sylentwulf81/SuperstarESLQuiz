@@ -26,7 +26,6 @@ import {
   Volume2, 
   VolumeX, 
   Library, 
-  Edit3, 
   Star,
   Info,
   ChevronRight,
@@ -42,7 +41,6 @@ import { SnesBoxArt } from '@/launcher/SnesBoxArt';
 
 interface LauncherScreenProps {
   onLaunchGame: (game: LauncherGame) => void;
-  onOpenQuestionStudio: (game: LauncherGame) => void;
   onOpenRulebook: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -50,7 +48,6 @@ interface LauncherScreenProps {
 
 export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   onLaunchGame,
-  onOpenQuestionStudio,
   onOpenRulebook,
   soundEnabled,
   onToggleSound,
@@ -103,6 +100,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       case 'Shield': return <Shield className="w-6 h-6 text-amber-400" />;
       case 'Zap': return <Zap className="w-6 h-6 text-lime-300" />;
       case 'Gavel': return <Gavel className="w-6 h-6 text-yellow-400" />;
+      case 'Star': return <Star className="w-6 h-6 text-rose-300" />;
       default: return <Gamepad2 className="w-6 h-6 text-yellow-300" />;
     }
   };
@@ -229,20 +227,6 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                   PLAY GAME
                 </button>
 
-                {spotlightGame.hasQuestionStudio && (
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      onOpenQuestionStudio(spotlightGame);
-                    }}
-                    className="px-6 py-3.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 text-yellow-300 border-2 border-yellow-400/50 hover:border-yellow-300 font-bold text-sm shadow-xl flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
-                    title="Customize 60-Block Summer Question Deck"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                    Question Studio
-                  </button>
-                )}
-
                 {spotlightGame.hasTeacherGuide && (
                   <button
                     onClick={() => {
@@ -333,7 +317,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                 }`}
               >
                 {getCategoryIcon(cat)}
-                {cat === 'all' ? 'All Games (12)' : cat.replace('_', ' ').toUpperCase()}
+                {cat === 'all' ? `All Games (${LAUNCHER_GAMES.length})` : cat.replace('_', ' ').toUpperCase()}
               </button>
             ))}
           </div>
@@ -369,7 +353,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
               </span>
             </h3>
             <span className="text-xs text-white/50 hidden sm:inline-block">
-              Click any game for actions, question studio, or rule previews
+              Click any game for play, details, or rule previews
             </span>
           </div>
 
@@ -416,43 +400,22 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                   <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
                     {game.isPlayable ? (
                       <>
-                        {game.hasQuestionStudio ? (
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={() => {
-                                sounds.playGameStart();
-                                onLaunchGame(game);
-                              }}
-                              className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-xs sm:text-sm font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-                            >
-                              <Play className="w-3.5 h-3.5 fill-current" />
-                              PLAY NOW
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                sounds.playClick();
-                                onOpenQuestionStudio(game);
-                              }}
-                              className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-yellow-400/40 font-bold text-xs flex items-center justify-center gap-1 cursor-pointer transition-all"
-                              title="Edit Summer Question Deck"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              Question Studio
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              sounds.playGameStart();
-                              onLaunchGame(game);
-                            }}
-                            className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-mario text-xs sm:text-sm font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
-                          >
-                            <Play className="w-3.5 h-3.5 fill-current" />
-                            PLAY NOW
-                          </button>
-                        )}
+                        <button
+                          onClick={() => {
+                            sounds.playGameStart();
+                            onLaunchGame(game);
+                          }}
+                          className={`w-full py-2.5 px-3 rounded-xl font-mario text-xs sm:text-sm font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 ${
+                            game.themeKey === 'christmas'
+                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950'
+                              : game.themeKey === 'classic'
+                                ? 'bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 text-slate-950'
+                                : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950'
+                          }`}
+                        >
+                          <Play className="w-3.5 h-3.5 fill-current" />
+                          PLAY NOW
+                        </button>
 
                         <div className="flex items-center justify-between gap-2 text-[11px] pt-1">
                           {game.hasTeacherGuide ? (
@@ -629,19 +592,6 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                       >
                         <BookOpen className="w-3.5 h-3.5 text-indigo-300" />
                         Host Guide & Rules
-                      </button>
-                    )}
-                    {previewGame.hasQuestionStudio && (
-                      <button
-                        onClick={() => {
-                          sounds.playClick();
-                          setPreviewGame(null);
-                          onOpenQuestionStudio(previewGame);
-                        }}
-                        className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-yellow-400/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        Question Studio
                       </button>
                     )}
                     <button

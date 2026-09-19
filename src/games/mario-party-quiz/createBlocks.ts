@@ -1,6 +1,7 @@
 import { BlockState, GameQuestion, GameTheme, Question } from '@/shared/types';
 import { DEFAULT_QUESTIONS } from './data/questions';
 import { SUMMER_QUESTIONS } from './data/summerQuestions';
+import { CLASSIC_QUESTIONS } from '@/games/mario-blast-classic/data/classicQuestions';
 
 export const TOTAL_BLOCKS = 60;
 
@@ -16,7 +17,8 @@ export function createGameBlocks(
   shouldShuffle: boolean = false
 ): BlockState[] {
   let rawDeck: Question[] = [];
-  const defaultSource = theme === 'summer' ? SUMMER_QUESTIONS : DEFAULT_QUESTIONS;
+  const defaultSource =
+    theme === 'summer' ? SUMMER_QUESTIONS : theme === 'classic' ? CLASSIC_QUESTIONS : DEFAULT_QUESTIONS;
 
   if (customQuestions && Array.isArray(customQuestions) && customQuestions.length > 0) {
     rawDeck = customQuestions.map(q => ({ ...q }));
