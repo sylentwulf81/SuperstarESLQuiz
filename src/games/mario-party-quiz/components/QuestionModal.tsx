@@ -258,8 +258,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }
 
     return (
-      <div className={`relative min-h-0 flex items-center justify-center ${compact ? 'h-full max-h-full' : 'max-h-40 sm:max-h-48 lg:max-h-56 w-full'}`}>
-        <div className="relative h-full max-h-full rounded-2xl overflow-hidden border-2 border-white/25 bg-black/70 shadow-2xl flex items-center justify-center">
+      <div className={`relative min-h-0 flex items-center justify-center ${compact ? 'h-full w-full max-h-full' : 'max-h-40 sm:max-h-48 lg:max-h-56 w-full'}`}>
+        <div className="relative h-full w-full max-h-full rounded-2xl overflow-hidden border-2 border-white/25 bg-black/70 shadow-2xl flex items-center justify-center">
           {!imageLoadFailed ? (
             <img
               src={currentImage}
@@ -490,14 +490,14 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           )}
 
           {question.type === 'unscramble' && (
-            <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-hidden">
+            <div className={`flex-1 min-h-0 overflow-hidden ${currentImage ? 'flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] gap-3 lg:gap-5' : 'flex flex-col'}`}>
               {currentImage && (
-                <div className="shrink-0 max-h-28 sm:max-h-36 flex justify-center">
-                  {renderImagePanel(false)}
+                <div className="min-h-[13rem] sm:min-h-[16rem] flex-[1.15] lg:flex-none lg:h-full lg:min-h-0 w-full flex items-center justify-center">
+                  {renderImagePanel(true)}
                 </div>
               )}
 
-              <div className="flex-1 min-h-0 flex flex-col justify-center gap-3">
+              <div className="flex-1 min-h-0 flex flex-col justify-center gap-3 overflow-y-auto">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 bg-black/75 rounded-3xl border-2 border-white/25 min-h-[72px]">
                   {spelledLetters.length === 0 ? (
                     <span className="text-slate-400 text-sm sm:text-lg font-bold italic">

@@ -1,5 +1,5 @@
 export type CharacterId = 'yoshi' | 'mario' | 'peach' | 'daisy' | 'donkey_kong' | 'luigi';
-export type GameTheme = 'christmas' | 'summer';
+export type GameTheme = 'christmas' | 'summer' | 'classic';
 
 export interface CharacterInfo {
   id: CharacterId;
@@ -24,8 +24,12 @@ export interface Team {
   streak: number;
   blocksOpened: number;
   coinsStolen: number;
-  hasDoubleTurn: boolean; // Mushroom / Superstar power-up
-  skipTurns?: number; // Blue Shell freeze rounds
+  hasDoubleTurn: boolean; // Mushroom / Superstar power-up (board editions)
+  skipTurns?: number; // Blue Shell freeze rounds (board editions)
+  /** Classic: next coin payout for this team is doubled, then cleared. */
+  doubleNextCoinReward?: boolean;
+  /** Classic: next coin payout for this team is skipped, then cleared. */
+  skipNextCoinReward?: boolean;
   customImageUrl?: string;
 }
 
@@ -36,7 +40,7 @@ export interface BaseQuestion {
   blockNumber: number;
   type: QuestionType;
   title: string;
-  category: 'holiday_trivia' | 'vocabulary' | 'spelling' | 'mystery' | 'carol';
+  category: 'holiday_trivia' | 'vocabulary' | 'spelling' | 'mystery' | 'carol' | 'grammar';
   image?: string;
   imageUrl?: string;
   imageAlt?: string;
@@ -94,7 +98,9 @@ export type RewardCardType =
   | 'mushroom_x2'
   | 'boo_steal_5'
   | 'boo_steal_10'
-  | 'king_boo';
+  | 'king_boo'
+  | 'gold_star'
+  | 'mystery_blocks';
 
 export interface RewardCardActionOptions {
   targetTeamId?: string;

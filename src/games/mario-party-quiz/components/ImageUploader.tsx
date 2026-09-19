@@ -1,7 +1,9 @@
 import React, { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, Image as ImageIcon, Trash2, Link as LinkIcon, Check, Cloud, LogIn, Sparkles } from 'lucide-react';
-import { compressImageFile } from '@/shared/utils/imageUtils';
+import { Upload, Image as ImageIcon, Trash2, Link as LinkIcon, Check, Cloud, LogIn, Sparkles, Crop } from 'lucide-react';
+import { compressImageFile, readFileAsDataUrl } from '@/shared/utils/imageUtils';
 import { sounds } from '@/shared/utils/sound';
+import { QuestionType } from '@/shared/types';
+import { ImageCropModal } from './ImageCropModal';
 
 interface ImageUploaderProps {
   currentImageUrl?: string;
@@ -10,6 +12,7 @@ interface ImageUploaderProps {
   userEmail?: string | null;
   onPromptLogin?: () => void;
   titlePrompt?: string;
+  questionType?: QuestionType;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -19,13 +22,20 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   userEmail,
   onPromptLogin,
   titlePrompt,
+  questionType,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [manualUrl, setManualUrl] = useState(currentImageUrl || '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [cropSource, setCropSource] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const openCropper = (source: string) => {
+    setErrorMessage(null);
+    setCropSource(source);
+  };
 
   const processFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -37,10 +47,15 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     setErrorMessage(null);
     try {
       sounds.playPowerUp();
-      const compressedDataUrl = await compressImageFile(file, 960, 720, 0.82);
-      onImageChange(compressedDataUrl);
-      setManualUrl(compressedDataUrl);
-    } catch (err: any) {
+      if (file.type === 'image/svg+xml') {
+        const compressedDataUrl = await compressImageFile(file, 960, 720, 0.82);
+        onImageChange(compressedDataUrl);
+        setManualUrl(compressedDataUrl);
+      } else {
+        const dataUrl = await readFileAsDataUrl(file);
+        openCropper(dataUrl);
+      }
+    } catch (err: unknown) {
       console.error('Image compression error:', err);
       setErrorMessage('Could not process image file. Please try another file.');
     } finally {
@@ -90,9 +105,12 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       onImageChange(undefined);
     } else {
       sounds.playCoin();
-      onImageChange(manualUrl.trim());
+      openCropper(manualUrl.trim());
     }
   };
+
+  const previewAspectClass =
+    questionType === 'multiple_choice' ? 'aspect-[3/4] sm:w-36 h-auto' : 'aspect-[4/3] sm:w-52 h-auto';
 
   return (
     <div className="space-y-2">
@@ -120,7 +138,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       {/* Main Upload Dropzone or Active Preview */}
       {currentImageUrl ? (
         <div className="relative rounded-2xl overflow-hidden border border-white/20 bg-black/50 p-3 flex flex-col sm:flex-row items-center gap-4">
-          <div className="relative w-full sm:w-44 h-32 bg-slate-950 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
+          <div className={`relative w-full ${previewAspectClass} max-h-48 bg-slate-950 rounded-xl overflow-hidden border border-white/10 flex items-center justify-center shrink-0`}>
             <img
               src={currentImageUrl}
               alt="Clue Preview"
@@ -147,10 +165,19 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
             </div>
 
             <p className="text-[11px] text-slate-300">
-              This image will be displayed on-screen during the question prompt for teams to see.
+              This image will be displayed on-screen during the question prompt. Crop it to match the card shape before saving.
             </p>
 
             <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => openCropper(currentImageUrl)}
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 border border-yellow-200/70 cursor-pointer shadow"
+              >
+                <Crop className="w-3.5 h-3.5" />
+                <span>Crop / Adjust</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -264,6 +291,19 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
         <p className="text-xs text-red-400 font-semibold bg-red-950/60 p-2 rounded-lg border border-red-500/30">
           {errorMessage}
         </p>
+      )}
+
+      {cropSource && (
+        <ImageCropModal
+          sourceUrl={cropSource}
+          questionType={questionType}
+          onCancel={() => setCropSource(null)}
+          onApply={(dataUrl) => {
+            onImageChange(dataUrl);
+            setManualUrl(dataUrl);
+            setCropSource(null);
+          }}
+        />
       )}
     </div>
   );

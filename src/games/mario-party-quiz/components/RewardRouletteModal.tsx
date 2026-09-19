@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check 
+  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
+import { isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/data/rewards';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
@@ -15,9 +16,12 @@ interface RewardRouletteModalProps {
   cards: RewardCard[];
   currentTeam: Team;
   teams: Team[];
-  theme?: 'summer' | 'christmas';
+  theme?: 'summer' | 'christmas' | 'classic';
   onCardSelected: (card: RewardCard, options?: RewardCardActionOptions) => void;
   onClose: () => void;
+  showCatchUpNote?: boolean;
+  /** Skip the 6-card pick grid and open directly on this card's reveal / action UI. */
+  startInReveal?: boolean;
 }
 
 type CardTheme = {
@@ -136,6 +140,18 @@ const CARD_THEMES: Record<string, CardTheme> = {
     iconWrap: 'from-amber-200 to-yellow-600',
     accent: 'text-amber-50',
   },
+  gold_star: {
+    shell: 'from-yellow-200 via-amber-400 to-orange-700',
+    glow: 'shadow-[0_0_50px_rgba(250,204,21,0.75)] border-yellow-100',
+    iconWrap: 'from-yellow-200 to-amber-500',
+    accent: 'text-yellow-50',
+  },
+  mystery_blocks: {
+    shell: 'from-amber-400 via-yellow-700 to-orange-950',
+    glow: 'shadow-[0_0_45px_rgba(245,158,11,0.65)] border-amber-200',
+    iconWrap: 'from-yellow-300 to-orange-700',
+    accent: 'text-amber-50',
+  },
 };
 
 const DEFAULT_THEME: CardTheme = {
@@ -154,11 +170,13 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   currentTeam,
   teams,
   onCardSelected,
+  showCatchUpNote = false,
+  startInReveal = false,
 }) => {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
-  const [phase, setPhase] = useState<'pick' | 'reveal'>('pick');
-  const [selectedCard, setSelectedCard] = useState<RewardCard | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
+  const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
+  const [phase, setPhase] = useState<'pick' | 'reveal'>(startInReveal ? 'reveal' : 'pick');
+  const [selectedCard, setSelectedCard] = useState<RewardCard | null>(startInReveal ? cards[0] ?? null : null);
 
   // Interactive card state
   // Boo: team chosen first, then roll die
@@ -197,6 +215,10 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
         return <Zap className={`${className} text-red-100 fill-red-400`} />;
       case 'blue_shell':
         return <ShieldAlert className={`${className} text-sky-100 fill-sky-400/40`} />;
+      case 'gold_star':
+        return <Star className={`${className} text-yellow-100 fill-yellow-300`} />;
+      case 'mystery_blocks':
+        return <BoxSelect className={`${className} text-amber-100`} />;
       case 'super_coins_10':
       case 'coins_10':
         return <Trophy className={`${className} text-yellow-100 fill-yellow-400/40`} />;
@@ -436,6 +458,11 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                 ? `${currentTeam.name} drew a special card`
                 : 'Choose 1 of 6 cards'}
             </p>
+            {phase === 'pick' && showCatchUpNote && isCatchUpRestrictedTeam(teams, currentTeam.id) && (
+              <p className="text-[10px] sm:text-xs font-bold text-sky-300 mt-0.5">
+                1st place catch-up: no Blue Shell or Bowser cards this draw
+              </p>
+            )}
           </div>
           <div className="w-[108px] hidden sm:block" />
         </div>
@@ -837,7 +864,18 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                       </div>
                     )}
 
-                    {/* Standard Cards (Coins, Super Mushroom, Blue Shell) */}
+                    {selectedCard.type === 'mystery_blocks' && (
+                      <button
+                        type="button"
+                        onClick={handleFinishStandard}
+                        className="self-center lg:self-start px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-yellow-200 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                      >
+                        <BoxSelect className="w-6 h-6" />
+                        HIT THE MYSTERY BLOCKS
+                      </button>
+                    )}
+
+                    {/* Standard Cards (Coins, Super Mushroom, Blue Shell, Gold Star) */}
                     {selectedCard.type !== 'ghost_steal_5' &&
                       selectedCard.type !== 'boo_steal_5' &&
                       selectedCard.type !== 'king_boo' &&
@@ -845,7 +883,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                       selectedCard.type !== 'bowser_revolution' &&
                       selectedCard.type !== 'bowser_fury' &&
                       selectedCard.type !== 'pow_block' &&
-                      selectedCard.type !== 'hidden_block' && (
+                      selectedCard.type !== 'hidden_block' &&
+                      selectedCard.type !== 'mystery_blocks' && (
                         <button
                           type="button"
                           onClick={handleFinishStandard}
@@ -858,7 +897,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                   </div>
                 </div>
 
-                {/* The Other Cards Preview */}
+                {cards.length > 1 && (
                 <div className="shrink-0">
                   <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center lg:text-left">
                     The other cards
@@ -881,6 +920,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     })}
                   </div>
                 </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>

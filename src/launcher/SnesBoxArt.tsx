@@ -24,7 +24,7 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
   // Load custom box art from localStorage if teacher uploaded one via browser
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(`snes_box_art_${game.id}`);
+      const stored = localStorage.getItem(`snes_box_art_v2_${game.id}`);
       if (stored) {
         setCustomImage(stored);
       }
@@ -42,7 +42,7 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
         setCustomImage(dataUrl);
         setImageError(false);
         try {
-          localStorage.setItem(`snes_box_art_${game.id}`, dataUrl);
+          localStorage.setItem(`snes_box_art_v2_${game.id}`, dataUrl);
         } catch {
           // LocalStorage full or blocked
         }

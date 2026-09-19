@@ -15,7 +15,7 @@ import { CustomizerModal } from './components/CustomizerModal';
 import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
 import { Team, BlockState, GameQuestion, RewardCard, GameView, GameTheme, RewardCardActionOptions } from '@/shared/types';
-import { generateRouletteCards } from './data/rewards';
+import { generateRouletteCards, loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
 import { sounds } from '@/shared/utils/sound';
 import { createGameBlocks, TOTAL_BLOCKS } from './createBlocks';
 
@@ -23,7 +23,6 @@ export { TOTAL_BLOCKS };
 
 export interface MarioPartyQuizProps {
   initialTheme?: GameTheme;
-  startInStudio?: boolean;
   onExitToLauncher: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -31,7 +30,6 @@ export interface MarioPartyQuizProps {
 
 export function MarioPartyQuiz({
   initialTheme = 'summer',
-  startInStudio = false,
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
@@ -39,8 +37,17 @@ export function MarioPartyQuiz({
   const { user, isLoggedIn, saveQuestionsCloud, loadQuestionsCloud } = useAuth();
 
   // Theme & Flow (launcher lives in the app shell, not this game module)
-  const [theme, setTheme] = useState<GameTheme>(initialTheme);
+  const theme = initialTheme;
   const [view, setView] = useState<GameView>('setup');
+  const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
+
+  const handleToggleCatchUpNote = useCallback(() => {
+    setShowCatchUpNote(prev => {
+      const next = !prev;
+      persistShowCatchUpNote(next);
+      return next;
+    });
+  }, []);
 
   // Teams State (Default 6 characters)
   const [teams, setTeams] = useState<Team[]>([
@@ -152,31 +159,6 @@ export function MarioPartyQuiz({
   const openedBlocksCount = blocks.filter(b => b.isOpened).length;
   const isGameOver = blocks.length > 0 && openedBlocksCount === blocks.length;
 
-  // Select Game Theme directly (Summer or Christmas)
-  const handleSelectTheme = (newTheme: GameTheme) => {
-    if (newTheme === theme) return;
-    setTheme(newTheme);
-    setBlocks(createGameBlocks(newTheme));
-    if (newTheme === 'summer') {
-      sounds.playSummerTheme();
-    } else {
-      sounds.playWinterTheme();
-    }
-    showToast(newTheme === 'summer' ? '☀️ Switched to Summer Edition (60 Tiered ESL Questions)!' : '❄️ Switched to Christmas Holiday Edition (60 Questions)!');
-  };
-
-  // Toggle Game Theme (Summer vs Christmas)
-  const handleToggleTheme = () => {
-    const newTheme: GameTheme = theme === 'summer' ? 'christmas' : 'summer';
-    handleSelectTheme(newTheme);
-  };
-
-  useEffect(() => {
-    if (startInStudio) {
-      setIsCustomizerOpen(true);
-    }
-  }, [startInStudio]);
-
   // Start Game from Setup (Automatically shuffles all questions & mystery blocks)
   const handleStartGame = (configuredTeams: Team[]) => {
     setTeams(configuredTeams);
@@ -210,7 +192,7 @@ export function MarioPartyQuiz({
       setBlocks(prev => prev.map(b => 
         b.id === blockId ? { ...b, isOpened: true, openedByTeamId: activeTeam.id } : b
       ));
-      setRouletteCards(generateRouletteCards());
+      setRouletteCards(generateRouletteCards(teams, activeTeam.id));
       return;
     }
 
@@ -384,7 +366,7 @@ export function MarioPartyQuiz({
     ));
 
     setSelectedBlockId(null);
-    setRouletteCards(generateRouletteCards());
+    setRouletteCards(generateRouletteCards(teams, activeTeam.id));
   };
 
   const handleRewardCardSelected = (
@@ -621,26 +603,6 @@ export function MarioPartyQuiz({
     showToast(`✅ Saved changes for Block #${blockId}!`);
   };
 
-  // Quick image update directly from Question Modal or presenter view
-  const handleUpdateQuestionImage = (blockNumber: number, imageUrl: string | undefined) => {
-    const updated = blocks.map(b => {
-      if (b.question.blockNumber === blockNumber || b.id === blockNumber) {
-        return {
-          ...b,
-          question: {
-            ...b.question,
-            imageUrl,
-            image: imageUrl,
-          },
-        };
-      }
-      return b;
-    });
-    setBlocks(updated);
-    persistQuestions(updated);
-    showToast(imageUrl ? `🖼️ Image saved for Block #${blockNumber}!` : `🗑️ Image removed for Block #${blockNumber}`);
-  };
-
   // Customizer: restore all defaults
   const handleResetAllQuestions = () => {
     try {
@@ -716,10 +678,9 @@ export function MarioPartyQuiz({
         {view === 'setup' && (
           <SetupScreen
             theme={theme}
-            onToggleTheme={handleToggleTheme}
-            onSelectTheme={handleSelectTheme}
             onStartGame={handleStartGame}
             onOpenRules={() => setIsRulesModalOpen(true)}
+            onOpenStudio={() => setIsCustomizerOpen(true)}
             onBackToLauncher={onExitToLauncher}
           />
         )}
@@ -733,7 +694,8 @@ export function MarioPartyQuiz({
               teams={teams}
               soundEnabled={soundEnabled}
               onToggleSound={onToggleSound}
-              onToggleTheme={handleToggleTheme}
+              showCatchUpNote={showCatchUpNote}
+              onToggleCatchUpNote={handleToggleCatchUpNote}
               onOpenRules={() => setIsRulesModalOpen(true)}
               onOpenCustomizer={() => setIsCustomizerOpen(true)}
               onDeclareWinner={() => setView('superstar')}
@@ -780,7 +742,6 @@ export function MarioPartyQuiz({
             onAnswerCorrect={handleAnswerCorrect}
             onAnswerIncorrect={handleAnswerIncorrect}
             onTriggerRoulette={handleTriggerRoulette}
-            onUpdateQuestionImage={handleUpdateQuestionImage}
             onAdjustCoins={handleAdjustCoins}
           />
         )}
@@ -796,6 +757,7 @@ export function MarioPartyQuiz({
             theme={theme}
             onCardSelected={handleRewardCardSelected}
             onClose={() => setRouletteCards(null)}
+            showCatchUpNote={showCatchUpNote}
           />
         )}
       </AnimatePresence>
@@ -822,6 +784,8 @@ export function MarioPartyQuiz({
             onSaveCloud={handleManualSync}
             onLoadCloud={handleManualLoad}
             onClose={() => setIsCustomizerOpen(false)}
+            showCatchUpNote={showCatchUpNote}
+            onToggleCatchUpNote={handleToggleCatchUpNote}
           />
         )}
       </AnimatePresence>

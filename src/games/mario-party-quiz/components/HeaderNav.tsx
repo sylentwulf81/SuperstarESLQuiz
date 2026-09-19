@@ -10,8 +10,6 @@ import {
   VolumeX, 
   RotateCcw, 
   SkipForward, 
-  Sun, 
-  Snowflake, 
   Shuffle, 
   AlertTriangle, 
   X,
@@ -21,9 +19,12 @@ import {
   GraduationCap,
   Library,
   Gamepad2,
-  ArrowLeft
+  ArrowLeft,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Team, GameTheme } from '@/shared/types';
+import { THEME_UI } from '@/shared/themeMeta';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MusicPlayer } from './MusicPlayer';
@@ -37,7 +38,8 @@ interface HeaderNavProps {
   teams: Team[];
   soundEnabled: boolean;
   onToggleSound: () => void;
-  onToggleTheme?: () => void;
+  showCatchUpNote?: boolean;
+  onToggleCatchUpNote?: () => void;
   onOpenRules: () => void;
   onOpenCustomizer: () => void;
   onDeclareWinner: () => void;
@@ -58,7 +60,8 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   teams,
   soundEnabled,
   onToggleSound,
-  onToggleTheme,
+  showCatchUpNote = false,
+  onToggleCatchUpNote,
   onOpenRules,
   onOpenCustomizer,
   onDeclareWinner,
@@ -90,10 +93,12 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${
                 theme === 'summer'
                   ? 'bg-amber-400 text-slate-950 border-amber-300'
-                  : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                  : theme === 'classic'
+                    ? 'bg-rose-500 text-white border-rose-300'
+                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
               }`}
             >
-              {theme === 'summer' ? 'Summer' : 'Holiday'}
+              {THEME_UI[theme].short}
             </span>
             {onExitToLauncher && (
               <button
@@ -124,7 +129,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             />
             <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap leading-none">
               <span className="text-[10px] sm:text-xs text-indigo-200 font-bold uppercase tracking-wider shrink-0 whitespace-nowrap leading-none select-none">
-                Turn:
+                {theme === 'classic' ? 'Picks:' : 'Turn:'}
               </span>
               <span className="font-mario text-xs sm:text-sm text-yellow-300 max-w-[80px] sm:max-w-[120px] md:max-w-[150px] truncate shrink-0 whitespace-nowrap leading-none drop-shadow-sm">
                 {currentTeam.name}
@@ -208,31 +213,14 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               onOpenCustomizer();
             }}
             className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-white/20 text-xs font-semibold transition-all cursor-pointer"
-            title="Question Editor & Cloud Sync"
+            title="Question Studio & Cloud Sync"
           >
             <Settings2 className="w-3.5 h-3.5 text-amber-300" />
-            <span>Edit</span>
+            <span>Studio</span>
           </button>
 
           {/* Compact Utilities Cluster: Theme, Sound, Rules, Shuffle, Reset */}
           <div className="flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
-            {/* Theme Toggle Button */}
-            {onToggleTheme && (
-              <button
-                onClick={() => {
-                  onToggleTheme();
-                }}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  theme === 'summer'
-                    ? 'hover:bg-amber-500/20 text-amber-300'
-                    : 'hover:bg-cyan-500/20 text-cyan-300'
-                }`}
-                title={theme === 'summer' ? '☀️ Summer Edition (Click to switch to ❄️ Christmas Edition)' : '❄️ Christmas Edition (Click to switch to ☀️ Summer Edition)'}
-              >
-                {theme === 'summer' ? <Sun className="w-3.5 h-3.5" /> : <Snowflake className="w-3.5 h-3.5" />}
-              </button>
-            )}
-
             {/* Sound Toggle */}
             <button
               onClick={() => {
@@ -485,40 +473,40 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           <Settings2 className="w-4 h-4 text-amber-300" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-white">
-                              Edit Question Deck
+                              Question Studio
                             </div>
                             <div className="text-[10px] text-slate-400">
-                              Customize 60 questions, answers & points
+                              Customize this edition's 60 questions, answers & points
                             </div>
                           </div>
                         </div>
                       </button>
 
-                      {/* Theme Switcher */}
-                      {onToggleTheme && (
+                      {onToggleCatchUpNote && (
                         <button
                           onClick={() => {
                             sounds.playClick();
-                            onToggleTheme();
+                            onToggleCatchUpNote();
                           }}
                           className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
                         >
                           <div className="flex items-center gap-2.5">
-                            {theme === 'summer' ? (
-                              <Sun className="w-4 h-4 text-amber-400" />
+                            {showCatchUpNote ? (
+                              <Eye className="w-4 h-4 text-sky-300" />
                             ) : (
-                              <Snowflake className="w-4 h-4 text-cyan-300" />
+                              <EyeOff className="w-4 h-4 text-slate-500" />
                             )}
                             <div>
                               <div className="font-semibold text-xs sm:text-sm text-white">
-                                Theme: {theme === 'summer' ? 'Summer Edition' : 'Christmas Edition'}
+                                Catch-up Note: {showCatchUpNote ? 'Shown' : 'Hidden'}
                               </div>
                               <div className="text-[10px] text-slate-400">
-                                Tap to switch {theme === 'summer' ? 'to Christmas' : 'to Summer'}
+                                {showCatchUpNote
+                                  ? '1st place sees why Blue Shell & Bowser cards are missing'
+                                  : 'Keep mystery draws surprising — catch-up still applies'}
                               </div>
                             </div>
                           </div>
-                          <span className="text-xs">{theme === 'summer' ? '☀️' : '❄️'}</span>
                         </button>
                       )}
 

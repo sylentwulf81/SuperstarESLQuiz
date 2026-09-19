@@ -2,7 +2,7 @@ import { GameTheme } from '@/shared/types';
 
 export type GameCategory = 'all' | 'board' | 'quiz_show' | 'action' | 'seasonal' | 'strategy';
 
-export type PlayableGameModule = 'mario-party-quiz';
+export type PlayableGameModule = 'mario-party-quiz' | 'mario-blast-classic';
 
 export interface LauncherGame {
   id: string;
@@ -35,7 +35,6 @@ export interface LauncherGame {
   };
   features: string[];
   powerpointInspiration: string;
-  hasQuestionStudio?: boolean;
   hasTeacherGuide?: boolean;
 }
 
@@ -52,7 +51,6 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     isPlayable: true,
     gameModule: 'mario-party-quiz',
     themeKey: 'summer',
-    hasQuestionStudio: true,
     hasTeacherGuide: true,
     cover: {
       heroGradient: 'from-amber-600 via-orange-600 to-yellow-500',
@@ -74,7 +72,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       '60 Curated Summer ESL & General Trivia Questions',
       '6-Card Mystery Roulette Draw System',
       'Double Turns, Boo Stealing & Bowser Revolutions',
-      'Dedicated Question Studio & Cloud Deck Sync',
+      'Star captures, coin races, and classroom-safe item cards',
     ],
     powerpointInspiration: 'Upgrades the 50-slide Mario PPT with real sound effects, audio, and coin physics',
   },
@@ -90,7 +88,6 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     isPlayable: true,
     gameModule: 'mario-party-quiz',
     themeKey: 'christmas',
-    hasQuestionStudio: false,
     hasTeacherGuide: true,
     cover: {
       heroGradient: 'from-cyan-700 via-blue-700 to-indigo-900',
@@ -112,9 +109,83 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Festive Christmas & Winter Holiday Questions',
       'Carol Sing-Along Surprise Rewards',
       'Winterized Soundboard & Particle Engine',
+      'Star captures, coin races, and classroom-safe item cards',
       'Snowy Visual Theme with Frost Effects',
     ],
     powerpointInspiration: 'Replaces seasonal winter PPT games with animated snow and holiday music',
+  },
+  {
+    id: 'mario_blast_classic',
+    title: 'Mario Blast Classic',
+    shortTitle: 'Mario Blast Classic',
+    tagline: 'Have You Ever…? Live Classroom Race & Mystery Cards',
+    description:
+      'The original Blast loop, rebuilt. One team picks the block, the whole class can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser Revolutions can slam the round shut.',
+    category: 'board',
+    badge: 'NEW',
+    badgeColor: 'bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950 shadow-rose-500/30',
+    isPlayable: true,
+    gameModule: 'mario-blast-classic',
+    themeKey: 'classic',
+    hasTeacherGuide: true,
+    cover: {
+      heroGradient: 'from-rose-600 via-orange-500 to-amber-400',
+      cardGradient: 'from-rose-950/90 via-slate-900/95 to-amber-950/80',
+      borderGlow: 'hover:border-rose-400/80 hover:shadow-[0_0_30px_rgba(244,63,94,0.35)]',
+      accentColor: '#fb7185',
+      icon: 'Star',
+      coverArtEmoji: '⭐',
+      patternType: 'gold',
+      backgroundImage: '/assets/boxart/super-quiz-classic.jpg',
+    },
+    stats: {
+      players: '2 – 6 Teams',
+      duration: '20 – 45 Min',
+      questions: '60 Have You Ever',
+      grades: 'JHS Present Perfect',
+    },
+    features: [
+      'Any team can answer — host clicks the winner, then a card',
+      'Six mystery cards per question; one draw per team',
+      'Rare round-enders: Gold Star, Bowser Revolution, Piranha Plant',
+      'Same Mario Party items as Summer & Holiday, remapped for live play',
+    ],
+    powerpointInspiration: 'Recreates the original Have You Ever Mario Party PPT with live multi-team answering',
+  },
+  {
+    id: 'mario_halloween_blast',
+    title: 'Super Halloween Blast',
+    shortTitle: 'Halloween Blast',
+    tagline: 'Spooky Mystery Blocks, Ghost Hunts & Haunted Cards',
+    description:
+      'A coming-soon seasonal Mario Blast night. Teams pick blocks under a haunted sky, race to answer, and draw from a deck of haunted block cards — the twist we’ll cook up for October classrooms.',
+    category: 'seasonal',
+    badge: 'IN DEVELOPMENT',
+    badgeColor: 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-orange-500/30',
+    isPlayable: false,
+    cover: {
+      heroGradient: 'from-orange-700 via-purple-800 to-slate-950',
+      cardGradient: 'from-orange-950/90 via-slate-900/95 to-purple-950/80',
+      borderGlow: 'hover:border-orange-400/80 hover:shadow-[0_0_30px_rgba(249,115,22,0.35)]',
+      accentColor: '#f97316',
+      icon: 'Ghost',
+      coverArtEmoji: '🎃',
+      patternType: 'castle',
+      backgroundImage: '/assets/boxart/super-halloween-blast.jpg',
+    },
+    stats: {
+      players: '2 – 6 Teams',
+      duration: '20 – 45 Min',
+      questions: '60 Spooky Blocks',
+      grades: 'Elementary & JHS',
+    },
+    features: [
+      'Haunted Block Cards',
+      'Halloween mystery board & seasonal trivia',
+      'Ghost hunts, pumpkin coins, and classroom-safe scares',
+      'Coming soon as a seasonal Mario Blast edition',
+    ],
+    powerpointInspiration: 'A Halloween classroom PPT upgrade with haunted blocks instead of static slides',
   },
   {
     id: 'jeopardy_showdown',

@@ -6,6 +6,49 @@ interface ThemedBackdropProps {
 }
 
 export const ThemedBackdrop: React.FC<ThemedBackdropProps> = ({ theme }) => {
+  if (theme === 'classic') {
+    return (
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+        <svg
+          viewBox="0 0 1920 1080"
+          preserveAspectRatio="xMidYMid slice"
+          className="w-full h-full object-cover"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient id="classicSky" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#1a1033" />
+              <stop offset="45%" stopColor="#2a1850" />
+              <stop offset="100%" stopColor="#0f172a" />
+            </linearGradient>
+            <radialGradient id="classicBurst" cx="50%" cy="50%" r="65%">
+              <stop offset="0%" stopColor="#fff7ed" stopOpacity="0.95" />
+              <stop offset="18%" stopColor="#fde68a" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#1e1b4b" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+          <rect width="1920" height="1080" fill="url(#classicSky)" />
+          <g transform="translate(960, 540)" opacity="0.85">
+            {Array.from({ length: 18 }).map((_, i) => {
+              const colors = ['#fb7185', '#38bdf8', '#facc15', '#4ade80', '#c084fc', '#f97316'];
+              return (
+                <polygon
+                  key={i}
+                  points="0,0 -90,-720 90,-720"
+                  fill={colors[i % colors.length]}
+                  opacity="0.22"
+                  transform={`rotate(${i * 20})`}
+                />
+              );
+            })}
+            <circle cx="0" cy="0" r="280" fill="url(#classicBurst)" />
+          </g>
+        </svg>
+        <div className="absolute inset-0 bg-gradient-to-b from-[#12081f]/70 via-[#0b1224]/55 to-[#020617]/85" />
+      </div>
+    );
+  }
+
   if (theme === 'summer') {
     return (
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">

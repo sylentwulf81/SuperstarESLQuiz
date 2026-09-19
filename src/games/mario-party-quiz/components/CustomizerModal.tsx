@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon } from 'lucide-react';
+import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '@/shared/types';
+import { THEME_UI } from '@/shared/themeMeta';
 import { sounds } from '@/shared/utils/sound';
 import { useAuth } from '@/shared/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avatar';
@@ -18,6 +19,8 @@ interface CustomizerModalProps {
   onSaveCloud?: () => Promise<void>;
   onLoadCloud?: () => Promise<void>;
   onClose: () => void;
+  showCatchUpNote?: boolean;
+  onToggleCatchUpNote?: () => void;
 }
 
 export const CustomizerModal: React.FC<CustomizerModalProps> = ({
@@ -28,6 +31,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   onSaveCloud,
   onLoadCloud,
   onClose,
+  showCatchUpNote = false,
+  onToggleCatchUpNote,
 }) => {
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
@@ -228,7 +233,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               Question Deck Editor
             </h2>
             <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-              {theme === 'summer' ? 'Summer Edition' : 'Christmas Edition'}
+              {THEME_UI[theme].edition}
             </span>
           </div>
           <button
@@ -297,6 +302,34 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             )}
           </div>
         </div>
+
+        {onToggleCatchUpNote && (
+          <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-xs font-bold text-sky-200 uppercase tracking-wider block">
+                Mystery Draw Presentation
+              </span>
+              <span className="text-[11px] text-slate-400 leading-snug">
+                1st place still cannot draw Blue Shell or Bowser cards. Turn the note on if you want the class to see why.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onToggleCatchUpNote();
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                showCatchUpNote
+                  ? 'bg-sky-500/20 text-sky-200 border-sky-400/40 hover:bg-sky-500/30'
+                  : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
+              }`}
+            >
+              {showCatchUpNote ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              <span>{showCatchUpNote ? 'Catch-up note: Shown' : 'Catch-up note: Hidden'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
@@ -425,6 +458,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     userEmail={user?.displayName || user?.email}
                     onPromptLogin={loginWithGoogle}
                     titlePrompt={`Block #${currentBlock.id}`}
+                    questionType={editingQuestion.type}
                   />
                 </div>
               )}
