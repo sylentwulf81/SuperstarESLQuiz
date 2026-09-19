@@ -1,5 +1,6 @@
 import { RewardCard, RewardCardType, Team } from '@/shared/types';
 import { REWARD_CARDS, isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/data/rewards';
+import { shuffleArray } from '@/shared/utils/shuffle';
 
 export const CLASSIC_ROUND_ENDER_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury'];
 export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury', 'mystery_blocks'];
@@ -58,8 +59,67 @@ const MYSTERY_BLOCKS: RewardCard = {
   badgeColor: 'from-amber-500 via-yellow-600 to-orange-800 text-amber-50',
 };
 
-/** Classic pool only — Party Quiz still draws Blue Shell. */
-const CLASSIC_DISABLED_TYPES: RewardCardType[] = ['blue_shell'];
+const BLOOPER: RewardCard = {
+  id: 'blooper',
+  type: 'blooper',
+  title: 'Blooper',
+  subtitle: 'Ink a Team — Next Coins = 1!',
+  coins: 0,
+  description:
+    'Squirt ink on a rival! Their next coin card pays only 1 coin — even a Gold Star or Treasure haul.',
+  iconName: 'Droplets',
+  badgeColor: 'from-indigo-800 via-blue-950 to-slate-950 text-indigo-100',
+};
+
+/** Classic pool only — Party Quiz still draws Blue Shell and POW. */
+const CLASSIC_DISABLED_TYPES: RewardCardType[] = ['blue_shell', 'pow_block', 'hidden_block'];
+
+const CLASSIC_TEST_DECK_TYPES: RewardCardType[] = [
+  'blooper',
+  'ghost_steal_5',
+  'super_star_x2',
+  'bowser_revolution',
+  'mystery_blocks',
+  'gold_star',
+];
+
+const TEST_GAME_STORAGE_KEY = 'mp_classic_test_game_v1';
+
+export function loadClassicTestGame(): boolean {
+  try {
+    return localStorage.getItem(TEST_GAME_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function persistClassicTestGame(on: boolean) {
+  try {
+    localStorage.setItem(TEST_GAME_STORAGE_KEY, String(on));
+  } catch {
+    // LocalStorage full or blocked
+  }
+}
+
+export function dealClassicTestCards(): RewardCard[] {
+  const byType = new Map(CLASSIC_REWARD_CARDS.map(card => [card.type, card]));
+  return shuffleArray(
+    CLASSIC_TEST_DECK_TYPES.map((type, i) => {
+      const pick = byType.get(type) || CLASSIC_REWARD_CARDS[0];
+      return { ...pick, id: `${pick.type}_test_${Date.now()}_${i}` };
+    })
+  );
+}
+
+export function fillClassicTestSlots<T extends { card?: RewardCard; claimedByTeamId?: string }>(slots: T[]): T[] {
+  const deck = dealClassicTestCards();
+  let i = 0;
+  return slots.map(slot => {
+    if (slot.claimedByTeamId || slot.card) return slot;
+    const next = deck[i++];
+    return next ? { ...slot, card: next } : slot;
+  });
+}
 
 export const CLASSIC_REWARD_CARDS: RewardCard[] = [
   ...REWARD_CARDS.filter(card => !CLASSIC_DISABLED_TYPES.includes(card.type)).map(card => {
@@ -68,6 +128,7 @@ export const CLASSIC_REWARD_CARDS: RewardCard[] = [
   }),
   GOLD_STAR,
   MYSTERY_BLOCKS,
+  BLOOPER,
 ];
 
 const BASE_WEIGHTS: Partial<Record<RewardCardType, number>> = {
@@ -77,8 +138,7 @@ const BASE_WEIGHTS: Partial<Record<RewardCardType, number>> = {
   coins_5: 20,
   super_coins_10: 12,
   coins_10: 12,
-  pow_block: 10,
-  hidden_block: 10,
+  blooper: 10,
   ghost_steal_5: 10,
   boo_steal_5: 10,
   king_boo: 6,
@@ -117,9 +177,15 @@ export function drawClassicCard(teams: Team[], drawingTeamId: string): RewardCar
   return { ...pick, id: `${pick.type}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
 }
 
-export function applyCoinPayout(team: Team, amount: number): { team: Team; awarded: number; skipped: boolean; doubled: boolean } {
+export function applyCoinPayout(team: Team, amount: number): {
+  team: Team;
+  awarded: number;
+  skipped: boolean;
+  doubled: boolean;
+  bloopered: boolean;
+} {
   if (amount <= 0) {
-    return { team, awarded: 0, skipped: false, doubled: false };
+    return { team, awarded: 0, skipped: false, doubled: false, bloopered: false };
   }
   if (team.skipNextCoinReward) {
     return {
@@ -127,6 +193,21 @@ export function applyCoinPayout(team: Team, amount: number): { team: Team; award
       awarded: 0,
       skipped: true,
       doubled: false,
+      bloopered: false,
+    };
+  }
+  if (team.blooperNextCoin) {
+    return {
+      team: {
+        ...team,
+        coins: team.coins + 1,
+        blooperNextCoin: false,
+        doubleNextCoinReward: false,
+      },
+      awarded: 1,
+      skipped: false,
+      doubled: false,
+      bloopered: true,
     };
   }
   const doubled = Boolean(team.doubleNextCoinReward);
@@ -140,6 +221,7 @@ export function applyCoinPayout(team: Team, amount: number): { team: Team; award
     awarded,
     skipped: false,
     doubled,
+    bloopered: false,
   };
 }
 

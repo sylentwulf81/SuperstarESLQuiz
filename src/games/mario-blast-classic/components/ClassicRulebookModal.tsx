@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { X, BookOpen, Layers, GraduationCap, Sparkles, Languages } from 'lucide-react';
 import { sounds } from '@/shared/utils/sound';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface ClassicRulebookModalProps {
   onClose: () => void;
@@ -21,6 +22,7 @@ const EN = {
   cards: [
     'Super Mushroom: doubles that team’s next coin card — even if they did not pick the question. Then the mushroom is used up.',
     'Gold Star: +15 coins, then Round Over.',
+    'Blooper: ink one rival. Their next coin card pays only 1 coin.',
     'Bowser’s Revolution: swap coins with a rival, then Round Over.',
     'Bowser’s Fury: −5 coins to every rival, then Round Over.',
     'Mystery Blocks: pick 1 of 3 — Treasure (10–15), 0 coins, or Piranha (round over).',
@@ -42,6 +44,7 @@ const JA = {
   cards: [
     'スーパーキノコ：次のコインカードが2倍（問題を選んだチームでなくてもOK）。使ったら消えます。',
     'ゴールドスター：+15コインのあとラウンド終了。',
+    'ブルーパー：相手1チームにインク。次のコインカードが必ず+1。',
     'クッパレボリューション：相手とコインを交換したあとラウンド終了。',
     'クッパフューリー：他チーム全員−5コインのあとラウンド終了。',
     'ミステリーブロック：3つのうち1つ（宝10–15 / 0 / パックンで終了）。',
@@ -50,6 +53,7 @@ const JA = {
 };
 
 export const ClassicRulebookModal: React.FC<ClassicRulebookModalProps> = ({ onClose }) => {
+  useBodyScrollLock();
   const [lang, setLang] = useState<'en' | 'ja'>('en');
   const t = lang === 'ja' ? JA : EN;
 

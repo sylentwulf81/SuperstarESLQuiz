@@ -126,6 +126,12 @@
     font-family: 'Fredoka', sans-serif;
     @apply bg-background text-foreground;
   }
+
+  html.modal-scroll-lock,
+  body.modal-scroll-lock {
+    overflow: hidden !important;
+    overscroll-behavior: none;
+  }
 }
 
 .font-mario {

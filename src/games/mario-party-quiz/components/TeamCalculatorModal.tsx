@@ -4,6 +4,7 @@ import { Calculator, Minus, Plus, Users, X } from 'lucide-react';
 import { GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
 import { sounds } from '@/shared/utils/sound';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 const CLASS_SIZE_KEY = 'mp_class_size_v1';
 const MIN_STUDENTS = 1;
@@ -53,6 +54,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
   suggestedGroups,
   onClose,
 }) => {
+  useBodyScrollLock();
   const [students, setStudents] = useState(loadClassSize);
   const [groups, setGroups] = useState(() =>
     clamp(suggestedGroups, MIN_GROUPS, MAX_GROUPS),

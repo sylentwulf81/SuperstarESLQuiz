@@ -30,6 +30,8 @@ export interface Team {
   doubleNextCoinReward?: boolean;
   /** Classic: next coin payout for this team is skipped, then cleared. */
   skipNextCoinReward?: boolean;
+  /** Classic Blooper: next coin payout for this team is exactly 1, then cleared. */
+  blooperNextCoin?: boolean;
   customImageUrl?: string;
 }
 
@@ -100,7 +102,8 @@ export type RewardCardType =
   | 'boo_steal_10'
   | 'king_boo'
   | 'gold_star'
-  | 'mystery_blocks';
+  | 'mystery_blocks'
+  | 'blooper';
 
 export interface RewardCardActionOptions {
   targetTeamId?: string;

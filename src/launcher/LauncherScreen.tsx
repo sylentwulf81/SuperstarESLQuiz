@@ -37,6 +37,7 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { SnesBoxArt } from '@/launcher/SnesBoxArt';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface LauncherScreenProps {
   onLaunchGame: (game: LauncherGame) => void;
@@ -55,6 +56,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [spotlightGameId, setSpotlightGameId] = useState<string>('mario_party_summer');
   const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
+  useBodyScrollLock(Boolean(previewGame));
 
   const spotlightGame = useMemo(() => {
     return LAUNCHER_GAMES.find(g => g.id === spotlightGameId) || LAUNCHER_GAMES[0];

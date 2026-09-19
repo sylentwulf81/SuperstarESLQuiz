@@ -8,15 +8,18 @@ import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
+import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface MysteryBlocksMiniGameProps {
   currentTeam: Team;
   outcomes: MysteryBlockOutcome[];
   onResolved: (outcome: MysteryBlockOutcome) => void;
+  testMode?: boolean;
 }
 
-function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean) {
+function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean, bloopered: boolean) {
   if (outcome.kind === 'treasure') {
+    if (bloopered) return 'Inked! +1';
     const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
     return `Treasure Block! +${coins}`;
   }
@@ -28,12 +31,15 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   currentTeam,
   outcomes,
   onResolved,
+  testMode = false,
 }) => {
+  useBodyScrollLock();
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const char = CHARACTERS[currentTeam.characterId];
 
   const picked = pickedIndex !== null ? outcomes[pickedIndex] : null;
-  const mushroomBoost = Boolean(currentTeam.doubleNextCoinReward);
+  const bloopered = Boolean(currentTeam.blooperNextCoin);
+  const mushroomBoost = Boolean(currentTeam.doubleNextCoinReward) && !bloopered;
 
   const handlePick = (idx: number) => {
     if (pickedIndex !== null) return;
@@ -42,7 +48,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     const outcome = outcomes[idx];
     window.setTimeout(() => {
       if (outcome.kind === 'treasure') {
-        if (mushroomBoost) sounds.playPowerUp();
+        if (bloopered) sounds.playBlooper();
+        else if (mushroomBoost) sounds.playPowerUp();
         else sounds.playStarCoin();
       } else if (outcome.kind === 'piranha') sounds.playWrong();
       else sounds.playPop();
@@ -53,6 +60,15 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     () =>
       outcomes.map(outcome => {
         if (outcome.kind === 'treasure') {
+          if (bloopered) {
+            return {
+              shell: 'from-indigo-600 via-blue-950 to-slate-950',
+              icon: <span className="font-mario text-5xl">🦑</span>,
+              title: 'INKED!',
+              sub: '+1 Coin',
+              mushroom: false,
+            };
+          }
           const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
           return {
             shell: 'from-amber-300 via-yellow-500 to-orange-700',
@@ -79,7 +95,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           mushroom: false,
         };
       }),
-    [outcomes, mushroomBoost]
+    [outcomes, mushroomBoost, bloopered]
   );
 
   return (
@@ -102,6 +118,11 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   className="w-5 h-5 rounded-full object-cover"
                 />
                 <span className="font-mario text-[11px] text-yellow-200 leading-none">×2</span>
+              </span>
+            )}
+            {bloopered && (
+              <span className="rounded-full bg-indigo-900 border border-indigo-200 px-1.5 py-0.5 font-mario text-[11px] text-indigo-100 leading-none">
+                🦑1
               </span>
             )}
           </div>
@@ -140,12 +161,28 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   >
                     <div
                       style={{ backfaceVisibility: 'hidden' }}
-                      className="absolute inset-0 rounded-2xl border-2 border-amber-300 bg-gradient-to-b from-yellow-400 via-amber-600 to-orange-900 flex flex-col items-center justify-center gap-3 shadow-xl"
+                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 shadow-xl p-2 ${
+                        testMode
+                          ? 'border-red-300 bg-gradient-to-b from-red-600 via-rose-800 to-red-950'
+                          : 'border-amber-300 bg-gradient-to-b from-yellow-400 via-amber-600 to-orange-900 gap-3'
+                      }`}
                     >
-                      <span className="font-mario text-6xl sm:text-7xl text-yellow-100 text-shadow-mario">?</span>
-                      <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200 px-2 py-0.5 rounded-full">
-                        Block {idx + 1}
-                      </span>
+                      {testMode ? (
+                        <>
+                          <span className="font-mario text-[10px] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
+                          <span className="font-mario text-lg sm:text-xl text-yellow-100 text-shadow-mario text-center leading-tight">
+                            {face.title}
+                          </span>
+                          <span className="text-xs font-bold text-amber-100">{face.sub}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-mario text-6xl sm:text-7xl text-yellow-100 text-shadow-mario">?</span>
+                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200 px-2 py-0.5 rounded-full">
+                            Block {idx + 1}
+                          </span>
+                        </>
+                      )}
                     </div>
                     <div
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
@@ -184,7 +221,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           {picked && (
             <div className="mt-5 flex flex-col items-center gap-3">
               <p className="font-mario text-lg sm:text-2xl text-yellow-300 text-center">
-                {outcomeLabel(picked, mushroomBoost)}
+                {outcomeLabel(picked, mushroomBoost, bloopered)}
               </p>
               <button
                 type="button"
