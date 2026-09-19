@@ -8,7 +8,7 @@ import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { GameModalShell } from '@/shared/components/GameModalShell';
 
 interface MysteryBlocksMiniGameProps {
   currentTeam: Team;
@@ -33,7 +33,6 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   onResolved,
   testMode = false,
 }) => {
-  useBodyScrollLock();
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const char = CHARACTERS[currentTeam.characterId];
 
@@ -99,14 +98,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 bg-slate-950/90">
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="relative w-full max-w-4xl bg-slate-900 rounded-3xl border-2 border-amber-300/50 shadow-2xl overflow-hidden"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-500" />
-        <div className="px-4 sm:px-6 py-3 border-b border-white/15 flex items-center justify-between gap-3">
+    <GameModalShell zIndexClass="z-[70]" className="border-amber-300/50">
+        <div className="px-4 sm:px-6 py-3 border-b border-white/15 flex items-center justify-between gap-3 shrink-0">
           <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-2xl ${char.bgColor} bg-opacity-50 border border-white/20`}>
             <TeamAvatar characterId={currentTeam.characterId} size="sm" customUrl={currentTeam.customImageUrl} />
             <span className="text-sm font-bold text-white">{currentTeam.name}</span>
@@ -133,8 +126,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           <div className="w-[120px] hidden sm:block" />
         </div>
 
-        <div className="p-4 sm:p-6">
-          <div className="grid grid-cols-3 gap-3 sm:gap-5">
+        <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col">
+          <div className="flex-1 min-h-0 grid grid-cols-3 gap-3 sm:gap-5">
             {outcomes.map((_, idx) => {
               const isChosen = pickedIndex === idx;
               const revealing = pickedIndex !== null;
@@ -145,7 +138,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   type="button"
                   disabled={revealing}
                   onClick={() => handlePick(idx)}
-                  className={`relative aspect-[3/4] [perspective:900px] cursor-pointer disabled:cursor-default ${
+                  className={`relative h-full min-h-0 [perspective:900px] cursor-pointer disabled:cursor-default ${
                     isChosen ? 'z-[1]' : ''
                   }`}
                 >
@@ -218,8 +211,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             })}
           </div>
 
-          {picked && (
-            <div className="mt-5 flex flex-col items-center gap-3">
+          {picked ? (
+            <div className="h-[6.5rem] shrink-0 flex flex-col items-center justify-center gap-2">
               <p className="font-mario text-lg sm:text-2xl text-yellow-300 text-center">
                 {outcomeLabel(picked, mushroomBoost, bloopered)}
               </p>
@@ -233,9 +226,10 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                 {picked.kind === 'treasure' && <MarioCoin size="sm" />}
               </button>
             </div>
+          ) : (
+            <div className="h-[6.5rem] shrink-0" />
           )}
         </div>
-      </motion.div>
-    </div>
+    </GameModalShell>
   );
 };

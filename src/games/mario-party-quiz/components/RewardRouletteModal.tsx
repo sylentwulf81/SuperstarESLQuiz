@@ -12,7 +12,7 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
 import { DiceRoller } from './DiceRoller';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { GameModalShell } from '@/shared/components/GameModalShell';
 
 interface RewardRouletteModalProps {
   cards: RewardCard[];
@@ -338,7 +338,6 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   startInReveal = false,
   onSkipAction,
 }) => {
-  useBodyScrollLock();
   const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
   const [phase, setPhase] = useState<'pick' | 'reveal'>(startInReveal ? 'reveal' : 'pick');
@@ -634,15 +633,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     !blooperedPayout;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/88">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-[96vw] xl:max-w-7xl max-h-[94dvh] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden flex flex-col"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: charInfo.accentColor }} />
-
+    <GameModalShell barColor={charInfo.accentColor}>
         <div className={`${charInfo.bgColor} px-3 sm:px-6 py-2.5 sm:py-3 border-b-2 ${charInfo.borderColor} flex items-center justify-between gap-3 shrink-0`}>
           <div className="flex items-center gap-2 bg-black/35 border border-white/30 rounded-2xl px-2.5 py-1.5">
             <TeamAvatar
@@ -689,9 +680,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
           )}
         </div>
 
-        <div className={`flex-1 min-h-0 p-3 sm:p-5 lg:p-6 ${
-          gameTheme === 'classic' && phase === 'reveal' ? 'overflow-hidden' : 'overflow-y-auto'
-        }`}>
+        <div className={`flex-1 min-h-0 p-3 sm:p-5 lg:p-6 ${phase === 'pick' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <AnimatePresence mode="wait">
             {phase === 'pick' && (
               <motion.div
@@ -752,20 +741,14 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                 key="reveal"
                 initial={{ opacity: 0, y: 18 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="h-full min-h-0 flex flex-col gap-3 lg:gap-4"
+                className="h-full min-h-0 flex flex-col gap-3"
               >
-                <div className={`flex-1 min-h-0 grid gap-3 lg:gap-5 items-stretch ${
-                  isClassicInteractive
-                    ? 'grid-cols-1 lg:grid-cols-[minmax(180px,0.7fr)_minmax(0,1.3fr)]'
-                    : 'grid-cols-1 lg:grid-cols-2'
-                }`}>
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(16rem,38%)_minmax(0,1fr)] gap-3 lg:gap-5">
                   <motion.div
                     initial={{ rotateY: 90, scale: 0.8 }}
                     animate={{ rotateY: 0, scale: 1 }}
                     transition={{ type: 'spring', stiffness: 180, damping: 16 }}
-                    className={`relative mx-auto w-full aspect-square rounded-3xl overflow-hidden border-4 ${
-                      isClassicInteractive ? 'max-w-[min(34vh,320px)] lg:max-w-none lg:h-full lg:max-h-full' : 'max-w-[min(56vh,560px)]'
-                    } ${getCardTheme(selectedCard.type).glow}`}
+                    className={`relative min-h-[14rem] lg:min-h-0 h-full overflow-hidden rounded-3xl border-4 ${getCardTheme(selectedCard.type).glow}`}
                   >
                     {revealArt ? (
                       <img
@@ -809,17 +792,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     </div>
                   </motion.div>
 
-                  <div
-                    className={`mx-auto w-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-3 sm:p-4 flex flex-col min-h-0 ${
-                      gameTheme === 'classic'
-                        ? `h-full items-center text-center gap-2 ${
-                            isClassicInteractive ? 'overflow-y-auto max-w-none' : `overflow-hidden max-w-[min(56vh,560px)] ${
-                              isStandardRevealCard(selectedCard.type) ? 'aspect-square' : ''
-                            }`
-                          }`
-                        : 'max-w-[min(56vh,560px)] aspect-square overflow-y-auto justify-center gap-4 text-center lg:text-left p-4 sm:p-5'
-                    }`}
-                  >
+                  <div className="min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-3 sm:p-4 flex flex-col gap-2 overflow-y-auto">
                     {gameTheme === 'classic' && isClassicInteractive && (
                       <TeamCoinBank teams={teams} currentTeamId={currentTeam.id} />
                     )}
@@ -833,74 +806,65 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 1. BOO: Select Team First, Then Roll Die */}
                     {(selectedCard.type === 'ghost_steal_5' || selectedCard.type === 'boo_steal_5') && (
-                      <div className="space-y-4">
-                        {!booTargetTeamId ? (
-                          <div className="p-4 bg-purple-950/80 rounded-2xl border border-purple-400/50">
-                            <div className="flex items-center justify-center lg:justify-start gap-2 text-purple-200 mb-3">
-                              <Ghost className="w-6 h-6 text-purple-300" />
-                              <h4 className="font-mario text-lg sm:text-2xl text-white leading-tight">Which team will you steal from?</h4>
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-                              {eligibleOpponents.map(opp => {
-                                const oppChar = CHARACTERS[opp.characterId];
-                                return (
-                                  <button
-                                    key={opp.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setBooTargetTeamId(opp.id);
-                                      sounds.playBoo();
-                                    }}
-                                    className={`p-3 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-white/30 text-white font-bold hover:scale-105 transition-all cursor-pointer flex flex-col items-center gap-1.5`}
-                                  >
-                                    <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
-                                    <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
-                                    <CoinScore coins={opp.coins} />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2 justify-center lg:justify-start">
-                              <span className="text-sm font-bold text-slate-300">Targeting:</span>
-                              <span className="px-3 py-1 rounded-full bg-purple-900 border border-purple-400 text-white text-sm font-bold flex items-center gap-2">
-                                <Ghost className="w-4 h-4 text-purple-300" />
-                                {targetOpponent?.name}
-                                <CoinScore coins={targetOpponent?.coins ?? 0} />
-                              </span>
+                      <div className="flex-1 min-h-0 flex flex-col gap-2">
+                        <div className="flex items-center justify-center gap-2 text-purple-200 shrink-0">
+                          <Ghost className="w-6 h-6 text-purple-300" />
+                          <h4 className="font-mario text-lg sm:text-xl text-white leading-tight">Which team?</h4>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-2 shrink-0">
+                          {eligibleOpponents.map(opp => {
+                            const oppChar = CHARACTERS[opp.characterId];
+                            const isSelected = booTargetTeamId === opp.id;
+                            return (
                               <button
+                                key={opp.id}
                                 type="button"
                                 onClick={() => {
-                                  setBooTargetTeamId(null);
+                                  setBooTargetTeamId(opp.id);
                                   setBooDieRoll(null);
+                                  sounds.playBoo();
                                 }}
-                                className="text-xs text-amber-300 underline cursor-pointer hover:text-amber-200"
+                                className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
+                                  isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:scale-105'
+                                }`}
                               >
-                                Change Target
+                                <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
+                                <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
+                                <CoinScore coins={opp.coins} />
                               </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex-1 min-h-[13rem] flex flex-col items-center justify-center gap-2">
+                          {booTargetTeamId ? (
+                            <>
+                              <DiceRoller
+                                key={booTargetTeamId}
+                                compact={gameTheme === 'classic'}
+                                title="Roll the steal die!"
+                                subtitle={`How many coins from ${targetOpponent?.name}?`}
+                                themeColor="purple"
+                                onRollComplete={val => setBooDieRoll(val)}
+                              />
+                              <div className="h-[3.25rem] flex items-center justify-center w-full">
+                                {booDieRoll !== null && (
+                                  <button
+                                    type="button"
+                                    onClick={handleFinishBooSteal}
+                                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                                  >
+                                    <Ghost className="w-5 h-5" />
+                                    STEAL {booDieRoll}
+                                  </button>
+                                )}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="w-full h-full min-h-[13rem] rounded-2xl border border-dashed border-purple-400/40 bg-purple-950/40 flex items-center justify-center px-4">
+                              <p className="font-mario text-base sm:text-lg text-purple-100/80 text-center">Pick a team</p>
                             </div>
-
-                            <DiceRoller
-                              title="Step 2: Roll the Steal Die!"
-                              subtitle={`Roll a six-sided die to determine how many coins Boo steals from ${targetOpponent?.name}!`}
-                              themeColor="purple"
-                              onRollComplete={val => setBooDieRoll(val)}
-                            />
-
-                            {booDieRoll !== null && (
-                              <button
-                                type="button"
-                                onClick={handleFinishBooSteal}
-                                className="self-center lg:self-start px-8 py-3.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                              >
-                                <Ghost className="w-6 h-6" />
-                                STEAL {booDieRoll} COINS & CONTINUE
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -934,9 +898,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 3. BOWSER'S REVOLUTION: Swap coin totals with one other team */}
                     {selectedCard.type === 'bowser_revolution' && (
-                      <div className={`bg-orange-950/80 rounded-2xl border border-orange-500/50 flex flex-col min-h-0 ${
-                        gameTheme === 'classic' ? 'flex-1 w-full p-2.5 gap-2 overflow-hidden' : 'p-4 space-y-3'
-                      }`}>
+                      <div className="bg-orange-950/80 rounded-2xl border border-orange-500/50 flex flex-col gap-2 p-2.5 min-h-0">
                         {gameTheme !== 'classic' && (
                           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
                             <TeamAvatar characterId={currentTeam.characterId} size="xl" customUrl={currentTeam.customImageUrl} />
@@ -947,11 +909,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <Flame className="w-6 h-6 text-orange-400" />
                           <h4 className="font-mario text-xl sm:text-2xl text-white">SWAP WITH?</h4>
                         </div>
-                        <div className={`grid gap-2 min-h-0 ${
-                          gameTheme === 'classic'
-                            ? 'grid-cols-3 content-start flex-1'
-                            : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5'
-                        }`}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {eligibleOpponents.map(opp => {
                             const oppChar = CHARACTERS[opp.characterId];
                             const isSelected = swapTargetTeamId === opp.id;
@@ -981,10 +939,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           })}
                         </div>
 
-                        {swapOpponent && (
-                          <div className={`shrink-0 flex flex-col items-center gap-2 ${
-                            gameTheme === 'classic' ? '' : 'pt-2 lg:items-start gap-2.5'
-                          }`}>
+                        <div className="min-h-[7.25rem] flex flex-col items-center justify-center gap-2">
+                          {swapOpponent && (
+                          <div className="flex flex-col items-center gap-2 w-full">
                             <div className="p-2 bg-black/60 rounded-xl border border-orange-400/60 flex items-center gap-2 sm:gap-3">
                               <TeamAvatar characterId={currentTeam.characterId} size="md" customUrl={currentTeam.customImageUrl} />
                               <CoinScore coins={currentTeam.coins} />
@@ -1005,15 +962,14 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                               {gameTheme === 'classic' ? 'SWAP — ROUND OVER' : 'SWAP!'}
                             </button>
                           </div>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
 
                     {/* 4. BOWSER'S FURY: -5 Coins to Each Other Team */}
                     {selectedCard.type === 'bowser_fury' && (
-                      <div className={`bg-red-950/90 rounded-2xl border border-red-500/60 flex flex-col min-h-0 ${
-                        gameTheme === 'classic' ? 'flex-1 w-full p-2.5 gap-2 overflow-hidden' : 'p-4 space-y-3'
-                      }`}>
+                      <div className="bg-red-950/90 rounded-2xl border border-red-500/60 flex flex-col gap-2 p-2.5 min-h-0">
                         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
                           <Flame className="w-7 h-7 text-red-500 animate-pulse" />
                           <h4 className="font-mario text-3xl sm:text-4xl text-white">RIVALS −5</h4>
@@ -1055,9 +1011,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 5b. BLOOPER: Ink a rival so their next coin card pays 1 */}
                     {selectedCard.type === 'blooper' && (
-                      <div className={`bg-indigo-950/85 rounded-2xl border border-indigo-400/50 flex flex-col min-h-0 ${
-                        gameTheme === 'classic' ? 'flex-1 w-full p-2.5 gap-2 overflow-hidden' : 'p-4 space-y-3'
-                      }`}>
+                      <div className="bg-indigo-950/85 rounded-2xl border border-indigo-400/50 flex flex-col gap-2 p-2.5 min-h-0">
                         <div className="flex items-center justify-center gap-2 text-indigo-100 shrink-0">
                           <Droplets className="w-6 h-6 text-indigo-300" />
                           <h4 className="font-mario text-lg sm:text-2xl text-white leading-tight">Which team gets inked?</h4>
@@ -1065,9 +1019,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                         <p className="text-xs sm:text-sm font-bold text-indigo-100/90 shrink-0">
                           Next coin card = <span className="font-mario text-yellow-300">+1</span>
                         </p>
-                        <div className={`grid gap-2 min-h-0 ${
-                          gameTheme === 'classic' ? 'grid-cols-3 content-start flex-1' : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5'
-                        }`}>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {eligibleOpponents.map(opp => {
                             const oppChar = CHARACTERS[opp.characterId];
                             const isSelected = blooperTargetTeamId === opp.id;
@@ -1099,18 +1051,20 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             );
                           })}
                         </div>
-                        {blooperTarget && (
+                        <div className="h-[3.75rem] shrink-0 flex items-center justify-center">
+                          {blooperTarget && (
                           <button
                             type="button"
                             onClick={handleFinishBlooper}
                             className={`bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white font-mario rounded-2xl shadow-xl border-2 border-indigo-200 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 ${
-                              gameTheme === 'classic' ? 'w-full px-4 py-3 text-lg sm:text-xl shrink-0' : 'px-8 py-3.5 text-xl sm:text-2xl'
+                              gameTheme === 'classic' ? 'w-full px-4 py-3 text-lg sm:text-xl' : 'px-8 py-3.5 text-xl sm:text-2xl'
                             }`}
                           >
                             <Droplets className="w-6 h-6" />
                             INK {blooperTarget.name.toUpperCase()}
                           </button>
-                        )}
+                          )}
+                        </div>
                       </div>
                     )}
 
@@ -1270,7 +1224,6 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
             )}
           </AnimatePresence>
         </div>
-      </motion.div>
-    </div>
+    </GameModalShell>
   );
 };

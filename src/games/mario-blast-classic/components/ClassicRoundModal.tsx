@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
 import { Eye, EyeOff, X, Check, OctagonX } from 'lucide-react';
 import { GameQuestion, RewardCard, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { GameModalShell } from '@/shared/components/GameModalShell';
 
 export interface ClassicCardSlot {
   claimedByTeamId?: string;
@@ -44,7 +43,6 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
   onCancelIfEmpty,
   testGame = false,
 }) => {
-  useBodyScrollLock();
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
@@ -52,16 +50,8 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
     question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 bg-slate-950/88">
-      <motion.div
-        initial={{ scale: 0.94, opacity: 0, y: 16 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.94, opacity: 0 }}
-        className="relative w-full max-w-[1600px] h-[min(96dvh,1080px)] max-h-[96dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: pickChar.accentColor }} />
-
-        <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2.5 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
+    <GameModalShell barColor={pickChar.accentColor}>
+        <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2 hshort:py-1.5 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <TeamAvatar
               characterId={pickingTeam.characterId}
@@ -100,20 +90,20 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-5 py-3">
+        <div className="flex-1 min-h-0 flex flex-col px-3 sm:px-5 py-2 hshort:py-1.5">
           <div className="shrink-0 text-center px-2 sm:px-6 pb-1">
-            <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1.5">
+            <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1 hshort:mb-0.5">
               {lessonGoal}
             </p>
-            <h2 className="font-mario text-[clamp(1.7rem,3.6vw,3.35rem)] text-yellow-300 leading-tight text-shadow-mario">
+            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario">
               {question.title}
             </h2>
             {answerText && (
               <div
-                className={`relative mt-3 mx-auto w-full min-h-[4.75rem] px-5 rounded-2xl border-2 flex items-center justify-center ${
+                className={`relative mt-2 hshort:mt-1.5 mx-auto w-full min-h-[3.25rem] hshort:min-h-[2.85rem] px-5 rounded-2xl border-2 flex items-center justify-center ${
                   answerRevealed
-                    ? 'bg-black/75 border-white/25 py-3 pr-14'
-                    : 'h-[4.75rem] overflow-hidden bg-indigo-700/75 border-indigo-300/50'
+                    ? 'bg-black/75 border-white/25 py-2 pr-14'
+                    : 'h-[3.25rem] hshort:h-[2.85rem] overflow-hidden bg-indigo-700/75 border-indigo-300/50'
                 }`}
               >
                 {answerRevealed ? (
@@ -150,7 +140,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             )}
           </div>
 
-          <div className="mt-2 flex-1 min-h-0 rounded-3xl bg-black/30 border-t-2 border-t-amber-300/45 border-x border-b border-white/10 px-3 sm:px-4 py-3 flex flex-col">
+          <div className="mt-2 hshort:mt-1.5 flex-1 min-h-0 rounded-3xl bg-black/30 border-t-2 border-t-amber-300/45 border-x border-b border-white/10 px-3 sm:px-4 py-2.5 hshort:py-2 flex flex-col">
             <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 shrink-0">
               {teams.map(team => {
                 const char = CHARACTERS[team.characterId];
@@ -220,8 +210,8 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
               })}
             </div>
 
-            <div className="mt-2 flex-1 min-h-0">
-              <div className="grid grid-cols-6 gap-1.5 sm:gap-3 max-w-5xl mx-auto h-full">
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center">
+              <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 max-w-5xl mx-auto w-full justify-items-center">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
@@ -232,7 +222,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative h-full max-h-full mx-auto aspect-[2/3] rounded-2xl border-2 overflow-hidden transition-all ${
+                    className={`relative w-full aspect-[2/3] max-w-[min(100%,11.5rem)] max-h-[min(38dvh,22rem)] rounded-2xl border-2 overflow-hidden transition-all ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
@@ -281,7 +271,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             </div>
           </div>
 
-            <div className="flex justify-end mt-3">
+            <div className="flex justify-end mt-2 hshort:mt-1.5 shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -296,7 +286,6 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             </div>
           </div>
         </div>
-      </motion.div>
-    </div>
+    </GameModalShell>
   );
 };

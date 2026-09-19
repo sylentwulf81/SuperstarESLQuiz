@@ -2,6 +2,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant hshort (@media (max-height: 900px));
+@custom-variant htall (@media (min-height: 1000px));
 
 @theme inline {
   --color-background: var(--background);

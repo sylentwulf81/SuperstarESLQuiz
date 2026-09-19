@@ -569,7 +569,7 @@ export function MarioBlastClassic({
   const selectedQuestion = selectedBlock?.question;
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
+    <div className="h-dvh max-h-dvh overflow-hidden text-slate-100 flex flex-col relative selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
       <ThemedBackdrop theme={theme} />
       <AmbientParticles theme={theme} />
 
@@ -627,7 +627,7 @@ export function MarioBlastClassic({
               onSelectTeamTurn={handleSelectTeamTurn}
               onAdjustCoins={handleAdjustCoins}
             />
-            <main className="flex-1 min-h-0 flex flex-col py-1 pb-16 sm:pb-24">
+            <main className="flex-1 min-h-0 flex flex-col py-1">
               <GameBoard
                 blocks={blocks}
                 teams={teams}

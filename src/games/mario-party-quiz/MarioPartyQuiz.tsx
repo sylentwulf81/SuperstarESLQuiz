@@ -651,7 +651,7 @@ export function MarioPartyQuiz({
   const selectedQuestion = selectedBlock?.question;
 
   return (
-    <div className="min-h-screen text-slate-100 flex flex-col relative overflow-x-hidden selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
+    <div className="h-dvh max-h-dvh overflow-hidden text-slate-100 flex flex-col relative selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
       {/* Hand-crafted Cartoony Artistic Nintendo Themed Backdrop */}
       <ThemedBackdrop theme={theme} />
 
@@ -719,7 +719,7 @@ export function MarioPartyQuiz({
             />
 
             {/* Main 60 Mystery Blocks Game Board */}
-            <main className="flex-1 min-h-0 flex flex-col py-1 pb-16 sm:pb-24">
+            <main className="flex-1 min-h-0 flex flex-col py-1">
               <GameBoard
                 blocks={blocks}
                 teams={teams}
