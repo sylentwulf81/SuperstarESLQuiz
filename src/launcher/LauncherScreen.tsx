@@ -30,7 +30,6 @@ import {
   Info,
   ChevronRight,
   Filter,
-  Upload,
   X
 } from 'lucide-react';
 import { LAUNCHER_GAMES, LauncherGame, GameCategory } from '@/launcher/catalog';
@@ -257,11 +256,9 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             <div className="w-full sm:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
               <SnesBoxArt game={spotlightGame} size="hero" />
 
-              {/* Quick Theme Switcher & Box Art Hint */}
-              <div className="w-full flex flex-col gap-1.5 p-2.5 rounded-2xl bg-black/60 border border-white/10 px-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-white/70">Featured Edition:</span>
-                  <div className="flex items-center gap-1.5">
+              <div className="w-full flex items-center justify-between gap-1.5 p-2.5 rounded-2xl bg-black/60 border border-white/10 px-3">
+                <span className="text-[11px] font-bold text-white/70">Featured Edition:</span>
+                <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => {
                         sounds.playPop();
@@ -289,11 +286,6 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                       Holiday
                     </button>
                   </div>
-                </div>
-                <div className="text-[10px] text-amber-300/80 flex items-center justify-center gap-1 pt-1 border-t border-white/10">
-                  <Upload className="w-3 h-3" />
-                  <span>Click box or drag & drop your image to set cover art</span>
-                </div>
               </div>
             </div>
           </div>
@@ -368,9 +360,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                 }`}
               >
                 {/* Upper SNES Box Art Area */}
-                <div className="p-3 bg-slate-950/80 pb-0">
-                  <SnesBoxArt game={game} size="card" />
-                </div>
+                <SnesBoxArt game={game} size="card" />
 
                 {/* Lower Information & Actions Body */}
                 <div className="p-4 flex-1 flex flex-col justify-between gap-4 bg-slate-950/80">

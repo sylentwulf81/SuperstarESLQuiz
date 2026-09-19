@@ -144,10 +144,10 @@ export function MarioPartyQuiz({
   // When user logs in, check if they have a saved deck in Firestore
   useEffect(() => {
     if (isLoggedIn && user) {
-      loadQuestionsCloud(theme).then((cloudQuestions) => {
-        if (cloudQuestions && cloudQuestions.length > 0) {
-          setBlocks(createGameBlocks(theme, cloudQuestions));
-          showToast(`☁️ Synced ${cloudQuestions.length} custom questions from Firestore (${user.displayName || 'User'})!`);
+      loadQuestionsCloud(theme).then((cloud) => {
+        if (cloud && cloud.questions.length > 0) {
+          setBlocks(createGameBlocks(theme, cloud.questions));
+          showToast(`☁️ Synced ${cloud.questions.length} custom questions from Firestore (${user.displayName || 'User'})!`);
         }
       }).catch((e) => {
         console.warn('Initial cloud questions fetch:', e);
@@ -637,11 +637,11 @@ export function MarioPartyQuiz({
       showToast(`ℹ️ Sign in with Google to load your cloud questions.`);
       return;
     }
-    const cloudQuestions = await loadQuestionsCloud(theme);
-    if (cloudQuestions && cloudQuestions.length > 0) {
-      setBlocks(createGameBlocks(theme, cloudQuestions));
-      persistQuestions(createGameBlocks(theme, cloudQuestions));
-      showToast(`☁️ Loaded ${cloudQuestions.length} custom questions from Firestore!`);
+    const cloud = await loadQuestionsCloud(theme);
+    if (cloud && cloud.questions.length > 0) {
+      setBlocks(createGameBlocks(theme, cloud.questions));
+      persistQuestions(createGameBlocks(theme, cloud.questions));
+      showToast(`☁️ Loaded ${cloud.questions.length} custom questions from Firestore!`);
     } else {
       showToast(`ℹ️ No custom questions found in Firestore for ${theme} theme.`);
     }

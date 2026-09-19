@@ -31,6 +31,12 @@ import {
   MysteryBlockOutcome,
   shuffleMysteryBlockOutcomes,
 } from './data/classicRewards';
+import {
+  DEFAULT_CLASSIC_LESSON_GOAL,
+  loadClassicLessonGoal,
+  persistClassicLessonGoal,
+  resetClassicLessonGoal,
+} from './data/classicLesson';
 import { sounds } from '@/shared/utils/sound';
 import { createGameBlocks, TOTAL_BLOCKS } from '@/games/mario-party-quiz/createBlocks';
 
@@ -70,6 +76,7 @@ export function MarioBlastClassic({
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
 
   const handleToggleCatchUpNote = useCallback(() => {
     setShowCatchUpNote(prev => {
@@ -89,10 +96,14 @@ export function MarioBlastClassic({
   useEffect(() => {
     if (isLoggedIn && user) {
       loadQuestionsCloud(theme)
-        .then(cloudQuestions => {
-          if (cloudQuestions && cloudQuestions.length > 0) {
-            setBlocks(createGameBlocks(theme, cloudQuestions));
-            showToast(`☁️ Synced ${cloudQuestions.length} custom questions from Firestore!`);
+        .then(cloud => {
+          if (cloud && cloud.questions.length > 0) {
+            setBlocks(createGameBlocks(theme, cloud.questions));
+            showToast(`☁️ Synced ${cloud.questions.length} custom questions from Firestore!`);
+          }
+          if (cloud?.lessonGoal?.trim()) {
+            setLessonGoal(cloud.lessonGoal.trim());
+            persistClassicLessonGoal(cloud.lessonGoal);
           }
         })
         .catch(() => {});
@@ -128,7 +139,7 @@ export function MarioBlastClassic({
   const handleShuffleBoard = () => {
     sounds.playShuffle();
     setBlocks(createGameBlocks(theme, undefined, true));
-    showToast('🎲 All 60 Have You Ever prompts reshuffled!');
+    showToast('🎲 All 60 prompts reshuffled!');
   };
 
   const handleSelectBlock = (blockId: number) => {
@@ -164,7 +175,21 @@ export function MarioBlastClassic({
       // ignore
     }
     if (isLoggedIn && user) {
-      saveQuestionsCloud(theme, rawQuestions).catch(() => {});
+      saveQuestionsCloud(theme, rawQuestions, { lessonGoal }).catch(() => {});
+    }
+  };
+
+  const handleLessonGoalChange = (goal: string) => {
+    setLessonGoal(goal);
+    persistClassicLessonGoal(goal);
+  };
+
+  const commitLessonGoal = (goal: string) => {
+    const next = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
+    setLessonGoal(next);
+    persistClassicLessonGoal(next);
+    if (isLoggedIn && user) {
+      saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal: next }).catch(() => {});
     }
   };
 
@@ -342,6 +367,21 @@ export function MarioBlastClassic({
     setDrawnTeamIds(prev => (prev.includes(teamId) ? prev : [...prev, teamId]));
   };
 
+  const handleSkipCardAction = () => {
+    const drawingTeam = teams.find(t => t.id === selectedAnsweringTeamId);
+    if (!drawingTeam || pendingSlotIndex === null || !pendingCard) return;
+
+    commitCardToSlot(pendingCard, pendingSlotIndex, drawingTeam.id);
+    setPendingCard(null);
+    setPendingSlotIndex(null);
+    setSelectedAnsweringTeamId(null);
+
+    const remainingAfter = slots.filter((s, i) => i !== pendingSlotIndex && !s.claimedByTeamId).length;
+    if (remainingAfter <= 0) {
+      setRoundOverReason('cards');
+    }
+  };
+
   const handleRewardResolved = (card: RewardCard, options?: RewardCardActionOptions) => {
     const drawingTeam = teams.find(t => t.id === selectedAnsweringTeamId);
     if (!drawingTeam || pendingSlotIndex === null) return;
@@ -362,7 +402,13 @@ export function MarioBlastClassic({
 
     const remainingAfter = slots.filter((s, i) => i !== pendingSlotIndex && !s.claimedByTeamId).length;
     if (endsRound) {
-      setRoundOverReason(card.type === 'gold_star' ? 'gold_star' : 'bowser_revolution');
+      const reason: RoundOverReason =
+        card.type === 'gold_star'
+          ? 'gold_star'
+          : card.type === 'bowser_fury'
+            ? 'bowser_fury'
+            : 'bowser_revolution';
+      setRoundOverReason(reason);
     } else if (remainingAfter <= 0) {
       setRoundOverReason('cards');
     }
@@ -436,7 +482,8 @@ export function MarioBlastClassic({
     }
     const defaultBlocks = createGameBlocks(theme);
     setBlocks(defaultBlocks);
-    showToast(`🔄 Restored all ${defaultBlocks.length} Have You Ever prompts!`);
+    setLessonGoal(resetClassicLessonGoal());
+    showToast(`🔄 Restored the default Have You Ever lesson (${defaultBlocks.length} prompts)!`);
   };
 
   const handleManualSync = async () => {
@@ -444,7 +491,7 @@ export function MarioBlastClassic({
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
       return false;
     }
-    const success = await saveQuestionsCloud(theme, blocks.map(b => b.question));
+    const success = await saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal });
     showToast(success ? '☁️ Questions backed up to Firestore!' : '⚠️ Could not sync to Firestore.');
     return success;
   };
@@ -454,12 +501,16 @@ export function MarioBlastClassic({
       showToast('ℹ️ Sign in with Google to load your cloud questions.');
       return false;
     }
-    const cloudQuestions = await loadQuestionsCloud(theme);
-    if (cloudQuestions && cloudQuestions.length > 0) {
-      const next = createGameBlocks(theme, cloudQuestions);
+    const cloud = await loadQuestionsCloud(theme);
+    if (cloud && cloud.questions.length > 0) {
+      const next = createGameBlocks(theme, cloud.questions);
       setBlocks(next);
       persistQuestions(next);
-      showToast(`☁️ Loaded ${cloudQuestions.length} custom questions!`);
+      if (cloud.lessonGoal?.trim()) {
+        setLessonGoal(cloud.lessonGoal.trim());
+        persistClassicLessonGoal(cloud.lessonGoal);
+      }
+      showToast(`☁️ Loaded ${cloud.questions.length} custom questions!`);
       return true;
     }
     showToast('ℹ️ No custom Classic questions found in Firestore.');
@@ -491,6 +542,7 @@ export function MarioBlastClassic({
         {view === 'setup' && (
           <SetupScreen
             theme={theme}
+            lessonGoal={lessonGoal}
             onStartGame={handleStartGame}
             onOpenRules={() => setIsRulesModalOpen(true)}
             onOpenStudio={() => setIsCustomizerOpen(true)}
@@ -544,6 +596,7 @@ export function MarioBlastClassic({
         {selectedQuestion && !roundOverReason && (
           <ClassicRoundModal
             question={selectedQuestion}
+            lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
             pickingTeam={activeTeam}
             teams={teams}
             slots={slots}
@@ -571,6 +624,7 @@ export function MarioBlastClassic({
             startInReveal
             onCardSelected={handleRewardResolved}
             onClose={() => {}}
+            onSkipAction={handleSkipCardAction}
             showCatchUpNote={showCatchUpNote}
           />
         )}
@@ -615,6 +669,9 @@ export function MarioBlastClassic({
             onClose={() => setIsCustomizerOpen(false)}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
+            lessonGoal={lessonGoal}
+            onLessonGoalChange={handleLessonGoalChange}
+            onLessonGoalCommit={commitLessonGoal}
           />
         )}
       </AnimatePresence>

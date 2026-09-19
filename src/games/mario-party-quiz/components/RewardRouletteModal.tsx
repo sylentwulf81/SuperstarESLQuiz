@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star
+  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/data/rewards';
+import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
@@ -22,6 +23,8 @@ interface RewardRouletteModalProps {
   showCatchUpNote?: boolean;
   /** Skip the 6-card pick grid and open directly on this card's reveal / action UI. */
   startInReveal?: boolean;
+  /** Host-only: close the reveal without applying the card effect. */
+  onSkipAction?: () => void;
 }
 
 type CardTheme = {
@@ -165,13 +168,72 @@ function getCardTheme(type: string): CardTheme {
   return CARD_THEMES[type] || DEFAULT_THEME;
 }
 
+function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' }) {
+  const big = size === 'lg';
+  return (
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-full bg-black/60 border border-yellow-300/50 ${
+        big ? 'px-3 py-1.5' : 'px-2 py-1'
+      }`}
+    >
+      <MarioCoin size={big ? 'md' : 'sm'} />
+      <span
+        className={`font-mario leading-none ${big ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'} ${
+          coins < 0 ? 'text-red-400' : 'text-yellow-300'
+        }`}
+      >
+        {coins}
+      </span>
+    </div>
+  );
+}
+
+const INTERACTIVE_REVEAL_TYPES = new Set([
+  'ghost_steal_5',
+  'boo_steal_5',
+  'king_boo',
+  'boo_steal_10',
+  'bowser_revolution',
+  'bowser_fury',
+  'pow_block',
+  'hidden_block',
+  'mystery_blocks',
+]);
+
+function isStandardRevealCard(type: string): boolean {
+  return !INTERACTIVE_REVEAL_TYPES.has(type);
+}
+
+function EffectHero({ card }: { card: RewardCard }) {
+  const markClass =
+    'font-mario text-[clamp(6.5rem,28vh,13rem)] leading-none tracking-tight text-shadow-mario drop-shadow-[0_0_42px_rgba(250,204,21,0.6)]';
+
+  if (card.type === 'mushroom_x2' || card.type === 'super_star_x2') {
+    return <span className={`${markClass} text-yellow-300`}>×2</span>;
+  }
+  if (card.coins > 0) {
+    return (
+      <div className="inline-flex items-center gap-4 sm:gap-6">
+        <span className={`${markClass} text-yellow-300`}>+{card.coins}</span>
+        <MarioCoin size="2xl" />
+      </div>
+    );
+  }
+  if (card.type === 'blue_shell') {
+    return <span className={`${markClass} text-sky-300`}>SKIP</span>;
+  }
+  return null;
+}
+
 export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   cards,
   currentTeam,
   teams,
+  theme: gameTheme,
   onCardSelected,
   showCatchUpNote = false,
   startInReveal = false,
+  onSkipAction,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
@@ -425,6 +487,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
   const targetOpponent = booTargetTeamId ? teams.find(t => t.id === booTargetTeamId) : null;
   const swapOpponent = swapTargetTeamId ? teams.find(t => t.id === swapTargetTeamId) : null;
+  const revealArt = selectedCard ? getRevealArt(selectedCard.type) : undefined;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/88">
@@ -464,7 +527,21 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
               </p>
             )}
           </div>
-          <div className="w-[108px] hidden sm:block" />
+          {onSkipAction && phase === 'reveal' ? (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onSkipAction();
+              }}
+              className="shrink-0 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-[11px] font-bold uppercase tracking-wider border border-white/20 cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <SkipForward className="w-3.5 h-3.5" />
+              Skip action
+            </button>
+          ) : (
+            <div className="w-[108px] hidden sm:block" />
+          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 lg:p-6">
@@ -530,47 +607,45 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="h-full min-h-0 flex flex-col gap-3 lg:gap-4"
               >
-                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(220px,34%)_1fr] gap-4 lg:gap-6 items-center">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 items-stretch">
                   <motion.div
                     initial={{ rotateY: 90, scale: 0.8 }}
                     animate={{ rotateY: 0, scale: 1 }}
                     transition={{ type: 'spring', stiffness: 180, damping: 16 }}
-                    className={`relative mx-auto w-full max-w-[280px] lg:max-w-none h-[min(46vh,420px)] lg:h-full max-h-[460px] aspect-[2/3] lg:aspect-auto rounded-3xl overflow-hidden border-4 bg-gradient-to-b ${getCardTheme(selectedCard.type).shell} ${getCardTheme(selectedCard.type).glow} flex flex-col items-center justify-between p-5`}
+                    className={`relative mx-auto w-full max-w-[min(56vh,560px)] aspect-square rounded-3xl overflow-hidden border-4 ${getCardTheme(selectedCard.type).glow}`}
                   >
-                    <span className="px-3 py-1 bg-yellow-300 text-slate-950 font-black text-xs rounded-full uppercase tracking-widest">
-                      ★ Your pick ★
-                    </span>
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-black/40 border-2 border-white/50 flex items-center justify-center shadow-2xl">
-                      {getCardIcon(selectedCard.type, 'w-16 h-16 sm:w-20 sm:h-20')}
-                    </div>
-                    <div className="text-center space-y-1">
-                      <h3 className="font-mario text-3xl sm:text-4xl text-yellow-100 text-shadow-mario leading-tight">
+                    {revealArt ? (
+                      <img
+                        src={revealArt}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className={`absolute inset-0 bg-gradient-to-b ${getCardTheme(selectedCard.type).shell} flex items-center justify-center`}>
+                        <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-black/40 border-2 border-white/50 flex items-center justify-center shadow-2xl">
+                          {getCardIcon(selectedCard.type, 'w-20 h-20 sm:w-24 sm:h-24')}
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 bg-gradient-to-t from-black/85 via-black/50 to-transparent">
+                      <h3 className="font-mario text-2xl sm:text-3xl text-yellow-100 text-shadow-mario leading-tight">
                         {selectedCard.title}
                       </h3>
-                      {selectedCard.coins > 0 && (
-                        <div className="inline-flex items-center gap-2 bg-black/40 px-4 py-1.5 rounded-full border border-yellow-200/50">
-                          <span className="font-mario text-2xl text-yellow-200">+{selectedCard.coins}</span>
-                          <MarioCoin size="md" />
-                        </div>
-                      )}
                     </div>
                   </motion.div>
 
-                  <div className="min-h-0 flex flex-col justify-center gap-4 text-center lg:text-left">
-                    <div>
-                      <p className="text-xs sm:text-sm font-black uppercase tracking-[0.2em] text-yellow-300 mb-1">
-                        Mystery card get
-                      </p>
-                      <h3 className="font-mario text-3xl sm:text-4xl lg:text-5xl text-white text-shadow-mario leading-tight">
-                        {selectedCard.title}
-                      </h3>
-                      <p className="mt-2 text-lg sm:text-xl lg:text-2xl font-bold text-amber-200">
+                  <div
+                    className={`mx-auto w-full max-w-[min(56vh,560px)] aspect-square rounded-3xl border-2 border-white/15 bg-slate-950/50 p-4 sm:p-5 overflow-y-auto flex flex-col ${
+                      gameTheme === 'classic'
+                        ? 'items-center text-center gap-3'
+                        : 'justify-center gap-4 text-center lg:text-left'
+                    }`}
+                  >
+                    {!(gameTheme === 'classic' && isStandardRevealCard(selectedCard.type)) && (
+                      <p className="font-mario text-xl sm:text-2xl text-amber-200 leading-tight">
                         {selectedCard.subtitle}
                       </p>
-                      <p className="mt-3 text-base sm:text-lg lg:text-xl text-slate-100 leading-snug max-w-2xl mx-auto lg:mx-0">
-                        {selectedCard.description}
-                      </p>
-                    </div>
+                    )}
 
                     {/* INTERACTIVE CARD LOGIC BRANCHES */}
 
@@ -581,13 +656,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <div className="p-4 bg-purple-950/80 rounded-2xl border border-purple-400/50">
                             <div className="flex items-center justify-center lg:justify-start gap-2 text-purple-200 mb-3">
                               <Ghost className="w-6 h-6 text-purple-300" />
-                              <h4 className="font-mario text-xl sm:text-2xl text-white">
-                                Step 1: Choose a Rival Team to Target!
-                              </h4>
+                              <h4 className="font-mario text-2xl sm:text-3xl text-white">WHO?</h4>
                             </div>
-                            <p className="text-xs text-purple-200 mb-3 text-center lg:text-left">
-                              Select the opponent team Boo will sneak up on. Afterwards, roll the die to steal coins!
-                            </p>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                               {eligibleOpponents.map(opp => {
                                 const oppChar = CHARACTERS[opp.characterId];
@@ -601,14 +671,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                     }}
                                     className={`p-3 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-white/30 text-white font-bold hover:scale-105 transition-all cursor-pointer flex flex-col items-center gap-1.5`}
                                   >
-                                    <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
-                                    <span className="text-xs truncate w-full text-center">{opp.name}</span>
-                                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-black/40 border border-white/20">
-                                      <MarioCoin size="xs" />
-                                      <span className={`text-sm font-mario ${opp.coins < 0 ? 'text-red-400' : 'text-yellow-300'}`}>
-                                        {opp.coins}
-                                      </span>
-                                    </div>
+                                    <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
+                                    <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                    <CoinScore coins={opp.coins} />
                                   </button>
                                 );
                               })}
@@ -620,7 +685,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                               <span className="text-sm font-bold text-slate-300">Targeting:</span>
                               <span className="px-3 py-1 rounded-full bg-purple-900 border border-purple-400 text-white text-sm font-bold flex items-center gap-2">
                                 <Ghost className="w-4 h-4 text-purple-300" />
-                                {targetOpponent?.name} ({targetOpponent?.coins} Coins)
+                                {targetOpponent?.name}
+                                <CoinScore coins={targetOpponent?.coins ?? 0} />
                               </span>
                               <button
                                 type="button"
@@ -687,15 +753,19 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     {/* 3. BOWSER'S REVOLUTION: Swap coin totals with one other team */}
                     {selectedCard.type === 'bowser_revolution' && (
                       <div className="p-4 bg-orange-950/80 rounded-2xl border border-orange-500/50 space-y-3">
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                          <TeamAvatar characterId={currentTeam.characterId} size="xl" customUrl={currentTeam.customImageUrl} />
+                          <CoinScore coins={currentTeam.coins} size="lg" />
+                          {gameTheme === 'classic' && (
+                            <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-widest">
+                              Round over
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center justify-center lg:justify-start gap-2 text-orange-200">
                           <Flame className="w-6 h-6 text-orange-400" />
-                          <h4 className="font-mario text-xl sm:text-2xl text-white">
-                            Choose a Rival Team to Swap Coin Totals With!
-                          </h4>
+                          <h4 className="font-mario text-2xl sm:text-3xl text-white">SWAP WITH?</h4>
                         </div>
-                        <p className="text-xs text-orange-200 text-center lg:text-left">
-                          {currentTeam.name} currently has <strong>{currentTeam.coins} coins</strong>. Choose an opponent below to swap bank totals!
-                        </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                           {eligibleOpponents.map(opp => {
                             const oppChar = CHARACTERS[opp.characterId];
@@ -712,14 +782,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                   isSelected ? 'border-yellow-300 ring-4 ring-orange-400 scale-105' : 'border-white/30 hover:scale-102'
                                 }`}
                               >
-                                <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
-                                <span className="text-xs truncate w-full text-center">{opp.name}</span>
-                                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-black/50 border border-white/20">
-                                  <MarioCoin size="xs" />
-                                  <span className={`text-sm font-mario ${opp.coins < 0 ? 'text-red-400' : 'text-yellow-300'}`}>
-                                    {opp.coins}
-                                  </span>
-                                </div>
+                                <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
+                                <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                <CoinScore coins={opp.coins} />
                               </button>
                             );
                           })}
@@ -727,10 +792,12 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                         {swapOpponent && (
                           <div className="pt-2 flex flex-col items-center lg:items-start gap-2.5">
-                            <div className="p-2.5 bg-black/60 rounded-xl border border-orange-400/60 flex items-center gap-3 text-sm text-white font-bold">
-                              <span>{currentTeam.name} ({currentTeam.coins})</span>
-                              <ArrowRightLeft className="w-5 h-5 text-yellow-300 animate-pulse" />
-                              <span>{swapOpponent.name} ({swapOpponent.coins})</span>
+                            <div className="p-2.5 bg-black/60 rounded-xl border border-orange-400/60 flex items-center gap-3">
+                              <TeamAvatar characterId={currentTeam.characterId} size="md" customUrl={currentTeam.customImageUrl} />
+                              <CoinScore coins={currentTeam.coins} />
+                              <ArrowRightLeft className="w-6 h-6 text-yellow-300 animate-pulse" />
+                              <TeamAvatar characterId={swapOpponent.characterId} size="md" customUrl={swapOpponent.customImageUrl} />
+                              <CoinScore coins={swapOpponent.coins} />
                             </div>
                             <button
                               type="button"
@@ -738,7 +805,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                               className="px-8 py-3.5 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-orange-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                             >
                               <Flame className="w-6 h-6" />
-                              CONFIRM COIN SWAP & CONTINUE
+                              {gameTheme === 'classic' ? 'SWAP — ROUND OVER' : 'SWAP!'}
                             </button>
                           </div>
                         )}
@@ -748,27 +815,27 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     {/* 4. BOWSER'S FURY: -5 Coins to Each Other Team */}
                     {selectedCard.type === 'bowser_fury' && (
                       <div className="p-4 bg-red-950/90 rounded-2xl border border-red-500/60 space-y-3">
-                        <div className="flex items-center justify-center lg:justify-start gap-2 text-amber-200">
-                          <Flame className="w-6 h-6 text-red-500 animate-pulse" />
-                          <h4 className="font-mario text-xl sm:text-2xl text-white">
-                            Bowser's Fury Scorches All Rival Teams!
-                          </h4>
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                          <Flame className="w-7 h-7 text-red-500 animate-pulse" />
+                          <h4 className="font-mario text-3xl sm:text-4xl text-white">RIVALS −5</h4>
+                          {gameTheme === 'classic' && (
+                            <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-widest">
+                              Round over
+                            </span>
+                          )}
                         </div>
-                        <p className="text-xs sm:text-sm text-red-200 text-center lg:text-left">
-                          Each of the {eligibleOpponents.length} rival teams is hit by fiery meteors and loses 5 coins!
-                        </p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                           {eligibleOpponents.map(opp => {
                             const oppChar = CHARACTERS[opp.characterId];
                             return (
                               <div
                                 key={opp.id}
-                                className={`p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-red-400/50 text-white flex flex-col items-center gap-1`}
+                                className={`p-3 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-red-400/50 text-white flex flex-col items-center gap-1.5`}
                               >
-                                <TeamAvatar characterId={opp.characterId} size="sm" customUrl={opp.customImageUrl} />
-                                <span className="text-xs truncate w-full text-center">{opp.name}</span>
-                                <span className="font-mario text-red-400 text-sm font-bold bg-black/60 px-2 py-0.5 rounded-full border border-red-500/60">
-                                  -5 Coins
+                                <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
+                                <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                <span className="font-mario text-2xl text-red-400 bg-black/60 px-3 py-1 rounded-full border border-red-500/60">
+                                  −5
                                 </span>
                               </div>
                             );
@@ -781,7 +848,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             className="px-8 py-3.5 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-red-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
                           >
                             <Flame className="w-6 h-6" />
-                            UNLEASH BOWSER'S FURY & CONTINUE
+                            {gameTheme === 'classic' ? '−5 — ROUND OVER' : '−5!'}
                           </button>
                         </div>
                       </div>
@@ -876,23 +943,41 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     )}
 
                     {/* Standard Cards (Coins, Super Mushroom, Blue Shell, Gold Star) */}
-                    {selectedCard.type !== 'ghost_steal_5' &&
-                      selectedCard.type !== 'boo_steal_5' &&
-                      selectedCard.type !== 'king_boo' &&
-                      selectedCard.type !== 'boo_steal_10' &&
-                      selectedCard.type !== 'bowser_revolution' &&
-                      selectedCard.type !== 'bowser_fury' &&
-                      selectedCard.type !== 'pow_block' &&
-                      selectedCard.type !== 'hidden_block' &&
-                      selectedCard.type !== 'mystery_blocks' && (
-                        <button
-                          type="button"
-                          onClick={handleFinishStandard}
-                          className="self-center lg:self-start px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                        >
-                          <Sparkles className="w-6 h-6" />
-                          CLAIM & CONTINUE
-                        </button>
+                    {isStandardRevealCard(selectedCard.type) && (
+                      gameTheme === 'classic' ? (
+                        <div className="flex-1 min-h-0 w-full flex flex-col">
+                          <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2">
+                            <EffectHero card={selectedCard} />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleFinishStandard}
+                            className="mt-auto w-full px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-2xl sm:text-3xl rounded-2xl shadow-xl border-2 border-emerald-300/70 inline-flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                          >
+                            <Sparkles className="w-7 h-7" />
+                            {selectedCard.type === 'gold_star' ? 'CLAIM & END ROUND' : 'CLAIM'}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center gap-5">
+                          {selectedCard.coins > 0 && (
+                            <div className="inline-flex items-center gap-3">
+                              <span className="font-mario text-5xl sm:text-6xl text-yellow-300 leading-none">
+                                +{selectedCard.coins}
+                              </span>
+                              <MarioCoin size="xl" />
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handleFinishStandard}
+                            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                          >
+                            <Sparkles className="w-6 h-6" />
+                            CLAIM
+                          </button>
+                        </div>
+                      )
                     )}
                   </div>
                 </div>
