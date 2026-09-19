@@ -60,7 +60,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Sun',
       coverArtEmoji: '🏖️',
       patternType: 'palm',
-      backgroundImage: '/assets/boxart/super-summer-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_supersummerblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -97,7 +97,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Snowflake',
       coverArtEmoji: '❄️',
       patternType: 'snow',
-      backgroundImage: '/assets/boxart/super-winter-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_superwinterblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -136,7 +136,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Star',
       coverArtEmoji: '⭐',
       patternType: 'gold',
-      backgroundImage: '/assets/boxart/super-quiz-classic.jpg',
+      backgroundImage: '/assets/boxart/boxart_superquizclassic.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',
@@ -171,7 +171,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       icon: 'Ghost',
       coverArtEmoji: '🎃',
       patternType: 'castle',
-      backgroundImage: '/assets/boxart/super-halloween-blast.jpg',
+      backgroundImage: '/assets/boxart/boxart_superhalloweenblast.jpeg',
     },
     stats: {
       players: '2 – 6 Teams',

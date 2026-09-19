@@ -359,14 +359,12 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
             {filteredGames.map(game => (
-              <motion.div
+              <div
                 key={game.id}
-                whileHover={{ y: -6 }}
-                transition={{ duration: 0.2 }}
-                className={`group relative flex flex-col rounded-3xl overflow-hidden border-2 bg-slate-900/90 shadow-xl transition-all ${
+                className={`group relative flex flex-col rounded-3xl overflow-hidden border-2 bg-slate-900/90 shadow-xl transition-[border-color,box-shadow,opacity] duration-200 ${
                   game.isPlayable 
-                    ? 'border-white/15 hover:border-amber-400/80 hover:shadow-[0_10px_35px_rgba(245,158,11,0.25)]' 
-                    : 'border-white/10 opacity-85 hover:opacity-100 hover:border-indigo-400/50 hover:shadow-[0_10px_30px_rgba(99,102,241,0.2)]'
+                    ? 'border-white/15 hover:border-amber-300/90 hover:shadow-[0_0_28px_rgba(251,191,36,0.35)]' 
+                    : 'border-white/10 opacity-85 hover:opacity-100 hover:border-indigo-300/70 hover:shadow-[0_0_24px_rgba(129,140,248,0.28)]'
                 }`}
               >
                 {/* Upper SNES Box Art Area */}
@@ -465,7 +463,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                     )}
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
         </section>

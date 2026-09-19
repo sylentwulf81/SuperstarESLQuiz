@@ -161,7 +161,7 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
             alt={game.title}
             referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover object-center transition-[filter] duration-300 group-hover:brightness-110"
           />
         ) : (
           /* Stylized Retro Vector Artwork Fallback */

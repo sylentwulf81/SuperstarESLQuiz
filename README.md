@@ -19,7 +19,9 @@ Open http://localhost:43123. The front page is the game launcher. Playable box a
 - `src/launcher/` — catalog, SNES box-art cards, launcher UI
 - `src/games/mario-party-quiz/` — the only playable game module (board, studio, Firebase decks)
 - `src/shared/` — auth, Firebase, types, shared UI
-- `public/assets/boxart/` — Summer/Winter launcher covers
-- `public/assets/characters/summer|winter/` — character art kept on disk for later; team slots still use the original SVG emblems
+- `public/assets/boxart/` — launcher covers
+- `public/assets/characters/summer|winter/` — character art kept on disk for later
+- `public/assets/teams/` — team SVG emblems used on the board and setup screen
+- `public/assets/hero/` — seasonal character group art kept on disk for later
 
 Google sign-in and Firestore question sync still use the committed Firebase applet config.
