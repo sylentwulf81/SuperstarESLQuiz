@@ -195,15 +195,15 @@ function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' }
   );
 }
 
-function TeamCoinChip({
-  team,
-  highlight,
-  label,
-}: {
+const TeamCoinChip: React.FC<{
   team: Team;
   highlight?: boolean;
   label?: string;
-}) {
+}> = ({
+  team,
+  highlight,
+  label,
+}) => {
   const char = CHARACTERS[team.characterId];
   return (
     <div
