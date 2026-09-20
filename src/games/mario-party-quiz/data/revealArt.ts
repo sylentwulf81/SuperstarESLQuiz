@@ -3,6 +3,9 @@ import { RewardCardType } from '@/shared/types';
 const ART = {
   coins: '/assets/effects/reveal_mariocoins.jpeg',
   mushroom: '/assets/effects/reveal_mariosupermushroom.jpeg',
+  goldStar: '/assets/effects/reveal_mariogoldenstar.jpeg',
+  blooper: '/assets/effects/reveal_blooperink.jpeg',
+  piranha: '/assets/effects/reveal_mysterblock_pirhanaplant.jpeg',
   bowserRevolution: '/assets/effects/reveal_bowserrevolution.jpeg',
   bowserFury: '/assets/effects/reveal_bowsersfury.jpeg',
   kingBoo: '/assets/effects/reveal_kingboo.jpeg',
@@ -16,8 +19,9 @@ const REVEAL_ART_BY_TYPE: Partial<Record<RewardCardType, string>> = {
   coins_5: ART.coins,
   super_coins_10: ART.coins,
   coins_10: ART.coins,
-  gold_star: ART.coins,
+  gold_star: ART.goldStar,
   mystery_blocks: ART.coins,
+  blooper: ART.blooper,
   super_star_x2: ART.mushroom,
   mushroom_x2: ART.mushroom,
   bowser_revolution: ART.bowserRevolution,
@@ -27,6 +31,24 @@ const REVEAL_ART_BY_TYPE: Partial<Record<RewardCardType, string>> = {
   ghost_steal_5: ART.kingBoo,
   boo_steal_5: ART.kingBoo,
 };
+
+export const PIRANHA_REVEAL_ART = ART.piranha;
+
+export const TREASURE_BLOCK_BACKS = [
+  '/assets/effects/treasureblock_red.jpeg',
+  '/assets/effects/treasureblock_yellow.jpeg',
+  '/assets/effects/treasureblock_green.jpeg',
+  '/assets/effects/treasureblock_blue.jpeg',
+] as const;
+
+export function pickMysteryBlockBacks(count: number): string[] {
+  const deck = [...TREASURE_BLOCK_BACKS];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return Array.from({ length: count }, (_, i) => deck[i % deck.length]);
+}
 
 export function getRevealArt(type: RewardCardType): string | undefined {
   return REVEAL_ART_BY_TYPE[type];

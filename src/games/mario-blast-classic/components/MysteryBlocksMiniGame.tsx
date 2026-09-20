@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bug, Coins, Sparkles, X } from 'lucide-react';
+import { Coins, Sparkles, X } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { MysteryBlockOutcome } from '@/games/mario-blast-classic/data/classicRewards';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
-import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
+import { getRevealArt, PIRANHA_REVEAL_ART, pickMysteryBlockBacks } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { GameModalShell } from '@/shared/components/GameModalShell';
 
 interface MysteryBlocksMiniGameProps {
   currentTeam: Team;
@@ -33,7 +33,6 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   onResolved,
   testMode = false,
 }) => {
-  useBodyScrollLock();
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const char = CHARACTERS[currentTeam.characterId];
 
@@ -55,6 +54,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
       else sounds.playPop();
     }, 420);
   };
+
+  const blockBacks = useMemo(() => pickMysteryBlockBacks(outcomes.length), [outcomes.length]);
 
   const faces = useMemo(
     () =>
@@ -89,7 +90,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         }
         return {
           shell: 'from-lime-500 via-green-800 to-red-950',
-          icon: <Bug className="w-14 h-14 text-lime-200" />,
+          art: PIRANHA_REVEAL_ART,
           title: 'PIRANHA!',
           sub: 'Round Over',
           mushroom: false,
@@ -99,14 +100,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 bg-slate-950/90">
-      <motion.div
-        initial={{ scale: 0.92, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="relative w-full max-w-4xl bg-slate-900 rounded-3xl border-2 border-amber-300/50 shadow-2xl overflow-hidden"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-500" />
-        <div className="px-4 sm:px-6 py-3 border-b border-white/15 flex items-center justify-between gap-3">
+    <GameModalShell zIndexClass="z-[70]" className="border-amber-300/50">
+        <div className="px-4 sm:px-6 py-3 border-b border-white/15 flex items-center justify-between gap-3 shrink-0">
           <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-2xl ${char.bgColor} bg-opacity-50 border border-white/20`}>
             <TeamAvatar characterId={currentTeam.characterId} size="sm" customUrl={currentTeam.customImageUrl} />
             <span className="text-sm font-bold text-white">{currentTeam.name}</span>
@@ -133,8 +128,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           <div className="w-[120px] hidden sm:block" />
         </div>
 
-        <div className="p-4 sm:p-6">
-          <div className="grid grid-cols-3 gap-3 sm:gap-5">
+        <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col">
+          <div className="flex-1 min-h-0 grid grid-cols-3 gap-3 sm:gap-5">
             {outcomes.map((_, idx) => {
               const isChosen = pickedIndex === idx;
               const revealing = pickedIndex !== null;
@@ -145,7 +140,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   type="button"
                   disabled={revealing}
                   onClick={() => handlePick(idx)}
-                  className={`relative aspect-[3/4] [perspective:900px] cursor-pointer disabled:cursor-default ${
+                  className={`relative h-full min-h-0 [perspective:900px] cursor-pointer disabled:cursor-default ${
                     isChosen ? 'z-[1]' : ''
                   }`}
                 >
@@ -161,40 +156,52 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   >
                     <div
                       style={{ backfaceVisibility: 'hidden' }}
-                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 shadow-xl p-2 ${
-                        testMode
-                          ? 'border-red-300 bg-gradient-to-b from-red-600 via-rose-800 to-red-950'
-                          : 'border-amber-300 bg-gradient-to-b from-yellow-400 via-amber-600 to-orange-900 gap-3'
+                      className={`absolute inset-0 rounded-2xl border-2 overflow-hidden shadow-xl ${
+                        testMode ? 'border-red-300' : 'border-amber-300'
                       }`}
                     >
+                      <img
+                        src={blockBacks[idx]}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                       {testMode ? (
-                        <>
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1 p-2">
                           <span className="font-mario text-[10px] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
                           <span className="font-mario text-lg sm:text-xl text-yellow-100 text-shadow-mario text-center leading-tight">
                             {face.title}
                           </span>
                           <span className="text-xs font-bold text-amber-100">{face.sub}</span>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <span className="font-mario text-6xl sm:text-7xl text-yellow-100 text-shadow-mario">?</span>
-                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200 px-2 py-0.5 rounded-full">
-                            Block {idx + 1}
-                          </span>
-                        </>
+                        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
+                          Block {idx + 1}
+                        </span>
                       )}
                     </div>
                     <div
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 p-3 ${
+                      className={`absolute inset-0 rounded-2xl border-2 overflow-hidden ${
                         isChosen
                           ? `border-yellow-200 bg-gradient-to-b ${face.shell}`
                           : `border-white/25 bg-gradient-to-b ${face.shell}`
-                      }`}
+                      } ${'art' in face && face.art ? '' : 'flex flex-col items-center justify-center gap-2 p-3'}`}
                     >
-                      {face.icon}
-                      <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
-                      <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                      {'art' in face && face.art ? (
+                        <>
+                          <img src={face.art} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col items-center">
+                            <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
+                            <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {face.icon}
+                          <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
+                          <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                        </>
+                      )}
                       {face.mushroom && (
                         <img
                           src={getRevealArt('mushroom_x2')}
@@ -218,8 +225,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             })}
           </div>
 
-          {picked && (
-            <div className="mt-5 flex flex-col items-center gap-3">
+          {picked ? (
+            <div className="h-[6.5rem] shrink-0 flex flex-col items-center justify-center gap-2">
               <p className="font-mario text-lg sm:text-2xl text-yellow-300 text-center">
                 {outcomeLabel(picked, mushroomBoost, bloopered)}
               </p>
@@ -233,9 +240,10 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                 {picked.kind === 'treasure' && <MarioCoin size="sm" />}
               </button>
             </div>
+          ) : (
+            <div className="h-[6.5rem] shrink-0" />
           )}
         </div>
-      </motion.div>
-    </div>
+    </GameModalShell>
   );
 };

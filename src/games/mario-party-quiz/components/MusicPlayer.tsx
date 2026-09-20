@@ -25,7 +25,6 @@ export const MusicPlayer: React.FC = () => {
     currentTrackIndex: 0,
     tracks: bgm.tracks,
   }));
-  const [showVolume, setShowVolume] = useState(false);
   const [showTracklist, setShowTracklist] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const tracklistRef = useRef<HTMLDivElement>(null);
@@ -202,11 +201,7 @@ export const MusicPlayer: React.FC = () => {
           </button>
 
           {/* Volume / Mute with mini slider toggle */}
-          <div
-            className="relative flex items-center"
-            onMouseEnter={() => setShowVolume(true)}
-            onMouseLeave={() => setShowVolume(false)}
-          >
+          <div className="flex items-center gap-1">
             <button
               id="music-mute-btn"
               onClick={handleToggleMute}
@@ -223,24 +218,16 @@ export const MusicPlayer: React.FC = () => {
                 <Volume2 className="w-3.5 h-3.5" />
               )}
             </button>
-
-            {/* Volume Slider Popover on Hover */}
-            {showVolume && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 bg-slate-900 border border-white/20 rounded-xl px-2.5 py-1.5 shadow-2xl flex items-center gap-1.5 z-50">
-                <span className="text-[10px] text-white/70 font-mono">
-                  {bgmState.isMuted ? '0%' : `${Math.round(bgmState.volume * 100)}%`}
-                </span>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={bgmState.isMuted ? 0 : bgmState.volume}
-                  onChange={handleVolumeChange}
-                  className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
-                />
-              </div>
-            )}
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={bgmState.isMuted ? 0 : bgmState.volume}
+              onChange={handleVolumeChange}
+              title={`Volume ${bgmState.isMuted ? '0' : Math.round(bgmState.volume * 100)}%`}
+              className="w-16 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
+            />
           </div>
 
           {/* Tracklist Menu Quick Toggle */}

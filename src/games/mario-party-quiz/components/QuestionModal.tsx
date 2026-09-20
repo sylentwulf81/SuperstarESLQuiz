@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'motion/react';
 import { X, CheckCircle, AlertCircle, Sparkles, Eye, RefreshCw, Upload, Image as ImageIcon, Trash2, Plus, Minus } from 'lucide-react';
 import { GameQuestion, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -8,7 +7,7 @@ import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from './TeamAvatar';
 import { compressImageFile } from '@/shared/utils/imageUtils';
 import { shuffleWordLetters } from '@/shared/utils/shuffle';
-import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { GameModalShell } from '@/shared/components/GameModalShell';
 
 interface QuestionModalProps {
   question: GameQuestion;
@@ -49,7 +48,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   onUpdateQuestionImage,
   onAdjustCoins,
 }) => {
-  useBodyScrollLock();
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>(() => getShuffledOptions(question));
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
@@ -317,15 +315,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const isCorrectClickable = isAnswerRevealed && (status === 'correct' || question.type === 'open_trivia');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-3 lg:p-4 bg-slate-950/88">
-      <motion.div
-        initial={{ scale: 0.94, opacity: 0, y: 16 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.94, opacity: 0 }}
-        className="relative w-full max-w-6xl h-[min(94dvh,980px)] max-h-[94dvh] bg-slate-900 rounded-3xl border-2 border-white/25 shadow-2xl overflow-hidden flex flex-col"
-      >
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
-
+    <GameModalShell>
         <div className="bg-slate-800/95 px-3 sm:px-5 py-2.5 sm:py-3 text-white flex items-center justify-between border-b border-white/15 shrink-0 gap-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <span className="font-mario text-lg sm:text-2xl md:text-3xl text-yellow-300 text-shadow-mario whitespace-nowrap">
@@ -666,7 +656,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
             </div>
           </div>
         )}
-      </motion.div>
-    </div>
+    </GameModalShell>
   );
 };

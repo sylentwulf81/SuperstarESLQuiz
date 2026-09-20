@@ -79,6 +79,30 @@ export const CHARACTERS: Record<CharacterId, CharacterInfo> = {
     catchphrase: 'Luigi number one! Woohoo!',
     superstarTitle: 'LUIGI - The Magnificent Green Superstar!',
   },
+  rosalina: {
+    id: 'rosalina',
+    name: 'Rosalina',
+    themeColor: 'cyan',
+    accentColor: '#22d3ee',
+    bgColor: 'bg-cyan-500',
+    borderColor: 'border-cyan-300',
+    avatarIcon: '🌟',
+    imagePromptDescription: 'Rosalina with a glowing Super Star',
+    catchphrase: 'The stars are watching!',
+    superstarTitle: 'ROSALINA - The Cosmic Superstar!',
+  },
+  toad: {
+    id: 'toad',
+    name: 'Toad',
+    themeColor: 'red',
+    accentColor: '#f43f5e',
+    bgColor: 'bg-rose-600',
+    borderColor: 'border-rose-300',
+    avatarIcon: '🍄',
+    imagePromptDescription: 'Toad with a red-spotted mushroom cap',
+    catchphrase: "I'm the best!",
+    superstarTitle: 'TOAD - The Speedy Superstar!',
+  },
 };
 
 export const CHARACTER_LIST: CharacterInfo[] = [
@@ -88,4 +112,6 @@ export const CHARACTER_LIST: CharacterInfo[] = [
   CHARACTERS.daisy,
   CHARACTERS.donkey_kong,
   CHARACTERS.luigi,
+  CHARACTERS.rosalina,
+  CHARACTERS.toad,
 ];
