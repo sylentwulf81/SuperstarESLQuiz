@@ -278,7 +278,7 @@ function EffectHero({
   bloopered?: boolean;
 }) {
   const markClass =
-    'font-mario text-[clamp(6.5rem,28vh,13rem)] leading-none tracking-tight text-shadow-mario drop-shadow-[0_0_42px_rgba(250,204,21,0.6)]';
+    'font-mario text-[clamp(4.25rem,22cqh,10rem)] leading-none tracking-tight text-shadow-mario drop-shadow-[0_0_42px_rgba(250,204,21,0.6)]';
 
   if (card.type === 'mushroom_x2' || card.type === 'super_star_x2') {
     return <span className={`${markClass} text-yellow-300`}>×2</span>;
@@ -792,7 +792,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     </div>
                   </motion.div>
 
-                  <div className="min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-3 sm:p-4 flex flex-col gap-2 overflow-y-auto">
+                  <div className="@container/reveal min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-3 sm:p-4 flex flex-col gap-2 overflow-x-hidden overflow-y-auto">
                     {gameTheme === 'classic' && isClassicInteractive && (
                       <TeamCoinBank teams={teams} currentTeamId={currentTeam.id} />
                     )}
@@ -807,9 +807,12 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     {/* 1. BOO: Select Team First, Then Roll Die */}
                     {(selectedCard.type === 'ghost_steal_5' || selectedCard.type === 'boo_steal_5') && (
                       <div className="flex-1 min-h-0 flex flex-col gap-2">
+                        <p className="font-mario text-lg sm:text-xl text-purple-100 text-center text-shadow-mario shrink-0">
+                          Steal coins from another team!
+                        </p>
                         <div className="flex items-center justify-center gap-2 text-purple-200 shrink-0">
                           <Ghost className="w-6 h-6 text-purple-300" />
-                          <h4 className="font-mario text-lg sm:text-xl text-white leading-tight">Which team?</h4>
+                          <h4 className="font-mario text-lg sm:text-xl text-white leading-tight">Which team will you steal from?</h4>
                         </div>
                         <div className="flex flex-wrap justify-center gap-2 shrink-0">
                           {eligibleOpponents.map(opp => {
@@ -824,8 +827,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                   setBooDieRoll(null);
                                   sounds.playBoo();
                                 }}
-                                className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                                  isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:scale-105'
+                                className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center gap-1 ${
+                                  isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:brightness-110'
                                 }`}
                               >
                                 <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
@@ -851,7 +854,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                   <button
                                     type="button"
                                     onClick={handleFinishBooSteal}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                                   >
                                     <Ghost className="w-5 h-5" />
                                     STEAL {booDieRoll}
@@ -886,7 +889,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             <button
                               type="button"
                               onClick={handleFinishKingBooSteal}
-                              className="px-8 py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                              className="px-8 py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
                               <Crown className="w-6 h-6" />
                               CLAIM KING BOO HEIST (+{kingBooDieRoll * eligibleOpponents.length} COINS)
@@ -952,7 +955,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             <button
                               type="button"
                               onClick={handleFinishBowserRevolution}
-                              className={`bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-mario rounded-2xl shadow-xl border-2 border-orange-300 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 ${
+                              className={`bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white font-mario rounded-2xl shadow-xl border-2 border-orange-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95 ${
                                 gameTheme === 'classic'
                                   ? 'w-full px-4 py-3 text-lg sm:text-xl'
                                   : 'px-8 py-3.5 text-xl sm:text-2xl'
@@ -1000,7 +1003,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <button
                             type="button"
                             onClick={handleFinishBowserFury}
-                            className="px-8 py-3.5 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-red-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                            className="px-8 py-3.5 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-red-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                           >
                             <Flame className="w-6 h-6" />
                             {gameTheme === 'classic' ? '−5 — ROUND OVER' : '−5!'}
@@ -1056,7 +1059,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <button
                             type="button"
                             onClick={handleFinishBlooper}
-                            className={`bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white font-mario rounded-2xl shadow-xl border-2 border-indigo-200 flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 ${
+                            className={`bg-gradient-to-r from-indigo-600 to-blue-700 hover:from-indigo-500 hover:to-blue-600 text-white font-mario rounded-2xl shadow-xl border-2 border-indigo-200 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95 ${
                               gameTheme === 'classic' ? 'w-full px-4 py-3 text-lg sm:text-xl' : 'px-8 py-3.5 text-xl sm:text-2xl'
                             }`}
                           >
@@ -1135,7 +1138,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             <button
                               type="button"
                               onClick={handleFinishPowBlock}
-                              className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-blue-300 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                              className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-blue-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
                               <BoxSelect className="w-6 h-6" />
                               APPLY POW BLOCK ({powChoice.toUpperCase()}: {powChoice === 'highest' ? maxCoins : minCoins} COINS)
@@ -1146,14 +1149,16 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     )}
 
                     {selectedCard.type === 'mystery_blocks' && (
-                      <button
-                        type="button"
-                        onClick={handleFinishStandard}
-                        className="self-center lg:self-start px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-yellow-200 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                      >
-                        <BoxSelect className="w-6 h-6" />
-                        HIT THE MYSTERY BLOCKS
-                      </button>
+                      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={handleFinishStandard}
+                          className="px-8 py-4 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-yellow-200 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                        >
+                          <BoxSelect className="w-6 h-6" />
+                          HIT THE MYSTERY BLOCKS
+                        </button>
+                      </div>
                     )}
 
                     {/* Standard Cards (Coins, Super Mushroom, Blue Shell, Gold Star) */}
@@ -1166,7 +1171,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <button
                             type="button"
                             onClick={handleFinishStandard}
-                            className="mt-auto w-full px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-2xl sm:text-3xl rounded-2xl shadow-xl border-2 border-emerald-300/70 inline-flex items-center justify-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                            className="mt-auto shrink-0 w-full px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-400 hover:to-green-300 hover:shadow-[0_0_28px_rgba(52,211,153,0.5)] text-white font-mario text-2xl sm:text-3xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center justify-center gap-2 cursor-pointer"
                           >
                             <Sparkles className="w-7 h-7" />
                             {selectedCard.type === 'gold_star' ? 'CLAIM — ROUND OVER' : 'CLAIM'}
@@ -1185,7 +1190,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <button
                             type="button"
                             onClick={handleFinishStandard}
-                            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                           >
                             <Sparkles className="w-6 h-6" />
                             CLAIM

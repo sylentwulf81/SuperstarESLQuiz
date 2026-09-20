@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { Bug, Coins, Sparkles, X } from 'lucide-react';
+import { Coins, Sparkles, X } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { MysteryBlockOutcome } from '@/games/mario-blast-classic/data/classicRewards';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
-import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
+import { getRevealArt, PIRANHA_REVEAL_ART, pickMysteryBlockBacks } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
@@ -55,6 +55,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     }, 420);
   };
 
+  const blockBacks = useMemo(() => pickMysteryBlockBacks(outcomes.length), [outcomes.length]);
+
   const faces = useMemo(
     () =>
       outcomes.map(outcome => {
@@ -88,7 +90,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         }
         return {
           shell: 'from-lime-500 via-green-800 to-red-950',
-          icon: <Bug className="w-14 h-14 text-lime-200" />,
+          art: PIRANHA_REVEAL_ART,
           title: 'PIRANHA!',
           sub: 'Round Over',
           mushroom: false,
@@ -154,40 +156,52 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   >
                     <div
                       style={{ backfaceVisibility: 'hidden' }}
-                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 shadow-xl p-2 ${
-                        testMode
-                          ? 'border-red-300 bg-gradient-to-b from-red-600 via-rose-800 to-red-950'
-                          : 'border-amber-300 bg-gradient-to-b from-yellow-400 via-amber-600 to-orange-900 gap-3'
+                      className={`absolute inset-0 rounded-2xl border-2 overflow-hidden shadow-xl ${
+                        testMode ? 'border-red-300' : 'border-amber-300'
                       }`}
                     >
+                      <img
+                        src={blockBacks[idx]}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
                       {testMode ? (
-                        <>
+                        <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1 p-2">
                           <span className="font-mario text-[10px] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
                           <span className="font-mario text-lg sm:text-xl text-yellow-100 text-shadow-mario text-center leading-tight">
                             {face.title}
                           </span>
                           <span className="text-xs font-bold text-amber-100">{face.sub}</span>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <span className="font-mario text-6xl sm:text-7xl text-yellow-100 text-shadow-mario">?</span>
-                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200 px-2 py-0.5 rounded-full">
-                            Block {idx + 1}
-                          </span>
-                        </>
+                        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
+                          Block {idx + 1}
+                        </span>
                       )}
                     </div>
                     <div
                       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                      className={`absolute inset-0 rounded-2xl border-2 flex flex-col items-center justify-center gap-2 p-3 ${
+                      className={`absolute inset-0 rounded-2xl border-2 overflow-hidden ${
                         isChosen
                           ? `border-yellow-200 bg-gradient-to-b ${face.shell}`
                           : `border-white/25 bg-gradient-to-b ${face.shell}`
-                      }`}
+                      } ${'art' in face && face.art ? '' : 'flex flex-col items-center justify-center gap-2 p-3'}`}
                     >
-                      {face.icon}
-                      <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
-                      <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                      {'art' in face && face.art ? (
+                        <>
+                          <img src={face.art} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                          <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col items-center">
+                            <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
+                            <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          {face.icon}
+                          <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
+                          <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
+                        </>
+                      )}
                       {face.mushroom && (
                         <img
                           src={getRevealArt('mushroom_x2')}
