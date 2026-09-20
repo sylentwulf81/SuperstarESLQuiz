@@ -1,4 +1,12 @@
-export type CharacterId = 'yoshi' | 'mario' | 'peach' | 'daisy' | 'donkey_kong' | 'luigi';
+export type CharacterId =
+  | 'yoshi'
+  | 'mario'
+  | 'peach'
+  | 'daisy'
+  | 'donkey_kong'
+  | 'luigi'
+  | 'rosalina'
+  | 'toad';
 export type GameTheme = 'christmas' | 'summer' | 'classic';
 
 export interface CharacterInfo {

@@ -15,17 +15,13 @@ import {
   X,
   Menu,
   Music,
-  BookOpen,
   GraduationCap,
   Library,
-  Gamepad2,
-  ArrowLeft,
   Eye,
   EyeOff
 } from 'lucide-react';
 import { Team, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
-import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MusicPlayer } from './MusicPlayer';
 import { AccountMenu } from '@/shared/components/AccountMenu';
@@ -80,79 +76,29 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useBodyScrollLock(isMobileMenuOpen || showResetConfirm);
 
-  const character = CHARACTERS[currentTeam.characterId];
+  const gameTitle = theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'MARIO PARTY';
 
   return (
     <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
       <div className="w-full max-w-[1750px] mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-        {/* Left: Brand & Active Team Turn Indicator */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="flex items-center gap-1.5">
-            <h1 className="font-mario text-sm sm:text-base md:text-xl text-yellow-300 drop-shadow flex items-center gap-1">
-              <span>MARIO PARTY</span>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <h1 className="font-mario text-sm sm:text-base md:text-xl text-yellow-300 drop-shadow truncate">
+              {gameTitle}
             </h1>
-            <span
-              className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${
-                theme === 'summer'
-                  ? 'bg-amber-400 text-slate-950 border-amber-300'
-                  : theme === 'classic'
-                    ? 'bg-rose-500 text-white border-rose-300'
+            {theme !== 'classic' && (
+              <span
+                className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${
+                  theme === 'summer'
+                    ? 'bg-amber-400 text-slate-950 border-amber-300'
                     : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
-              }`}
-            >
-              {THEME_UI[theme].short}
-            </span>
-            {onExitToLauncher && (
-              <button
-                onClick={() => {
-                  sounds.playClick();
-                  setShowResetConfirm(true);
-                }}
-                className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white border border-white/10 text-[10px] font-bold transition-all cursor-pointer"
-                title="Return to ALT Games Launcher"
+                }`}
               >
-                <Library className="w-3 h-3 text-amber-300" />
-                <span>Library</span>
-              </button>
-            )}
-          </div>
-
-          {/* Active Player Turn Chip */}
-          <div
-            id="header-active-turn-chip"
-            className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-800/90 border border-white/20 shadow-inner shrink-0 whitespace-nowrap"
-            title={`Active Turn: ${currentTeam.name}`}
-          >
-            <TeamAvatar
-              characterId={currentTeam.characterId}
-              size="sm"
-              customUrl={currentTeam.customImageUrl}
-              className="w-5 h-5 sm:w-6 sm:h-6 shrink-0"
-            />
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap leading-none">
-              <span className="text-[10px] sm:text-xs text-indigo-200 font-bold uppercase tracking-wider shrink-0 whitespace-nowrap leading-none select-none">
-                {theme === 'classic' ? 'Picks:' : 'Turn:'}
-              </span>
-              <span className="font-mario text-xs sm:text-sm text-yellow-300 max-w-[80px] sm:max-w-[120px] md:max-w-[150px] truncate shrink-0 whitespace-nowrap leading-none drop-shadow-sm">
-                {currentTeam.name}
-              </span>
-              <span className={`inline-flex items-center gap-1 text-[11px] sm:text-xs font-mario px-2 py-0.5 rounded-lg border leading-tight ${
-                currentTeam.coins < 0
-                  ? 'bg-red-950/90 border-red-500/80 text-red-400 font-bold shadow-[0_0_6px_rgba(239,68,68,0.4)]'
-                  : 'bg-black/50 border-yellow-400/40 text-yellow-300'
-              }`}>
-                <span>{currentTeam.coins}</span>
-                <MarioCoin size="xs" />
-              </span>
-            </div>
-            {currentTeam.hasDoubleTurn && (
-              <span className="px-1.5 py-0.5 bg-gradient-to-r from-red-600 to-rose-700 text-yellow-200 text-[9px] font-black rounded-md animate-pulse border border-yellow-300/80 shadow-sm whitespace-nowrap shrink-0">
-                🍄 EXTRA TURN
+                {THEME_UI[theme].short}
               </span>
             )}
           </div>
 
-          {/* Pass Turn Button (Desktop & Tablet) */}
           <button
             onClick={() => {
               sounds.playClick();
@@ -166,12 +112,11 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </button>
         </div>
 
-        {/* Center: Music Player & Progress (Wide Screens: ≥ xl) */}
-        <div className="hidden xl:flex items-center gap-2 shrink-0">
+        <div className="hidden md:flex items-center gap-2 shrink min-w-0">
           <MusicPlayer />
           <div className={`flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-xl border h-[34px] transition-all ${
-            isGameOver 
-              ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]' 
+            isGameOver
+              ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
               : 'bg-slate-800/60 border-white/10 text-slate-300'
           }`}>
             <span className={isGameOver ? 'text-yellow-300 font-bold text-[11px]' : 'text-white/60 text-[11px]'}>
@@ -191,39 +136,22 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
           </div>
         </div>
 
-        {/* Right Desktop: Actions & Account (Wide Screens: ≥ xl) */}
-        <div className="hidden xl:flex items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Superstar Ceremony / Leaderboard Button */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => {
               sounds.playSuperstar();
               onDeclareWinner();
             }}
-            className={`flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs sm:text-sm shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
-              isGameOver ? 'ring-2 ring-yellow-300 animate-pulse scale-105 shadow-[0_0_20px_rgba(250,204,21,0.6)]' : ''
+            className={`flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
+              isGameOver ? 'ring-2 ring-yellow-300 animate-pulse shadow-[0_0_20px_rgba(250,204,21,0.6)]' : ''
             }`}
             title={isGameOver ? 'Game Over! View Final Leaderboard & Champion' : 'Crown the Superstar Winner!'}
           >
             <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950" />
-            <span>{isGameOver ? 'Leaderboard 🏆' : 'Superstar!'}</span>
+            <span>{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
           </button>
 
-          {/* Question Customizer Button */}
-          <button
-            onClick={() => {
-              sounds.playClick();
-              onOpenCustomizer();
-            }}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-white/20 text-xs font-semibold transition-all cursor-pointer"
-            title="Question Studio & Cloud Sync"
-          >
-            <Settings2 className="w-3.5 h-3.5 text-amber-300" />
-            <span>Studio</span>
-          </button>
-
-          {/* Compact Utilities Cluster: Theme, Sound, Rules, Shuffle, Reset */}
-          <div className="flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
-            {/* Sound Toggle */}
+          <div className="hidden sm:flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
             <button
               onClick={() => {
                 sounds.playClick();
@@ -239,7 +167,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </button>
 
-            {/* How to Play & Host Guide */}
             <button
               onClick={() => {
                 sounds.playClick();
@@ -251,7 +178,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               <HelpCircle className="w-3.5 h-3.5 text-yellow-300" />
             </button>
 
-            {/* Shuffle Board Blocks */}
             {onShuffleBoard && (
               <button
                 onClick={() => {
@@ -265,7 +191,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
               </button>
             )}
 
-            {/* Reset */}
             <button
               id="header-reset-game-btn"
               onClick={() => {
@@ -279,31 +204,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </button>
           </div>
 
-          {/* Account & Cloud Sync: Nested at the very top right with ShadCN Avatar */}
-          <AccountMenu
-            onManualSync={onManualSync}
-            onManualLoad={onManualLoad}
-          />
-        </div>
-
-        {/* Responsive Header Controls (< xl Viewports): Compact Superstar + Hamburger Menu */}
-        <div className="flex xl:hidden items-center gap-1.5 sm:gap-2 shrink-0">
-          {/* Compact Superstar button */}
-          <button
-            onClick={() => {
-              sounds.playSuperstar();
-              onDeclareWinner();
-            }}
-            className={`flex items-center gap-1 bg-gradient-to-r from-amber-500 to-yellow-400 active:scale-95 text-slate-950 font-bold px-2 sm:px-2.5 py-1 rounded-xl text-xs shadow-md border border-yellow-200 transition-all cursor-pointer glass-glow-gold ${
-              isGameOver ? 'ring-2 ring-yellow-300 animate-pulse' : ''
-            }`}
-            title="Crown Superstar"
-          >
-            <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950" />
-            <span className="text-[11px] sm:text-xs">Superstar</span>
-          </button>
-
-          {/* Hamburger Menu Toggle Button */}
           <button
             id="header-mobile-menu-toggle-btn"
             onClick={() => {
@@ -315,7 +215,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 ? 'bg-amber-400 text-slate-950 border-yellow-300 shadow-md scale-105'
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-white/20'
             }`}
-            title={isMobileMenuOpen ? 'Close Menu' : 'Open Game Menu & Music Player'}
+            title={isMobileMenuOpen ? 'Close Menu' : 'Open menu'}
             aria-label="Toggle game options menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -377,8 +277,52 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       </button>
                     </div>
 
-                    {/* Section 1: Music Player Nested in Menu */}
-                    <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
+                    <div className="space-y-2">
+                      {onExitToLauncher && (
+                        <button
+                          onClick={() => {
+                            sounds.playClick();
+                            setIsMobileMenuOpen(false);
+                            onExitToLauncher();
+                          }}
+                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer transition-all"
+                        >
+                          <Library className="w-4 h-4 text-amber-300" />
+                          <div>
+                            <div className="font-semibold text-xs sm:text-sm text-white">Library</div>
+                            <div className="text-[10px] text-slate-400">Back to the game arcade</div>
+                          </div>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMobileMenuOpen(false);
+                          onOpenCustomizer();
+                        }}
+                        className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer transition-all"
+                      >
+                        <Settings2 className="w-4 h-4 text-amber-300" />
+                        <div>
+                          <div className="font-semibold text-xs sm:text-sm text-white">Studio</div>
+                          <div className="text-[10px] text-slate-400">Edit questions & answers</div>
+                        </div>
+                      </button>
+
+                      <div className="p-2.5 rounded-2xl bg-slate-800 border border-white/15 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-xs sm:text-sm text-white">Account</div>
+                          <div className="text-[10px] text-slate-400">Sign in for cloud backup</div>
+                        </div>
+                        <AccountMenu
+                          onManualSync={onManualSync}
+                          onManualLoad={onManualLoad}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:hidden p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                         <Music className="w-3.5 h-3.5 text-yellow-400" />
                         <span>Background Music (BGM)</span>
@@ -462,28 +406,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         <span className="text-xs text-yellow-300 font-bold">📖</span>
                       </button>
 
-                      {/* Question Editor */}
-                      <button
-                        onClick={() => {
-                          sounds.playClick();
-                          setIsMobileMenuOpen(false);
-                          onOpenCustomizer();
-                        }}
-                        className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center justify-between cursor-pointer transition-all"
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Settings2 className="w-4 h-4 text-amber-300" />
-                          <div>
-                            <div className="font-semibold text-xs sm:text-sm text-white">
-                              Question Studio
-                            </div>
-                            <div className="text-[10px] text-slate-400">
-                              Customize this edition's 60 questions, answers & points
-                            </div>
-                          </div>
-                        </div>
-                      </button>
-
                       {onToggleCatchUpNote && (
                         <button
                           onClick={() => {
@@ -561,30 +483,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         </button>
                       )}
 
-                      {/* Exit to Games Launcher */}
-                      {onExitToLauncher && (
-                        <button
-                          onClick={() => {
-                            sounds.playClick();
-                            setIsMobileMenuOpen(false);
-                            onExitToLauncher();
-                          }}
-                          className="w-full p-2.5 rounded-2xl bg-indigo-950/50 hover:bg-indigo-900/70 active:scale-97 text-left border border-indigo-500/30 shadow-sm flex items-center justify-between cursor-pointer transition-all text-indigo-200"
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <Library className="w-4 h-4 text-indigo-300" />
-                            <div>
-                              <div className="font-semibold text-xs sm:text-sm text-white">
-                                Exit to Games Launcher
-                              </div>
-                              <div className="text-[10px] text-indigo-300/80">
-                                Return to full 12-game classroom arcade library
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      )}
-
                       {/* Restart Game */}
                       <button
                         onClick={() => {
@@ -607,17 +505,6 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         </div>
                       </button>
                     </div>
-                  </div>
-
-                  {/* Drawer Bottom / Cloud Account */}
-                  <div className="pt-4 mt-4 border-t border-white/15 flex items-center justify-between">
-                    <div className="text-[11px] text-slate-400">
-                      <span>Cloud Sync & Profile:</span>
-                    </div>
-                    <AccountMenu
-                      onManualSync={onManualSync}
-                      onManualLoad={onManualLoad}
-                    />
                   </div>
                 </motion.div>
               </div>

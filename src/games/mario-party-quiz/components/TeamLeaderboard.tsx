@@ -42,7 +42,9 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
       ? 'grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto'
       : teams.length === 5
       ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5 max-w-[1600px] mx-auto'
-      : 'grid-cols-2 md:grid-cols-3 xl:grid-cols-6 max-w-[1750px] mx-auto';
+      : teams.length === 6
+      ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-6 max-w-[1750px] mx-auto'
+      : 'grid-cols-2 md:grid-cols-4 xl:grid-cols-8 max-w-[1750px] mx-auto';
 
   return (
     <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4 pt-1.5 pb-1 shrink-0">

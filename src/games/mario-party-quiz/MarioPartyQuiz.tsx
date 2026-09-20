@@ -54,7 +54,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_yoshi',
       characterId: 'yoshi',
-      name: 'Team Yoshi',
+      name: 'Yoshi',
       coins: 0,
       stars: 0,
       streak: 0,
@@ -65,7 +65,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_mario',
       characterId: 'mario',
-      name: 'Team Mario',
+      name: 'Mario',
       coins: 0,
       stars: 0,
       streak: 0,
@@ -76,7 +76,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_peach',
       characterId: 'peach',
-      name: 'Team Peach',
+      name: 'Peach',
       coins: 0,
       stars: 0,
       streak: 0,
@@ -87,7 +87,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_daisy',
       characterId: 'daisy',
-      name: 'Team Daisy',
+      name: 'Daisy',
       coins: 0,
       stars: 0,
       streak: 0,
@@ -98,7 +98,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_donkey_kong',
       characterId: 'donkey_kong',
-      name: 'Team DK',
+      name: 'Donkey Kong',
       coins: 0,
       stars: 0,
       streak: 0,
@@ -109,7 +109,7 @@ export function MarioPartyQuiz({
     {
       id: 'team_luigi',
       characterId: 'luigi',
-      name: 'Team Luigi',
+      name: 'Luigi',
       coins: 0,
       stars: 0,
       streak: 0,

@@ -47,7 +47,8 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
   }, [customUrl, storedUrl, characterId]);
 
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
-  const activeImageUrl = customUrl || storedUrl || `/avatars/${characterId}.png`;
+  const stockAvatar = char?.imageUrl ? `/avatars/${characterId}.png` : undefined;
+  const activeImageUrl = customUrl || storedUrl || stockAvatar;
 
   return (
     <div

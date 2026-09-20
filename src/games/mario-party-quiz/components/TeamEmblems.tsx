@@ -143,6 +143,36 @@ export const LuigiEmblem: React.FC<{ className?: string }> = ({ className = 'w-f
   </svg>
 );
 
+export const RosalinaEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
+  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#1AA7C4" />
+    <circle cx="100" cy="100" r="76" fill="#F4FBFF" />
+    <polygon
+      points="100,36 114,82 162,82 122,110 136,156 100,128 64,156 78,110 38,82 86,82"
+      fill="#7C3AED"
+      stroke="#5B21B6"
+      strokeWidth="6"
+      strokeLinejoin="round"
+    />
+    <circle cx="100" cy="104" r="16" fill="#FDE047" stroke="#CA8A04" strokeWidth="5" />
+  </svg>
+);
+
+export const ToadEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
+  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+    <rect width="200" height="200" fill="#E11D48" />
+    <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
+    <ellipse cx="100" cy="118" rx="42" ry="38" fill="#FFE4E6" />
+    <path
+      d="M 48 108 C 48 64, 152 64, 152 108 C 152 92, 48 92, 48 108 Z"
+      fill="#E11D48"
+    />
+    <circle cx="72" cy="90" r="12" fill="#FFFFFF" />
+    <circle cx="100" cy="78" r="14" fill="#FFFFFF" />
+    <circle cx="128" cy="90" r="12" fill="#FFFFFF" />
+  </svg>
+);
+
 export const TeamEmblem: React.FC<{ characterId: CharacterId; className?: string }> = ({
   characterId,
   className = 'w-full h-full',
@@ -160,6 +190,10 @@ export const TeamEmblem: React.FC<{ characterId: CharacterId; className?: string
       return <DonkeyKongEmblem className={className} />;
     case 'luigi':
       return <LuigiEmblem className={className} />;
+    case 'rosalina':
+      return <RosalinaEmblem className={className} />;
+    case 'toad':
+      return <ToadEmblem className={className} />;
     default:
       return <span className="select-none leading-none">🎮</span>;
   }

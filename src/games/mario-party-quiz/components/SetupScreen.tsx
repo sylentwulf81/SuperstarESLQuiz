@@ -32,14 +32,9 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
 }) => {
   const [selectedChars, setSelectedChars] = useState<CharacterId[]>([]);
 
-  const [teamNames, setTeamNames] = useState<Record<CharacterId, string>>({
-    yoshi: 'Team Yoshi',
-    mario: 'Team Mario',
-    peach: 'Team Peach',
-    daisy: 'Team Daisy',
-    donkey_kong: 'Team DK',
-    luigi: 'Team Luigi',
-  });
+  const [teamNames, setTeamNames] = useState<Record<CharacterId, string>>(() =>
+    Object.fromEntries(CHARACTER_LIST.map((char) => [char.id, char.name])) as Record<CharacterId, string>
+  );
 
   const [startingCoins, setStartingCoins] = useState<number>(0);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
@@ -64,6 +59,18 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
 
   const handleNameChange = (charId: CharacterId, newName: string) => {
     setTeamNames(prev => ({ ...prev, [charId]: newName }));
+  };
+
+  const allSelected = selectedChars.length === CHARACTER_LIST.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      sounds.playCharacterDeselect();
+      setSelectedChars([]);
+    } else {
+      sounds.playCharacterSelect();
+      setSelectedChars(CHARACTER_LIST.map((char) => char.id));
+    }
   };
 
   const isStartReady = selectedChars.length >= 2;
@@ -124,7 +131,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
               <h1 className="font-mario text-2xl sm:text-3xl text-white text-shadow-mario tracking-wider">
-                SUPER MARIO PARTY
+                {theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'SUPER MARIO PARTY'}
               </h1>
               <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
                 {theme === 'summer' ? (
@@ -183,23 +190,32 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
 
           <div className="p-4 sm:p-6 lg:py-5 lg:px-6 space-y-4 sm:space-y-5">
             <div>
-              <div className="flex items-center justify-between mb-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                 <h3 className="font-mario text-base sm:text-lg text-yellow-300 flex items-center gap-2">
                   <Users className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
-                  CHOOSE ACTIVE TEAMS ({selectedChars.length}/6)
+                  CHOOSE ACTIVE TEAMS ({selectedChars.length}/{CHARACTER_LIST.length})
                 </h3>
-                <span
-                  className={`text-xs font-bold px-3 py-0.5 rounded-full border transition-all ${
-                    isStartReady
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
-                      : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
-                  }`}
-                >
-                  {isStartReady ? 'Ready to play!' : 'Choose at least 2 teams'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleSelectAll}
+                    className="text-xs font-bold px-3 py-0.5 rounded-full border bg-slate-800 hover:bg-slate-700 text-indigo-100 border-white/20 transition-all cursor-pointer"
+                  >
+                    {allSelected ? 'Clear all' : 'Select all'}
+                  </button>
+                  <span
+                    className={`text-xs font-bold px-3 py-0.5 rounded-full border transition-all ${
+                      isStartReady
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40'
+                        : 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                    }`}
+                  >
+                    {isStartReady ? 'Ready to play!' : 'Choose at least 2 teams'}
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                 {CHARACTER_LIST.map((char) => {
                   const isSelected = selectedChars.includes(char.id);
                   return (
