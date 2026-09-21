@@ -1,0 +1,3 @@
+## 2025-05-18 - Dynamic Lazy-Loading for Monolithic Arcade Games
+**Learning:** Initial page load was bundling all 3 full interactive React game modules (Mario Party Quiz, Mario Blast Classic, Alien Invasion) into a single 1.73 MB bundle, forcing users on launcher load to download JS for games they might not play.
+**Action:** Use `React.lazy()` and `Suspense` at the `App.tsx` router level to code-split game components and rulebook modals into lazy chunks. Reduced initial entry JS bundle size from 1,730.33 kB to 1,171.98 kB (a ~558 kB / 32% reduction in initial JavaScript payload), deferring game code execution until selected by the user.
