@@ -47,7 +47,7 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
   }, [customUrl, storedUrl, characterId]);
 
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
-  const stockAvatar = char?.imageUrl ? `/avatars/${characterId}.png` : undefined;
+  const stockAvatar = char?.imageUrl;
   const activeImageUrl = customUrl || storedUrl || stockAvatar;
 
   return (
@@ -62,7 +62,7 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
           alt={char?.name || 'Team Emblem'}
           onError={() => setImgError(true)}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover select-none pointer-events-none"
+          className="w-full h-full object-contain select-none pointer-events-none"
         />
       ) : char ? (
         <TeamEmblem characterId={characterId} className="w-full h-full object-cover" />

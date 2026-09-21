@@ -388,7 +388,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 Test Game
               </span>
               <span className="text-[11px] text-slate-400 leading-snug">
-                Mystery cards turn red and show their names so you can rehearse Boo, Blooper, Bowser, Gold Star, and Mystery Blocks.
+                Mystery cards turn red and show their names so you can rehearse King Boo, Blooper, Bowser, Gold Star, and Mystery Blocks.
               </span>
             </div>
             <button

@@ -20,9 +20,13 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(`snes_box_art_v2_${game.id}`);
+      const key = `snes_box_art_v2_${game.id}`;
+      const stored = localStorage.getItem(key) || localStorage.getItem(`snes_box_art_${game.id}`);
       if (stored) {
         setCustomImage(stored);
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, stored);
+        }
       }
     } catch {
       // Storage unavailable

@@ -2,11 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets
+  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/data/rewards';
+import { shuffleRivalCoinTotals } from '@/games/mario-blast-classic/data/classicRewards';
 import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
@@ -348,8 +349,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   const [booTargetTeamId, setBooTargetTeamId] = useState<string | null>(null);
   const [booDieRoll, setBooDieRoll] = useState<number | null>(null);
 
-  // King Boo: roll die to steal from each rival team
+  // King Boo: Party Quiz steals from each rival; Classic shuffles rival totals
   const [kingBooDieRoll, setKingBooDieRoll] = useState<number | null>(null);
+  const [kingBooShuffle, setKingBooShuffle] = useState<Record<string, number> | null>(null);
 
   // Bowser's Revolution: choose a rival team to swap coin totals with
   const [swapTargetTeamId, setSwapTargetTeamId] = useState<string | null>(null);
@@ -473,6 +475,14 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     sounds.playStealConfirmed();
     onCardSelected(selectedCard, {
       dieRoll: kingBooDieRoll,
+    });
+  };
+
+  const handleFinishKingBooShuffle = () => {
+    if (!selectedCard || !kingBooShuffle) return;
+    sounds.playStealConfirmed();
+    onCardSelected(selectedCard, {
+      coinTotals: kingBooShuffle,
     });
   };
 
@@ -603,7 +613,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
           ) : (
             <div className="bg-black/50 border border-white/25 rounded-full py-0.5 px-2 flex items-center gap-1">
               <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
-                {card.type === 'pow_block' ? 'POW' : card.type === 'blooper' ? 'INK +1' : card.type === 'bowser_revolution' ? 'SWAP' : card.type === 'bowser_fury' ? '-5 ALL' : card.type === 'ghost_steal_5' ? 'DIE STEAL' : card.type === 'king_boo' ? 'ALL STEAL' : 'SPECIAL'}
+                {card.type === 'pow_block' ? 'POW' : card.type === 'blooper' ? 'INK +1' : card.type === 'bowser_revolution' ? 'SWAP' : card.type === 'bowser_fury' ? '-5 ALL' : card.type === 'ghost_steal_5' ? 'DIE STEAL' : card.type === 'king_boo' || card.type === 'boo_steal_10' ? (gameTheme === 'classic' ? 'SHUFFLE' : 'ALL STEAL') : 'SPECIAL'}
               </span>
             </div>
           )}
@@ -871,32 +881,110 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                       </div>
                     )}
 
-                    {/* 2. KING BOO: Roll Die to Steal from EACH Other Team */}
+                    {/* 2. KING BOO: Classic shuffles rival coins; Party Quiz steals from each */}
                     {(selectedCard.type === 'king_boo' || selectedCard.type === 'boo_steal_10') && (
-                      <div className="space-y-4">
-                        <DiceRoller
-                          title="Roll King Boo's Die!"
-                          subtitle={`Roll a 6-sided die to steal that exact number of coins from EACH of the ${eligibleOpponents.length} other teams!`}
-                          themeColor="purple"
-                          onRollComplete={val => setKingBooDieRoll(val)}
-                        />
-
-                        {kingBooDieRoll !== null && (
-                          <div className="flex flex-col items-center lg:items-start gap-3">
-                            <p className="text-sm font-bold text-fuchsia-300">
-                              👑 King Boo will steal {kingBooDieRoll} coins from each rival team (+{kingBooDieRoll * eligibleOpponents.length} total)!
-                            </p>
+                      gameTheme === 'classic' ? (
+                        <div className="flex-1 w-full p-2.5 gap-2 overflow-hidden flex flex-col min-h-0 bg-fuchsia-950/80 rounded-2xl border border-fuchsia-500/50">
+                          <div className="flex items-center justify-center gap-2 shrink-0 text-fuchsia-200">
+                            <Crown className="w-6 h-6 text-fuchsia-300" />
+                            <h4 className="font-mario text-xl sm:text-2xl text-white">SHUFFLE</h4>
+                          </div>
+                          <div className="flex items-center justify-center gap-2 shrink-0">
+                            <TeamAvatar
+                              characterId={currentTeam.characterId}
+                              size="md"
+                              customUrl={currentTeam.customImageUrl}
+                            />
+                            <CoinScore coins={currentTeam.coins} />
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest">
+                              Safe
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 content-start flex-1 min-h-0">
+                            {eligibleOpponents.map(opp => {
+                              const oppChar = CHARACTERS[opp.characterId];
+                              const shown = kingBooShuffle?.[opp.id] ?? opp.coins;
+                              const changed = kingBooShuffle != null && shown !== opp.coins;
+                              return (
+                                <div
+                                  key={opp.id}
+                                  className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold flex flex-col items-center p-2 gap-1 ${
+                                    changed ? 'border-yellow-300 ring-2 ring-fuchsia-400' : 'border-white/30'
+                                  }`}
+                                >
+                                  <TeamAvatar
+                                    characterId={opp.characterId}
+                                    size="md"
+                                    customUrl={opp.customImageUrl}
+                                  />
+                                  <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
+                                  <div className="flex items-center gap-1">
+                                    {changed && (
+                                      <span className="font-mario text-sm text-white/50 line-through leading-none">
+                                        {opp.coins}
+                                      </span>
+                                    )}
+                                    <motion.div
+                                      key={`${opp.id}-${shown}`}
+                                      initial={kingBooShuffle ? { scale: 1.35 } : false}
+                                      animate={{ scale: 1 }}
+                                    >
+                                      <CoinScore coins={shown} />
+                                    </motion.div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {kingBooShuffle == null ? (
                             <button
                               type="button"
-                              onClick={handleFinishKingBooSteal}
-                              className="px-8 py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                              onClick={() => {
+                                setKingBooShuffle(shuffleRivalCoinTotals(teams, currentTeam.id));
+                                sounds.playBoo();
+                              }}
+                              className="w-full shrink-0 px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                            >
+                              <Shuffle className="w-6 h-6" />
+                              SHUFFLE
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={handleFinishKingBooShuffle}
+                              className="w-full shrink-0 px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
                               <Crown className="w-6 h-6" />
-                              CLAIM KING BOO HEIST (+{kingBooDieRoll * eligibleOpponents.length} COINS)
+                              CLAIM
                             </button>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <DiceRoller
+                            title="Roll King Boo's Die!"
+                            subtitle={`Roll a 6-sided die to steal that exact number of coins from EACH of the ${eligibleOpponents.length} other teams!`}
+                            themeColor="purple"
+                            onRollComplete={val => setKingBooDieRoll(val)}
+                          />
+
+                          {kingBooDieRoll !== null && (
+                            <div className="flex flex-col items-center lg:items-start gap-3">
+                              <p className="text-sm font-bold text-fuchsia-300">
+                                👑 King Boo will steal {kingBooDieRoll} coins from each rival team (+{kingBooDieRoll * eligibleOpponents.length} total)!
+                              </p>
+                              <button
+                                type="button"
+                                onClick={handleFinishKingBooSteal}
+                                className="px-8 py-3.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                              >
+                                <Crown className="w-6 h-6" />
+                                CLAIM KING BOO HEIST (+{kingBooDieRoll * eligibleOpponents.length} COINS)
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
                     )}
 
                     {/* 3. BOWSER'S REVOLUTION: Swap coin totals with one other team */}

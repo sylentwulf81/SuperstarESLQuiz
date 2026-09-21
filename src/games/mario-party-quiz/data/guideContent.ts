@@ -72,7 +72,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '1. Starting the Game & Team Setup',
           icon: 'Users',
           points: [
-            'Select 2 to 6 active character teams (Mario, Luigi, Peach, Daisy, Yoshi, Donkey Kong).',
+            'Select 2 to 8 active character teams (Mario, Luigi, Peach, Daisy, Yoshi, Donkey Kong, Rosalina, Toad).',
             'Choose starting coins: 0, 5, 10, 15, or 20 coins. We recommend starting with 5 or 10 coins so Boo steal cards have an immediate impact!',
             'The board has 5 tiered rows of 12 blocks (60 total). Summer Edition uses ESL trivia; Holiday Edition uses Christmas and winter questions.',
           ],

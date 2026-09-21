@@ -26,6 +26,7 @@ import {
 import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party-quiz/data/rewards';
 import {
   applyCoinPayout,
+  applyRivalCoinShuffle,
   drawClassicCard,
   fillClassicTestSlots,
   isClassicRoundEnder,
@@ -347,16 +348,8 @@ export function MarioBlastClassic({
       case 'king_boo':
       case 'boo_steal_10': {
         sounds.playBoo();
-        const dieValue = options?.dieRoll || 5;
-        const rivals = nextTeams.filter(t => t.id !== drawingTeam.id);
-        const totalStolen = dieValue * rivals.length;
-        nextTeams = nextTeams.map(t => {
-          if (t.id === drawingTeam.id) {
-            return { ...t, coins: t.coins + totalStolen, coinsStolen: (t.coinsStolen || 0) + totalStolen };
-          }
-          return { ...t, coins: t.coins - dieValue };
-        });
-        showToast(`👑 KING BOO stole ${dieValue} from each rival (+${totalStolen})!`);
+        nextTeams = applyRivalCoinShuffle(nextTeams, drawingTeam.id, options?.coinTotals);
+        showToast('👑 KING BOO — SHUFFLE!');
         break;
       }
       case 'blue_shell': {

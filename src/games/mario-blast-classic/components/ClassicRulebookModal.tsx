@@ -21,6 +21,7 @@ const EN = {
   ],
   cards: [
     'Super Mushroom: doubles that team’s next coin card — even if they did not pick the question. Then the mushroom is used up.',
+    'King Boo: shuffles the other teams’ coins. Yours stay put.',
     'Gold Star: +15 coins, then Round Over.',
     'Blooper: ink one rival. Their next coin card pays only 1 coin.',
     'Bowser’s Revolution: swap coins with a rival, then Round Over.',
@@ -43,6 +44,7 @@ const JA = {
   ],
   cards: [
     'スーパーキノコ：次のコインカードが2倍（問題を選んだチームでなくてもOK）。使ったら消えます。',
+    'キングテレサ：他チームのコインをシャッフル。自分のコインはそのまま。',
     'ゴールドスター：+15コインのあとラウンド終了。',
     'ブルーパー：相手1チームにインク。次のコインカードが必ず+1。',
     'クッパレボリューション：相手とコインを交換したあとラウンド終了。',
