@@ -69,7 +69,7 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all shadow-md cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5 text-fuchsia-300" />
-                Game Library
+                Activity Library
               </button>
               <AccountMenu />
             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Gamepad2, 
+import {
+  GraduationCap,
   Sparkles, 
   Play, 
   BookOpen, 
@@ -32,7 +32,7 @@ import {
   Filter,
   X
 } from 'lucide-react';
-import { LAUNCHER_GAMES, LauncherGame, GameCategory } from '@/launcher/catalog';
+import { LAUNCHER_GAMES, LauncherGame, LibraryFilter, LIBRARY_FILTERS, LIBRARY_FILTER_LABELS, ACTIVITY_STYLE_LABELS } from '@/launcher/catalog';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
@@ -52,7 +52,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   soundEnabled,
   onToggleSound,
 }) => {
-  const [selectedCategory, setSelectedCategory] = useState<GameCategory>('all');
+  const [selectedCategory, setSelectedCategory] = useState<LibraryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [spotlightGameId, setSpotlightGameId] = useState<string>('mario_party_summer');
   const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
@@ -64,9 +64,15 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 
   const filteredGames = useMemo(() => {
     return LAUNCHER_GAMES.filter(game => {
-      const matchesCategory = 
-        selectedCategory === 'all' ? true : game.category === selectedCategory;
-      const matchesSearch = 
+      const matchesCategory =
+        selectedCategory === 'all'
+          ? true
+          : selectedCategory === 'board_turn_based' ||
+              selectedCategory === 'board_classic' ||
+              selectedCategory === 'map_takeover'
+            ? game.activityStyle === selectedCategory
+            : game.category === selectedCategory;
+      const matchesSearch =
         searchQuery.trim() === '' ||
         game.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         game.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -76,14 +82,16 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
     });
   }, [selectedCategory, searchQuery]);
 
-  const getCategoryIcon = (cat: GameCategory) => {
+  const getCategoryIcon = (cat: LibraryFilter) => {
     switch (cat) {
-      case 'board': return <Compass className="w-3.5 h-3.5" />;
+      case 'board_turn_based': return <Compass className="w-3.5 h-3.5" />;
+      case 'board_classic': return <Zap className="w-3.5 h-3.5" />;
+      case 'map_takeover': return <Rocket className="w-3.5 h-3.5" />;
       case 'quiz_show': return <Tv className="w-3.5 h-3.5" />;
       case 'action': return <Flame className="w-3.5 h-3.5" />;
       case 'seasonal': return <Snowflake className="w-3.5 h-3.5" />;
       case 'strategy': return <Building2 className="w-3.5 h-3.5" />;
-      default: return <Gamepad2 className="w-3.5 h-3.5" />;
+      default: return <GraduationCap className="w-3.5 h-3.5" />;
     }
   };
 
@@ -102,7 +110,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       case 'Zap': return <Zap className="w-6 h-6 text-lime-300" />;
       case 'Gavel': return <Gavel className="w-6 h-6 text-yellow-400" />;
       case 'Star': return <Star className="w-6 h-6 text-rose-300" />;
-      default: return <Gamepad2 className="w-6 h-6 text-yellow-300" />;
+      default: return <GraduationCap className="w-6 h-6 text-yellow-300" />;
     }
   };
 
@@ -115,16 +123,16 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center justify-center">
               <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
-                <Gamepad2 className="w-5 h-5 text-yellow-300" />
+                <GraduationCap className="w-5 h-5 text-yellow-300" />
               </div>
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="font-mario text-lg sm:text-xl text-yellow-300 tracking-wider flex items-center gap-1.5">
-                  ALT GAMES
+                  SUPERSTAR ESL
                 </h1>
                 <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 tracking-widest hidden sm:inline-block">
-                  CLASSROOM ARCADE
+                  CLASSROOM ACTIVITIES
                 </span>
               </div>
               <p className="text-[11px] text-white/50 -mt-0.5">
@@ -179,7 +187,9 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                   {spotlightGame.badge}
                 </span>
                 <span className="text-xs uppercase font-bold px-3 py-1 rounded-full bg-slate-800/90 border border-white/15 text-slate-300">
-                  {spotlightGame.category.replace('_', ' ')}
+                  {spotlightGame.activityStyle
+                    ? ACTIVITY_STYLE_LABELS[spotlightGame.activityStyle]
+                    : spotlightGame.category.replace('_', ' ')}
                 </span>
                 <span className="text-xs font-semibold text-white/50 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
@@ -225,7 +235,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                   className="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-lg shadow-[0_10px_25px_rgba(245,158,11,0.4)] border-2 border-yellow-200 flex items-center gap-2.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
                 >
                   <Play className="w-5 h-5 fill-current" />
-                  PLAY GAME
+                  START ACTIVITY
                 </button>
 
                 {spotlightGame.hasTeacherGuide && (
@@ -249,7 +259,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                   className="px-4 py-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/15 text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
                 >
                   <Info className="w-4 h-4" />
-                  Game Details
+                  Activity Details
                 </button>
               </div>
             </div>
@@ -297,7 +307,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
         <section className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           {/* Category Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none]">
-            {(['all', 'board', 'quiz_show', 'action', 'strategy', 'seasonal'] as GameCategory[]).map(cat => (
+            {LIBRARY_FILTERS.map(cat => (
               <button
                 key={cat}
                 onClick={() => {
@@ -311,7 +321,9 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                 }`}
               >
                 {getCategoryIcon(cat)}
-                {cat === 'all' ? `All Games (${LAUNCHER_GAMES.length})` : cat.replace('_', ' ').toUpperCase()}
+                {cat === 'all'
+                  ? `All Activities (${LAUNCHER_GAMES.length})`
+                  : LIBRARY_FILTER_LABELS[cat].toUpperCase()}
               </button>
             ))}
           </div>
@@ -323,7 +335,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search games, grades, mechanics..."
+              placeholder="Search activities, grades, mechanics..."
               className="w-full bg-slate-900/90 border border-white/15 rounded-2xl pl-10 pr-9 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
             {searchQuery && (
@@ -341,13 +353,13 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-mario text-xl text-yellow-300 flex items-center gap-2">
-              <span>GAME LIBRARY</span>
+              <span>ACTIVITY LIBRARY</span>
               <span className="text-xs font-sans font-bold px-2 py-0.5 rounded-md bg-white/10 text-slate-300">
                 {filteredGames.length} Available
               </span>
             </h3>
             <span className="text-xs text-white/50 hidden sm:inline-block">
-              Click any game for play, details, or rule previews
+              Click any activity for start, details, or rule previews
             </span>
           </div>
 
@@ -373,6 +385,11 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 
                     {/* Stats Pill Row */}
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/60">
+                      {game.activityStyle && (
+                        <span className="bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-400/30 text-indigo-200 font-bold uppercase tracking-wide">
+                          {ACTIVITY_STYLE_LABELS[game.activityStyle]}
+                        </span>
+                      )}
                       <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1">
                         <Users className="w-3 h-3 text-amber-300" />
                         {game.stats.players}
@@ -404,7 +421,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                           }`}
                         >
                           <Play className="w-3.5 h-3.5 fill-current" />
-                          PLAY NOW
+                          START
                         </button>
 
                         <div className="flex items-center justify-between gap-2 text-[11px] pt-1">
@@ -446,10 +463,10 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                           className="w-full py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-indigo-200 border border-indigo-400/30 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                         >
                           <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-                          Preview Game Concept
+                          Preview Activity
                         </button>
                         <p className="text-[10px] text-center text-white/40 italic">
-                          Coming in the 12-Game Classroom Suite
+                          Coming in the classroom activity suite
                         </p>
                       </div>
                     )}
@@ -461,7 +478,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
         </section>
       </main>
 
-      {/* Game Details & Mechanics Modal */}
+      {/* Activity details modal */}
       <AnimatePresence>
         {previewGame && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
@@ -478,9 +495,16 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                     {previewGame.cover.coverArtEmoji}
                   </div>
                   <div>
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${previewGame.badgeColor}`}>
-                      {previewGame.badge}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${previewGame.badgeColor}`}>
+                        {previewGame.badge}
+                      </span>
+                      {previewGame.activityStyle && (
+                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/50 border border-white/20 text-white/80">
+                          {ACTIVITY_STYLE_LABELS[previewGame.activityStyle]}
+                        </span>
+                      )}
+                    </div>
                     <h3 className="font-mario text-2xl text-white drop-shadow mt-1">
                       {previewGame.title}
                     </h3>
@@ -593,7 +617,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                       className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-mario text-xs sm:text-sm font-bold shadow flex items-center gap-1.5 cursor-pointer"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      PLAY THIS GAME
+                      START ACTIVITY
                     </button>
                   </div>
                 ) : (

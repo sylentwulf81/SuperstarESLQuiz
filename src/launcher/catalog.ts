@@ -2,6 +2,43 @@ import { GameTheme } from '@/shared/types';
 
 export type GameCategory = 'all' | 'board' | 'quiz_show' | 'action' | 'seasonal' | 'strategy';
 
+/**
+ * Engine family. Variants share a style (Summer/Holiday/Halloween = Board Turn-Based).
+ * Board Classic: every team can answer. Board Turn-Based: one team at a time.
+ * Map Takeover: paint the map (Invade the USA, later Invade Japan, …).
+ */
+export type ActivityStyle = 'board_classic' | 'board_turn_based' | 'map_takeover';
+
+export const ACTIVITY_STYLE_LABELS: Record<ActivityStyle, string> = {
+  board_classic: 'Board Classic',
+  board_turn_based: 'Board Turn-Based',
+  map_takeover: 'Map Takeover',
+};
+
+export type LibraryFilter = 'all' | ActivityStyle | Exclude<GameCategory, 'all' | 'board'>;
+
+export const LIBRARY_FILTERS: LibraryFilter[] = [
+  'all',
+  'board_turn_based',
+  'board_classic',
+  'map_takeover',
+  'quiz_show',
+  'action',
+  'strategy',
+  'seasonal',
+];
+
+export const LIBRARY_FILTER_LABELS: Record<LibraryFilter, string> = {
+  all: 'All Activities',
+  board_turn_based: 'Turn-Based',
+  board_classic: 'Classic',
+  map_takeover: 'Map Takeover',
+  quiz_show: 'Quiz Show',
+  action: 'Action',
+  strategy: 'Strategy',
+  seasonal: 'Seasonal',
+};
+
 export type PlayableGameModule = 'mario-party-quiz' | 'mario-blast-classic' | 'alien-invasion';
 
 export interface LauncherGame {
@@ -11,10 +48,12 @@ export interface LauncherGame {
   tagline: string;
   description: string;
   category: GameCategory;
-  badge: 'READY TO PLAY' | 'POPULAR' | 'IN DEVELOPMENT' | 'NEW' | 'SEASONAL';
+  /** Engine this activity belongs to. Variants share a style and pull from that engine. */
+  activityStyle?: ActivityStyle;
+  badge: 'CLASS READY' | 'POPULAR' | 'IN DEVELOPMENT' | 'NEW' | 'SEASONAL';
   badgeColor: string;
   isPlayable: boolean;
-  /** Only set for titles that have a siloed game module. Placeholders omit this. */
+  /** Only set for titles that have a siloed activity module. Placeholders omit this. */
   gameModule?: PlayableGameModule;
   themeKey?: GameTheme;
   cover: {
@@ -43,10 +82,11 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     id: 'mario_party_summer',
     title: 'Super Mario Party Quiz: Summer Edition',
     shortTitle: 'Mario Party Summer',
-    tagline: '60-Block Mystery Roulette & Interactive ESL Board Game',
-    description: 'The flagship classroom board game! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges, then spinning for game-changing items like Stars, Boo Steals, and Bowser Revolutions.',
+    tagline: '60-Block Mystery Roulette & Interactive ESL Board Activity',
+    description: 'The flagship classroom board activity! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges, then spinning for surprise items like Stars, Boo Steals, and Bowser Revolutions.',
     category: 'board',
-    badge: 'READY TO PLAY',
+    activityStyle: 'board_turn_based',
+    badge: 'CLASS READY',
     badgeColor: 'bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 shadow-yellow-500/30',
     isPlayable: true,
     gameModule: 'mario-party-quiz',
@@ -83,7 +123,8 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     tagline: 'Festive Winter Mystery Board with Snowy Surprises',
     description: 'A cozy holiday edition featuring winter-themed trivia, holiday vocabulary, Christmas carol sing-along rewards, and chilly Bowser Blizzard events.',
     category: 'seasonal',
-    badge: 'READY TO PLAY',
+    activityStyle: 'board_turn_based',
+    badge: 'CLASS READY',
     badgeColor: 'bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 shadow-cyan-500/30',
     isPlayable: true,
     gameModule: 'mario-party-quiz',
@@ -112,7 +153,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Star captures, coin races, and classroom-safe item cards',
       'Snowy Visual Theme with Frost Effects',
     ],
-    powerpointInspiration: 'Replaces seasonal winter PPT games with animated snow and holiday music',
+    powerpointInspiration: 'Replaces seasonal winter PPT activities with animated snow and holiday music',
   },
   {
     id: 'mario_blast_classic',
@@ -120,8 +161,9 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Mario Blast Classic',
     tagline: 'Have You Ever…? Live Classroom Race & Mystery Cards',
     description:
-      'The original Blast loop, rebuilt. One team picks the block, the whole class can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser cards can slam the round shut.',
+      'Board Classic: one team picks the block, every team can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser cards can slam the round shut.',
     category: 'board',
+    activityStyle: 'board_classic',
     badge: 'NEW',
     badgeColor: 'bg-gradient-to-r from-rose-500 to-amber-400 text-slate-950 shadow-rose-500/30',
     isPlayable: true,
@@ -158,8 +200,9 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Invade the USA',
     tagline: 'Paint the USA. Steal states. Host calls the winner.',
     description:
-      'Teams invade America on a live US map. Click any state, answer the English question, and paint it your color. Steal captured states. Most states when the host ends the game wins.',
+      'Teams invade America on a live US map. Click any state, answer the English question, and paint it your color. Steal captured states. Most states when the host ends the activity wins.',
     category: 'strategy',
+    activityStyle: 'map_takeover',
     badge: 'NEW',
     badgeColor: 'bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-slate-950 shadow-fuchsia-500/30',
     isPlayable: true,
@@ -195,8 +238,9 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Halloween Blast',
     tagline: 'Spooky Mystery Blocks, Ghost Hunts & Haunted Cards',
     description:
-      'A coming-soon seasonal Mario Blast night. Teams pick blocks under a haunted sky, race to answer, and draw from a deck of haunted block cards — the twist we’ll cook up for October classrooms.',
+      'A coming-soon seasonal Board Turn-Based activity. Teams take turns picking haunted mystery blocks, answering spooky ESL prompts, and drawing classroom-safe surprise cards — the October pack.',
     category: 'seasonal',
+    activityStyle: 'board_turn_based',
     badge: 'IN DEVELOPMENT',
     badgeColor: 'bg-gradient-to-r from-orange-500 to-purple-600 text-white shadow-orange-500/30',
     isPlayable: false,
@@ -220,7 +264,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Haunted Block Cards',
       'Halloween mystery board & seasonal trivia',
       'Ghost hunts, pumpkin coins, and classroom-safe scares',
-      'Coming soon as a seasonal Mario Blast edition',
+      'Coming soon as a seasonal Board Turn-Based activity',
     ],
     powerpointInspiration: 'A Halloween classroom PPT upgrade with haunted blocks instead of static slides',
   },
@@ -255,7 +299,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Final Jeopardy Music Timer & Wager System',
       'One-Click Category Deck Importer',
     ],
-    powerpointInspiration: 'Upgrades the fragile hyperlink-based PowerPoint Jeopardy games',
+    powerpointInspiration: 'Upgrades the fragile hyperlink-based PowerPoint Jeopardy activities',
   },
   {
     id: 'bomb_game',
@@ -327,7 +371,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     id: 'mystery_box',
     title: 'Mystery Box & The Lucky Wheel',
     shortTitle: 'Mystery Box Show',
-    tagline: 'Keep or Trade? The High-Stakes Classroom Game Show',
+    tagline: 'Keep or Trade? The High-Stakes Classroom Quiz Show',
     description: 'Teams answer questions to earn mysterious sealed boxes. Do they KEEP their mystery box or TRADE with the leading team? Watch out for the Bankrupt trap or the Golden Jackpots!',
     category: 'board',
     badge: 'IN DEVELOPMENT',
@@ -354,7 +398,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Hilarious Booby Prizes & Giant Point Swaps',
       'Guaranteed Laughs and Maximum Suspense',
     ],
-    powerpointInspiration: 'Upgrades the legendary Deal or No Deal / Mystery Box PPT games',
+    powerpointInspiration: 'Upgrades the legendary Deal or No Deal / Mystery Box PPT activities',
   },
   {
     id: 'treasure_island',
@@ -387,7 +431,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Pirate Cannons & Ghost Ship Raids',
       'Treasure Chest Digging Animations',
     ],
-    powerpointInspiration: 'Re-imagines the classic Battleship and Pirate Island PPT games',
+    powerpointInspiration: 'Re-imagines the classic Battleship and Pirate Island PPT activities',
   },
   {
     id: 'vocabulary_tycoon',
@@ -420,7 +464,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Natural Disasters and Insurance Quiz Challenges',
       'Strategic Decision-Making for Older Students',
     ],
-    powerpointInspiration: 'Replaces complex Monopoly PPT games with clean automated mechanics',
+    powerpointInspiration: 'Replaces complex Monopoly PPT activities with clean automated mechanics',
   },
   {
     id: 'grammar_dungeon',
@@ -460,7 +504,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     title: 'Speed Runners: ESL Grand Prix',
     shortTitle: 'Grand Prix Racing',
     tagline: 'Fastest Finger First! High-Octane Circuit Racing',
-    description: 'A lightning-paced racing game where response speed matters. Correct answers boost kart speed; question streaks trigger turbo mushrooms, while wrong answers trigger banana spins!',
+    description: 'A lightning-paced racing activity where response speed matters. Correct answers boost kart speed; question streaks trigger turbo mushrooms, while wrong answers trigger banana spins!',
     category: 'action',
     badge: 'IN DEVELOPMENT',
     badgeColor: 'bg-lime-600/80 text-lime-100 border border-lime-400/40',
@@ -486,7 +530,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Ideal for Quick 15-Minute Warmups',
       'Checkered Flag Victory Podium',
     ],
-    powerpointInspiration: 'Replaces Mario Kart racing PPT games with real-time synchronized track physics',
+    powerpointInspiration: 'Replaces Mario Kart racing PPT activities with real-time synchronized track physics',
   },
   {
     id: 'auction_house',
@@ -519,6 +563,6 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Teaches Numbers, Currency & Critical Thinking',
       'Exciting Economic Risk-Reward Gameplay',
     ],
-    powerpointInspiration: 'Upgrades the popular Auction / Bidding classroom PPT game',
+    powerpointInspiration: 'Upgrades the popular Auction / Bidding classroom PPT activity',
   },
 ];
