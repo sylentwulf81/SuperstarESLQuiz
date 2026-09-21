@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
@@ -623,8 +623,17 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   };
 
   // POW Block data
-  const maxCoins = Math.max(...teams.map(t => t.coins));
-  const minCoins = Math.min(...teams.map(t => t.coins));
+  const { maxCoins, minCoins } = useMemo(() => {
+    if (teams.length === 0) return { maxCoins: 0, minCoins: 0 };
+    let max = teams[0].coins;
+    let min = teams[0].coins;
+    for (let i = 1; i < teams.length; i++) {
+      const c = teams[i].coins;
+      if (c > max) max = c;
+      if (c < min) min = c;
+    }
+    return { maxCoins: max, minCoins: min };
+  }, [teams]);
 
   const targetOpponent = booTargetTeamId ? teams.find(t => t.id === booTargetTeamId) : null;
   const swapOpponent = swapTargetTeamId ? teams.find(t => t.id === swapTargetTeamId) : null;
