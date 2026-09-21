@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Play,
   Pause,
@@ -110,13 +110,21 @@ export const MusicPlayer: React.FC = () => {
     await bgm.deleteCustomTrack(trackId);
   };
 
-  const synthTracks = bgmState.tracks
-    .map((track, idx) => ({ track, idx }))
-    .filter(({ track }) => track.category === 'synth');
+  const synthTracks = useMemo(
+    () =>
+      bgmState.tracks
+        .map((track, idx) => ({ track, idx }))
+        .filter(({ track }) => track.category === 'synth'),
+    [bgmState.tracks]
+  );
 
-  const customTracks = bgmState.tracks
-    .map((track, idx) => ({ track, idx }))
-    .filter(({ track }) => track.category === 'custom');
+  const customTracks = useMemo(
+    () =>
+      bgmState.tracks
+        .map((track, idx) => ({ track, idx }))
+        .filter(({ track }) => track.category === 'custom'),
+    [bgmState.tracks]
+  );
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
