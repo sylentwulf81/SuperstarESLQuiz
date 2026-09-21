@@ -14,13 +14,13 @@ interface GameBoardProps {
   onOpenLeaderboard?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({
+export const GameBoard = React.memo(function GameBoard({
   blocks,
   teams,
   onSelectBlock,
   isGameOver,
   onOpenLeaderboard,
-}) => {
+}: GameBoardProps) {
   return (
     <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
       <div className="relative max-h-full w-[min(100%,calc(100cqh*12/5))] max-lg:w-[min(100%,calc(100cqh*0.6))] aspect-[12/5] max-lg:aspect-[6/10]">
@@ -90,7 +90,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     ? isClearedWithX
                       ? 'bg-red-950/40 border border-red-500/30 opacity-70 shadow-inner cursor-not-allowed'
                       : 'bg-slate-900/60 border border-white/10 opacity-75 shadow-inner cursor-not-allowed'
-                    : 'gold-mario-block cursor-pointer shadow-md hover:scale-105 active:scale-95 hover:z-20'
+                    : 'gold-mario-block cursor-pointer shadow-md hover:brightness-110 active:brightness-95 hover:z-20'
                 }`}
               >
                 {!isOpened ? (
@@ -133,4 +133,4 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       </div>
     </div>
   );
-};
+});

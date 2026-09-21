@@ -7,6 +7,8 @@ interface GameModalShellProps {
   barColor?: string;
   className?: string;
   zIndexClass?: string;
+  /** Skip the enter scale tween so Classic card reveals paint on the click frame. */
+  instant?: boolean;
 }
 
 /** One classroom overlay size so card reveals don't jump when inner content changes. */
@@ -18,14 +20,15 @@ export const GameModalShell: React.FC<GameModalShellProps> = ({
   barColor,
   className = '',
   zIndexClass = 'z-50',
+  instant = false,
 }) => {
   useBodyScrollLock();
   return (
     <div className={`fixed inset-0 ${zIndexClass} flex items-center justify-center p-2 sm:p-3 bg-slate-950/88`}>
       <motion.div
-        initial={{ scale: 0.97, opacity: 0 }}
+        initial={instant ? false : { scale: 0.97, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.97, opacity: 0 }}
+        exit={instant ? undefined : { scale: 0.97, opacity: 0 }}
         className={`${GAME_MODAL_FRAME} ${className}`}
       >
         {barColor && <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: barColor }} />}

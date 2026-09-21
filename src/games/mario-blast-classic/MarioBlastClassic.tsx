@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { AmbientParticles } from '@/games/mario-party-quiz/components/AmbientParticles';
@@ -13,6 +13,7 @@ import { CustomizerModal } from '@/games/mario-party-quiz/components/CustomizerM
 import { ClassicRoundModal } from './components/ClassicRoundModal';
 import { ClassicRulebookModal } from './components/ClassicRulebookModal';
 import { MysteryBlocksMiniGame } from './components/MysteryBlocksMiniGame';
+import { SuperMushroomMiniGame } from './components/SuperMushroomMiniGame';
 import { RoundOverOverlay } from './components/RoundOverOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
 import { GameQuestion, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
@@ -24,7 +25,8 @@ import {
   persistClassicLessonGoal,
   resetClassicLessonGoal,
 } from './data/classicLesson';
-import { EngineEffect, playEngineSound } from '@/shared/engineFx';
+import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
   createClassicState,
   reduceClassic,
@@ -33,6 +35,7 @@ import {
   classicBoardCleared,
   ClassicEvent,
 } from './engine';
+import type { MysteryBlockOutcome, SuperMushroomOffer } from './engine';
 import { createGameBlocks, TOTAL_BLOCKS } from '@/games/mario-party-quiz/createBlocks';
 
 export const MARIO_BLAST_CLASSIC_MODULE = 'mario-blast-classic' as const;
@@ -58,6 +61,7 @@ export function MarioBlastClassic({
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
+  const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
   const handleToggleCatchUpNote = useCallback(() => {
     setShowCatchUpNote(prev => {
@@ -89,10 +93,20 @@ export function MarioBlastClassic({
   const dispatch = useCallback((event: ClassicEvent) => {
     setState(prev => {
       const result = reduceClassic(prev, event);
-      queueMicrotask(() => runEffects(result.effects));
+      pendingEffectsRef.current = result.effects;
       return result.state;
     });
+    afterPaint(() => {
+      const effects = pendingEffectsRef.current;
+      if (effects.length === 0) return;
+      pendingEffectsRef.current = [];
+      runEffects(effects);
+    });
   }, [runEffects]);
+
+  useEffect(() => {
+    preloadRevealArt();
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn && user) {
@@ -116,7 +130,7 @@ export function MarioBlastClassic({
 
   const {
     view, teams, currentTeamIndex, blocks, selectedBlockId, slots, drawnTeamIds,
-    selectedAnsweringTeamId, pendingCard, mysteryOutcomes, roundOverReason, testMode,
+    selectedAnsweringTeamId, pendingCard, mysteryOutcomes, mushroomOffers, roundOverReason, testMode,
   } = state;
   const activeTeam = classicActiveTeam(state);
   const openedBlocksCount = classicOpenedCount(state);
@@ -187,7 +201,7 @@ export function MarioBlastClassic({
     setLessonGoal(resetClassicLessonGoal());
   };
 
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
       return false;
@@ -195,9 +209,9 @@ export function MarioBlastClassic({
     const success = await saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal });
     showToast(success ? '☁️ Questions backed up to Firestore!' : '⚠️ Could not sync to Firestore.');
     return success;
-  };
+  }, [isLoggedIn, saveQuestionsCloud, blocks, lessonGoal, showToast]);
 
-  const handleManualLoad = async () => {
+  const handleManualLoad = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to load your cloud questions.');
       return false;
@@ -215,11 +229,51 @@ export function MarioBlastClassic({
     }
     showToast('ℹ️ No custom Classic questions found in Firestore.');
     return false;
-  };
+  }, [isLoggedIn, loadQuestionsCloud, dispatch, showToast]);
 
-  const handleRewardResolved = (card: RewardCard, options?: RewardCardActionOptions) => {
+  const handleRewardResolved = useCallback((card: RewardCard, options?: RewardCardActionOptions) => {
     dispatch({ type: 'RESOLVE_CARD', card, options });
-  };
+  }, [dispatch]);
+
+  const handleOpenRules = useCallback(() => setIsRulesModalOpen(true), []);
+  const handleOpenCustomizer = useCallback(() => setIsCustomizerOpen(true), []);
+  const handleDeclareWinner = useCallback(() => dispatch({ type: 'DECLARE_SUPERSTAR' }), [dispatch]);
+  const handleResetGame = useCallback(() => dispatch({ type: 'RESTART_SETUP' }), [dispatch]);
+  const handleShuffleBoard = useCallback(() => {
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: createGameBlocks(theme, undefined, true),
+      playShuffle: true,
+      toast: '🎲 All 60 prompts reshuffled!',
+    });
+  }, [dispatch]);
+  const handleNextTurn = useCallback(() => dispatch({ type: 'PASS_TURN' }), [dispatch]);
+  const handleSelectTeamTurn = useCallback((idx: number) => {
+    dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx });
+  }, [dispatch]);
+  const handleAdjustCoins = useCallback((teamId: string, delta: number) => {
+    dispatch({ type: 'ADJUST_COINS', teamId, delta });
+  }, [dispatch]);
+  const handleSelectBlock = useCallback((blockId: number) => {
+    dispatch({ type: 'SELECT_BLOCK', blockId });
+  }, [dispatch]);
+  const handleSelectAnsweringTeam = useCallback((teamId: string) => {
+    dispatch({ type: 'SELECT_ANSWERING_TEAM', teamId });
+  }, [dispatch]);
+  const handlePickSlot = useCallback((slotIndex: number) => {
+    dispatch({ type: 'PICK_SLOT', slotIndex });
+  }, [dispatch]);
+  const handleEndRound = useCallback(() => dispatch({ type: 'END_ROUND', reason: 'host' }), [dispatch]);
+  const handleCancelEmptyRound = useCallback(() => dispatch({ type: 'CANCEL_EMPTY_ROUND' }), [dispatch]);
+  const handleSkipCardAction = useCallback(() => dispatch({ type: 'SKIP_CARD_ACTION' }), [dispatch]);
+  const handleResolveMystery = useCallback((outcome: MysteryBlockOutcome) => {
+    dispatch({ type: 'RESOLVE_MYSTERY', outcome });
+  }, [dispatch]);
+  const handleResolveMushroom = useCallback((coins: SuperMushroomOffer) => {
+    dispatch({ type: 'RESOLVE_MUSHROOM', coins });
+  }, [dispatch]);
+  const handleContinueRoundOver = useCallback(() => dispatch({ type: 'CONTINUE_ROUND_OVER' }), [dispatch]);
+  const handleCloseSuperstar = useCallback(() => dispatch({ type: 'CLOSE_SUPERSTAR' }), [dispatch]);
 
   return (
     <div className="h-dvh max-h-dvh overflow-hidden text-slate-100 flex flex-col relative selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
@@ -261,18 +315,13 @@ export function MarioBlastClassic({
               onToggleSound={onToggleSound}
               showCatchUpNote={showCatchUpNote}
               onToggleCatchUpNote={handleToggleCatchUpNote}
-              onOpenRules={() => setIsRulesModalOpen(true)}
-              onOpenCustomizer={() => setIsCustomizerOpen(true)}
-              onDeclareWinner={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
-              onResetGame={() => dispatch({ type: 'RESTART_SETUP' })}
+              onOpenRules={handleOpenRules}
+              onOpenCustomizer={handleOpenCustomizer}
+              onDeclareWinner={handleDeclareWinner}
+              onResetGame={handleResetGame}
               onExitToLauncher={onExitToLauncher}
-              onShuffleBoard={() => dispatch({
-                type: 'SET_BLOCKS',
-                blocks: createGameBlocks(theme, undefined, true),
-                playShuffle: true,
-                toast: '🎲 All 60 prompts reshuffled!',
-              })}
-              onNextTurn={() => dispatch({ type: 'PASS_TURN' })}
+              onShuffleBoard={handleShuffleBoard}
+              onNextTurn={handleNextTurn}
               openedCount={openedBlocksCount}
               totalBlocks={blocks.length || TOTAL_BLOCKS}
               isGameOver={boardCleared}
@@ -282,16 +331,16 @@ export function MarioBlastClassic({
             <TeamLeaderboard
               teams={teams}
               currentTeamIndex={currentTeamIndex}
-              onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-              onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+              onSelectTeamTurn={handleSelectTeamTurn}
+              onAdjustCoins={handleAdjustCoins}
             />
             <main className="flex-1 min-h-0 flex flex-col py-1">
               <GameBoard
                 blocks={blocks}
                 teams={teams}
-                onSelectBlock={blockId => dispatch({ type: 'SELECT_BLOCK', blockId })}
+                onSelectBlock={handleSelectBlock}
                 isGameOver={boardCleared}
-                onOpenLeaderboard={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
+                onOpenLeaderboard={handleDeclareWinner}
               />
             </main>
           </div>
@@ -309,10 +358,10 @@ export function MarioBlastClassic({
             drawnTeamIds={drawnTeamIds}
             selectedTeamId={selectedAnsweringTeamId}
             cardsRemaining={cardsRemaining}
-            onSelectTeam={teamId => dispatch({ type: 'SELECT_ANSWERING_TEAM', teamId })}
-            onPickSlot={slotIndex => dispatch({ type: 'PICK_SLOT', slotIndex })}
-            onEndRound={() => dispatch({ type: 'END_ROUND', reason: 'host' })}
-            onCancelIfEmpty={() => dispatch({ type: 'CANCEL_EMPTY_ROUND' })}
+            onSelectTeam={handleSelectAnsweringTeam}
+            onPickSlot={handlePickSlot}
+            onEndRound={handleEndRound}
+            onCancelIfEmpty={handleCancelEmptyRound}
             testGame={testMode}
           />
         )}
@@ -328,7 +377,7 @@ export function MarioBlastClassic({
             startInReveal
             onCardSelected={handleRewardResolved}
             onClose={() => {}}
-            onSkipAction={() => dispatch({ type: 'SKIP_CARD_ACTION' })}
+            onSkipAction={handleSkipCardAction}
             showCatchUpNote={showCatchUpNote}
           />
         )}
@@ -339,7 +388,18 @@ export function MarioBlastClassic({
           <MysteryBlocksMiniGame
             currentTeam={answeringTeam}
             outcomes={mysteryOutcomes}
-            onResolved={outcome => dispatch({ type: 'RESOLVE_MYSTERY', outcome })}
+            onResolved={handleResolveMystery}
+            testMode={testMode}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mushroomOffers && answeringTeam && (
+          <SuperMushroomMiniGame
+            currentTeam={answeringTeam}
+            offers={mushroomOffers}
+            onResolved={handleResolveMushroom}
             testMode={testMode}
           />
         )}
@@ -349,7 +409,7 @@ export function MarioBlastClassic({
         {roundOverReason && (
           <RoundOverOverlay
             reason={roundOverReason}
-            onContinue={() => dispatch({ type: 'CONTINUE_ROUND_OVER' })}
+            onContinue={handleContinueRoundOver}
           />
         )}
       </AnimatePresence>
@@ -383,8 +443,8 @@ export function MarioBlastClassic({
         {view === 'superstar' && (
           <SuperstarModal
             teams={teams}
-            onRestart={() => dispatch({ type: 'RESTART_SETUP' })}
-            onClose={() => dispatch({ type: 'CLOSE_SUPERSTAR' })}
+            onRestart={handleResetGame}
+            onClose={handleCloseSuperstar}
             onExitToLauncher={onExitToLauncher}
           />
         )}

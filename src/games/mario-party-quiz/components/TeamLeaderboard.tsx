@@ -26,12 +26,12 @@ function rankLabel(rank: number) {
   return `${rank}th`;
 }
 
-export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
+export const TeamLeaderboard = React.memo(function TeamLeaderboard({
   teams,
   currentTeamIndex,
   onSelectTeamTurn,
   onAdjustCoins,
-}) => {
+}: TeamLeaderboardProps) {
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const highestScore = sortedTeams[0]?.coins ?? 0;
 
@@ -48,7 +48,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
 
   return (
     <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4 pt-1.5 pb-1 shrink-0">
-      <div className="bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/15 p-2 sm:p-2.5 shadow-xl overflow-visible">
+      <div className="bg-slate-900/95 rounded-2xl border border-white/15 p-2 sm:p-2.5 shadow-xl overflow-visible">
         <div className={`grid gap-2 sm:gap-2.5 ${gridLayoutClasses}`}>
           {teams.map((team, idx) => {
             const char = CHARACTERS[team.characterId];
@@ -67,7 +67,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                     onSelectTeamTurn(idx);
                   }
                 }}
-                className={`relative flex items-center gap-2 p-2 sm:p-2.5 rounded-xl transition-all duration-200 cursor-pointer select-none border shadow-md overflow-visible ${
+                className={`relative flex items-center gap-2 p-2 sm:p-2.5 rounded-xl cursor-pointer select-none border shadow-md overflow-visible ${
                   isStunned
                     ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-400/80 text-white'
                     : isActive
@@ -144,15 +144,15 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                 </div>
 
                 <div
-                  className={`flex items-center gap-1 px-1.5 py-1 rounded-xl border shrink-0 transition-colors ${
+                  className={`flex items-center gap-1 px-1.5 py-1 rounded-xl border shrink-0 ${
                     team.coins < 0
                       ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.4)] ring-1 ring-red-500/50'
                       : 'bg-black/50 border-white/15 shadow-inner'
                   }`}
                 >
-                  <MarioCoin size="sm" animated={isActive} />
+                  <MarioCoin size="sm" />
                   <span
-                    className={`font-mario text-lg sm:text-xl leading-none min-w-[22px] text-center transition-colors ${
+                    className={`font-mario text-lg sm:text-xl leading-none min-w-[22px] text-center ${
                       team.coins < 0
                         ? 'text-red-500 font-black drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]'
                         : 'text-yellow-300 text-shadow-gold'
@@ -190,4 +190,4 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
       </div>
     </div>
   );
-};
+});

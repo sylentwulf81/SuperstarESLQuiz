@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Coins, Sparkles, X } from 'lucide-react';
 import { Team } from '@/shared/types';
@@ -7,6 +7,7 @@ import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { getRevealArt, PIRANHA_REVEAL_ART, pickMysteryBlockBacks } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
+import { InkedPayoutReveal } from '@/shared/components/InkedPayoutReveal';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
 
@@ -19,8 +20,8 @@ interface MysteryBlocksMiniGameProps {
 
 function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean, bloopered: boolean) {
   if (outcome.kind === 'treasure') {
-    if (bloopered) return 'Inked! +1';
     const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
+    if (bloopered) return `Treasure +${coins}`;
     return `Treasure Block! +${coins}`;
   }
   if (outcome.kind === 'bust') return 'Empty Block… 0 coins';
@@ -34,11 +35,26 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
   testMode = false,
 }) => {
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
+  const [claimReady, setClaimReady] = useState(false);
   const char = CHARACTERS[currentTeam.characterId];
 
   const picked = pickedIndex !== null ? outcomes[pickedIndex] : null;
   const bloopered = Boolean(currentTeam.blooperNextCoin);
   const mushroomBoost = Boolean(currentTeam.doubleNextCoinReward) && !bloopered;
+
+  useEffect(() => {
+    if (pickedIndex === null) {
+      setClaimReady(false);
+      return;
+    }
+    const waitForInk = bloopered && picked?.kind === 'treasure';
+    if (!waitForInk) {
+      setClaimReady(true);
+      return;
+    }
+    const t = window.setTimeout(() => setClaimReady(true), 1450);
+    return () => window.clearTimeout(t);
+  }, [pickedIndex, bloopered, picked?.kind]);
 
   const handlePick = (idx: number) => {
     if (pickedIndex !== null) return;
@@ -47,8 +63,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     const outcome = outcomes[idx];
     window.setTimeout(() => {
       if (outcome.kind === 'treasure') {
-        if (bloopered) sounds.playBlooper();
-        else if (mushroomBoost) sounds.playPowerUp();
+        if (bloopered) return;
+        if (mushroomBoost) sounds.playPowerUp();
         else sounds.playStarCoin();
       } else if (outcome.kind === 'piranha') sounds.playWrong();
       else sounds.playPop();
@@ -61,15 +77,6 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
     () =>
       outcomes.map(outcome => {
         if (outcome.kind === 'treasure') {
-          if (bloopered) {
-            return {
-              shell: 'from-indigo-600 via-blue-950 to-slate-950',
-              icon: <span className="font-mario text-5xl">🦑</span>,
-              title: 'INKED!',
-              sub: '+1 Coin',
-              mushroom: false,
-            };
-          }
           const coins = mushroomBoost ? outcome.coins * 2 : outcome.coins;
           return {
             shell: 'from-amber-300 via-yellow-500 to-orange-700',
@@ -77,6 +84,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             title: mushroomBoost ? 'TREASURE ×2!' : 'TREASURE!',
             sub: `+${coins} Coins`,
             mushroom: mushroomBoost,
+            inkOriginal: coins,
           };
         }
         if (outcome.kind === 'bust') {
@@ -86,6 +94,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             title: 'EMPTY',
             sub: '0 Coins',
             mushroom: false,
+            inkOriginal: undefined,
           };
         }
         return {
@@ -94,6 +103,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
           title: 'PIRANHA!',
           sub: 'Round Over',
           mushroom: false,
+          inkOriginal: undefined,
         };
       }),
     [outcomes, mushroomBoost, bloopered]
@@ -195,6 +205,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                             <span className="text-xs sm:text-sm font-bold text-yellow-100">{face.sub}</span>
                           </div>
                         </>
+                      ) : isChosen && bloopered && face.inkOriginal != null ? (
+                        <InkedPayoutReveal original={face.inkOriginal} compact />
                       ) : (
                         <>
                           {face.icon}
@@ -225,10 +237,12 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
             })}
           </div>
 
-          {picked ? (
+          {picked && claimReady ? (
             <div className="h-[6.5rem] shrink-0 flex flex-col items-center justify-center gap-2">
               <p className="font-mario text-lg sm:text-2xl text-yellow-300 text-center">
-                {outcomeLabel(picked, mushroomBoost, bloopered)}
+                {picked.kind === 'treasure' && bloopered
+                  ? ''
+                  : outcomeLabel(picked, mushroomBoost, bloopered)}
               </p>
               <button
                 type="button"

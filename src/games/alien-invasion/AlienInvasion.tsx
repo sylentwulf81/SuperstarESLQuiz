@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { InvasionTeam, factionOf } from './data/factions';
 import { US_STATE_PATHS } from './data/usStatePaths';
@@ -11,7 +11,7 @@ import { InvasionRulebookModal } from './components/InvasionRulebookModal';
 import { InvasionVictoryModal } from './components/InvasionVictoryModal';
 import { InvasionCinematic } from './components/InvasionCinematic';
 import { ENDING_SCENES, INTRO_SCENES } from './data/cinematicScenes';
-import { EngineEffect, playEngineSound } from '@/shared/engineFx';
+import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
 import {
   createMapTakeoverState,
   reduceMapTakeover,
@@ -35,6 +35,7 @@ export function AlienInvasion({
 }: AlienInvasionProps) {
   const [state, setState] = React.useState(createMapTakeoverState);
   const [isRulesOpen, setIsRulesOpen] = React.useState(false);
+  const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
   const runEffects = useCallback((effects: EngineEffect[]) => {
     for (const effect of effects) {
@@ -50,8 +51,14 @@ export function AlienInvasion({
   const dispatch = useCallback((event: MapTakeoverEvent) => {
     setState(prev => {
       const result = reduceMapTakeover(prev, event);
-      queueMicrotask(() => runEffects(result.effects));
+      pendingEffectsRef.current = result.effects;
       return result.state;
+    });
+    afterPaint(() => {
+      const effects = pendingEffectsRef.current;
+      if (effects.length === 0) return;
+      pendingEffectsRef.current = [];
+      runEffects(effects);
     });
   }, [runEffects]);
 

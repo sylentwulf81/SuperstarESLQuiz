@@ -32,7 +32,6 @@ function payoutEffects(
   }
   if (payout.bloopered) {
     return [
-      { kind: 'sound', sound: 'blooper' },
       { kind: 'toast', message: prefix || `🦑 INKED! ${drawingName} got +1 coin!` },
     ];
   }
@@ -99,14 +98,8 @@ export function applyClassicReward(
     }
     case 'super_star_x2':
     case 'mushroom_x2':
+      // Instant 3-card pick is opened by reduceClassic. Do not queue a later ×2 buff.
       effects.push({ kind: 'sound', sound: 'powerUp' });
-      nextTeams = nextTeams.map(t =>
-        t.id === drawingTeam.id ? { ...t, doubleNextCoinReward: true } : t
-      );
-      effects.push({
-        kind: 'toast',
-        message: `🍄 SUPER MUSHROOM! ${drawingTeam.name}'s next coin reward is doubled!`,
-      });
       break;
     case 'ghost_steal_5':
     case 'boo_steal_5': {

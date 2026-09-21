@@ -3,6 +3,7 @@ import {
   drawClassicCard,
   fillClassicTestSlots,
   shuffleMysteryBlockOutcomes,
+  shuffleSuperMushroomOffers,
 } from '../data/classicRewards';
 import { applyClassicReward, applyPayoutToTeam } from './cards';
 import {
@@ -129,6 +130,18 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
             ...commitSlot(state, event.card, state.pendingSlotIndex, drawingTeam.id),
             pendingCard: null,
             mysteryOutcomes: shuffleMysteryBlockOutcomes(),
+            mushroomOffers: null,
+          },
+          effects,
+        };
+      }
+      if (event.card.type === 'super_star_x2' || event.card.type === 'mushroom_x2') {
+        return {
+          state: {
+            ...commitSlot(state, event.card, state.pendingSlotIndex, drawingTeam.id),
+            pendingCard: null,
+            mysteryOutcomes: null,
+            mushroomOffers: shuffleSuperMushroomOffers(),
           },
           effects,
         };
@@ -164,6 +177,8 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
           pendingCard: null,
           pendingSlotIndex: null,
           selectedAnsweringTeamId: null,
+          mysteryOutcomes: null,
+          mushroomOffers: null,
           roundOverReason: remainingAfter <= 0 ? 'cards' : committed.roundOverReason,
         },
         effects,
@@ -171,7 +186,7 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
     }
     case 'RESOLVE_MYSTERY': {
       const drawingTeam = state.teams.find(t => t.id === state.selectedAnsweringTeamId);
-      const clearedMystery = { ...state, mysteryOutcomes: null };
+      const clearedMystery = { ...state, mysteryOutcomes: null, mushroomOffers: null };
       if (!drawingTeam) {
         return {
           state: { ...clearedMystery, selectedAnsweringTeamId: null, pendingSlotIndex: null },
@@ -186,7 +201,6 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
           effects.push({ kind: 'sound', sound: 'blueShell' });
           effects.push({ kind: 'toast', message: '🐢 Treasure skipped by Blue Shell!' });
         } else if (payout.bloopered) {
-          effects.push({ kind: 'sound', sound: 'blooper' });
           effects.push({ kind: 'toast', message: `🦑 INKED! Treasure became +1 for ${drawingTeam.name}!` });
         } else {
           if (payout.doubled) effects.push({ kind: 'sound', sound: 'powerUp' });
@@ -215,7 +229,44 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
         effects,
       };
     }
-    case 'END_ROUND':
+    case 'RESOLVE_MUSHROOM': {
+      const drawingTeam = state.teams.find(t => t.id === state.selectedAnsweringTeamId);
+      const cleared = { ...state, mushroomOffers: null, mysteryOutcomes: null };
+      if (!drawingTeam) {
+        return {
+          state: { ...cleared, selectedAnsweringTeamId: null, pendingSlotIndex: null },
+          effects,
+        };
+      }
+      const doubled = event.coins * 2;
+      const payout = applyPayoutToTeam(state.teams, drawingTeam.id, doubled);
+      let nextTeams = payout.teams.map(t =>
+        t.id === drawingTeam.id ? { ...t, streak: t.streak + 1 } : t
+      );
+      if (payout.skipped) {
+        effects.push({ kind: 'sound', sound: 'blueShell' });
+        effects.push({ kind: 'toast', message: '🐢 Super Mushroom skipped by Blue Shell!' });
+      } else if (payout.bloopered) {
+        effects.push({ kind: 'toast', message: `🦑 INKED! Super Mushroom became +1 for ${drawingTeam.name}!` });
+      } else {
+        effects.push({ kind: 'sound', sound: 'powerUp' });
+        effects.push({
+          kind: 'toast',
+          message: `🍄 ×2! ${drawingTeam.name} +${payout.awarded} coins!`,
+        });
+      }
+      const reason = state.slots.every(s => s.claimedByTeamId) ? 'cards' : state.roundOverReason;
+      return {
+        state: {
+          ...cleared,
+          teams: nextTeams,
+          selectedAnsweringTeamId: null,
+          pendingSlotIndex: null,
+          roundOverReason: reason,
+        },
+        effects,
+      };
+    }
       return { state: { ...state, roundOverReason: event.reason ?? 'host' }, effects };
     case 'CANCEL_EMPTY_ROUND':
       return { state: resetClassicRound({ ...state, selectedBlockId: null }), effects };
