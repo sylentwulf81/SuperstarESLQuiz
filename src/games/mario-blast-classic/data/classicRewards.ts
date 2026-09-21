@@ -34,6 +34,16 @@ const CLASSIC_OVERRIDES: Partial<Record<RewardCardType, Partial<RewardCard>>> = 
     description:
       "Catch-up Action Card. Bowser scorches every rival for -5 coins. After the blast, the round ends!",
   },
+  king_boo: {
+    subtitle: 'Shuffle the Other Teams’ Coins!',
+    description:
+      'King Boo scrambles every rival’s coin total. Your coins stay put!',
+  },
+  boo_steal_10: {
+    subtitle: 'Shuffle the Other Teams’ Coins!',
+    description:
+      'King Boo scrambles every rival’s coin total. Your coins stay put!',
+  },
 };
 
 const GOLD_STAR: RewardCard = {
@@ -76,7 +86,7 @@ const CLASSIC_DISABLED_TYPES: RewardCardType[] = ['blue_shell', 'pow_block', 'hi
 
 const CLASSIC_TEST_DECK_TYPES: RewardCardType[] = [
   'blooper',
-  'ghost_steal_5',
+  'king_boo',
   'super_star_x2',
   'bowser_revolution',
   'mystery_blocks',
@@ -223,6 +233,43 @@ export function applyCoinPayout(team: Team, amount: number): {
     doubled,
     bloopered: false,
   };
+}
+
+/** Reassign rival coin totals among themselves. The drawing team is never included. */
+export function shuffleRivalCoinTotals(teams: Team[], drawingTeamId: string): Record<string, number> {
+  const rivals = teams.filter(t => t.id !== drawingTeamId);
+  const amounts = rivals.map(t => t.coins);
+  if (rivals.length < 2) {
+    return Object.fromEntries(rivals.map(t => [t.id, t.coins]));
+  }
+
+  const allSame = amounts.every(n => n === amounts[0]);
+  let shuffled = shuffleArray(amounts);
+  if (!allSame) {
+    for (let i = 0; i < 16; i++) {
+      const moved = rivals.some((t, idx) => t.coins !== shuffled[idx]);
+      if (moved) break;
+      shuffled = shuffleArray(amounts);
+    }
+  }
+
+  return Object.fromEntries(rivals.map((t, i) => [t.id, shuffled[i]]));
+}
+
+export function applyRivalCoinShuffle(
+  teams: Team[],
+  drawingTeamId: string,
+  totals?: Record<string, number>
+): Team[] {
+  const map =
+    totals && Object.keys(totals).length > 0
+      ? totals
+      : shuffleRivalCoinTotals(teams, drawingTeamId);
+  return teams.map(t => {
+    if (t.id === drawingTeamId) return t;
+    if (map[t.id] === undefined) return t;
+    return { ...t, coins: map[t.id] };
+  });
 }
 
 export type MysteryBlockOutcome =

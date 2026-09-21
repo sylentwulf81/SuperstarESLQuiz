@@ -2,7 +2,7 @@ import { GameTheme } from '@/shared/types';
 
 export type GameCategory = 'all' | 'board' | 'quiz_show' | 'action' | 'seasonal' | 'strategy';
 
-export type PlayableGameModule = 'mario-party-quiz' | 'mario-blast-classic';
+export type PlayableGameModule = 'mario-party-quiz' | 'mario-blast-classic' | 'alien-invasion';
 
 export interface LauncherGame {
   id: string;
@@ -63,7 +63,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       backgroundImage: '/assets/boxart/boxart_supersummerblast.jpeg',
     },
     stats: {
-      players: '2 – 6 Teams',
+      players: '2 – 8 Teams',
       duration: '20 – 45 Min',
       questions: '60 Curated Blocks',
       grades: 'Elementary & JHS',
@@ -100,7 +100,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       backgroundImage: '/assets/boxart/boxart_superwinterblast.jpeg',
     },
     stats: {
-      players: '2 – 6 Teams',
+      players: '2 – 8 Teams',
       duration: '20 – 45 Min',
       questions: '60 Holiday Blocks',
       grades: 'All Grades',
@@ -139,7 +139,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       backgroundImage: '/assets/boxart/boxart_superquizclassic.jpeg',
     },
     stats: {
-      players: '2 – 6 Teams',
+      players: '2 – 8 Teams',
       duration: '20 – 45 Min',
       questions: '60 Have You Ever',
       grades: 'JHS Present Perfect',
@@ -151,6 +151,43 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Same Mario Party items as Summer & Holiday, remapped for live play',
     ],
     powerpointInspiration: 'Recreates the original Have You Ever Mario Party PPT with live multi-team answering',
+  },
+  {
+    id: 'alien_invasion',
+    title: 'Invade the USA',
+    shortTitle: 'Invade the USA',
+    tagline: 'Paint the USA. Steal states. Host calls the winner.',
+    description:
+      'Teams invade America on a live US map. Click any state, answer the English question, and paint it your color. Steal captured states. Most states when the host ends the game wins.',
+    category: 'strategy',
+    badge: 'NEW',
+    badgeColor: 'bg-gradient-to-r from-fuchsia-500 to-cyan-400 text-slate-950 shadow-fuchsia-500/30',
+    isPlayable: true,
+    gameModule: 'alien-invasion',
+    hasTeacherGuide: true,
+    cover: {
+      heroGradient: 'from-fuchsia-700 via-purple-800 to-slate-900',
+      cardGradient: 'from-fuchsia-950/80 via-slate-900/95 to-purple-950/80',
+      borderGlow: 'hover:border-fuchsia-400/60 hover:shadow-[0_0_25px_rgba(217,70,239,0.25)]',
+      accentColor: '#d946ef',
+      icon: 'Rocket',
+      coverArtEmoji: '🛸',
+      patternType: 'space',
+      backgroundImage: '/assets/boxart/boxart_invadetheusa.jpeg',
+    },
+    stats: {
+      players: '2 – 5 Teams',
+      duration: '20 – 40 Min',
+      questions: '50 States',
+      grades: 'Elementary & JHS',
+    },
+    features: [
+      'Live 50-state US conquest map',
+      'Anime, Robots, Aliens, Zombies, and Monsters',
+      'Steal rival colors after a new question',
+      'Host-judged ESL prompts on every attack',
+    ],
+    powerpointInspiration: 'Rebuilds Invade the USA as a projected classroom conquest board',
   },
   {
     id: 'mario_halloween_blast',
@@ -174,7 +211,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       backgroundImage: '/assets/boxart/boxart_superhalloweenblast.jpeg',
     },
     stats: {
-      players: '2 – 6 Teams',
+      players: '2 – 8 Teams',
       duration: '20 – 45 Min',
       questions: '60 Spooky Blocks',
       grades: 'Elementary & JHS',
@@ -384,39 +421,6 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Strategic Decision-Making for Older Students',
     ],
     powerpointInspiration: 'Replaces complex Monopoly PPT games with clean automated mechanics',
-  },
-  {
-    id: 'alien_invasion',
-    title: 'Alien Invasion: Space Defense',
-    shortTitle: 'Alien Invasion',
-    tagline: 'Cooperative Class Defense Against Incoming Space Fleets',
-    description: 'All teams unite against an alien mothership! Each round, students answer spelling and sentence patterns to charge photon lasers, lower alien shields, and defend Earth.',
-    category: 'action',
-    badge: 'IN DEVELOPMENT',
-    badgeColor: 'bg-fuchsia-600/80 text-fuchsia-100 border border-fuchsia-400/40',
-    isPlayable: false,
-    cover: {
-      heroGradient: 'from-fuchsia-700 via-purple-800 to-slate-900',
-      cardGradient: 'from-fuchsia-950/80 via-slate-900/95 to-purple-950/80',
-      borderGlow: 'hover:border-fuchsia-400/60 hover:shadow-[0_0_25px_rgba(217,70,239,0.25)]',
-      accentColor: '#d946ef',
-      icon: 'Rocket',
-      coverArtEmoji: '🛸',
-      patternType: 'space',
-    },
-    stats: {
-      players: 'Whole Class / Teams',
-      duration: '15 – 30 Min',
-      questions: '40 Defense Waves',
-      grades: 'Elementary & JHS',
-    },
-    features: [
-      'Retro Sci-Fi Arcade Aesthetics & Sound FX',
-      'Cooperative Classroom vs Alien Boss Gameplay',
-      'Wave-Based Difficulty Scaling',
-      'Laser Blast Visual Effects on Correct Answers',
-    ],
-    powerpointInspiration: 'Modernizes Space Invaders and Boss Battle PowerPoint activities',
   },
   {
     id: 'grammar_dungeon',

@@ -8,6 +8,7 @@ import { LauncherScreen } from '@/launcher/LauncherScreen';
 import { LauncherGame } from '@/launcher/catalog';
 import { MarioPartyQuiz, MARIO_PARTY_QUIZ_MODULE } from '@/games/mario-party-quiz';
 import { MarioBlastClassic, MARIO_BLAST_CLASSIC_MODULE } from '@/games/mario-blast-classic';
+import { AlienInvasion, ALIEN_INVASION_MODULE } from '@/games/alien-invasion';
 import { RulebookModal } from '@/games/mario-party-quiz/components/RulebookModal';
 
 type ShellSession =
@@ -16,7 +17,8 @@ type ShellSession =
       kind: typeof MARIO_PARTY_QUIZ_MODULE;
       theme: GameTheme;
     }
-  | { kind: typeof MARIO_BLAST_CLASSIC_MODULE };
+  | { kind: typeof MARIO_BLAST_CLASSIC_MODULE }
+  | { kind: typeof ALIEN_INVASION_MODULE };
 
 function AppShell() {
   const [session, setSession] = useState<ShellSession>({ kind: 'launcher' });
@@ -41,6 +43,10 @@ function AppShell() {
       setSession({ kind: MARIO_BLAST_CLASSIC_MODULE });
       return;
     }
+    if (game.gameModule === ALIEN_INVASION_MODULE) {
+      setSession({ kind: ALIEN_INVASION_MODULE });
+      return;
+    }
     if (game.gameModule !== MARIO_PARTY_QUIZ_MODULE) return;
     setSession({
       kind: MARIO_PARTY_QUIZ_MODULE,
@@ -51,6 +57,16 @@ function AppShell() {
   if (session.kind === MARIO_BLAST_CLASSIC_MODULE) {
     return (
       <MarioBlastClassic
+        onExitToLauncher={exitToLauncher}
+        soundEnabled={soundEnabled}
+        onToggleSound={handleToggleSound}
+      />
+    );
+  }
+
+  if (session.kind === ALIEN_INVASION_MODULE) {
+    return (
+      <AlienInvasion
         onExitToLauncher={exitToLauncher}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
