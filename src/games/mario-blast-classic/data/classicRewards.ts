@@ -8,15 +8,15 @@ export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revo
 const CLASSIC_OVERRIDES: Partial<Record<RewardCardType, Partial<RewardCard>>> = {
   super_star_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Card!',
+    subtitle: 'Pick 1 of 3 Super Cards — then ×2!',
     description:
-      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
+      'Pick 1 of 3 super-cards worth 1, 3, 5, or 10 coins. That amount is doubled immediately — it is not saved for later.',
   },
   mushroom_x2: {
     title: 'Super Mushroom',
-    subtitle: 'Double Your Next Coin Card!',
+    subtitle: 'Pick 1 of 3 Super Cards — then ×2!',
     description:
-      'Queue a Mega Mushroom! The next coin card this team claims is doubled — even if they did not pick the question — then the boost is used up.',
+      'Pick 1 of 3 super-cards worth 1, 3, 5, or 10 coins. That amount is doubled immediately — it is not saved for later.',
   },
   blue_shell: {
     title: 'Blue Shell',
@@ -289,4 +289,12 @@ export function shuffleMysteryBlockOutcomes(): MysteryBlockOutcome[] {
     [outcomes[i], outcomes[j]] = [outcomes[j], outcomes[i]];
   }
   return outcomes;
+}
+
+export const SUPER_MUSHROOM_AMOUNTS = [1, 3, 5, 10] as const;
+export type SuperMushroomOffer = (typeof SUPER_MUSHROOM_AMOUNTS)[number];
+
+/** Three distinct super-cards from 1 / 3 / 5 / 10. Payout is that amount ×2. */
+export function shuffleSuperMushroomOffers(): SuperMushroomOffer[] {
+  return shuffleArray([...SUPER_MUSHROOM_AMOUNTS]).slice(0, 3);
 }

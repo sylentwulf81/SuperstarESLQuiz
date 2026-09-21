@@ -1,3 +1,4 @@
+import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { RewardCardType } from '@/shared/types';
 
 const ART = {
@@ -52,4 +53,25 @@ export function pickMysteryBlockBacks(count: number): string[] {
 
 export function getRevealArt(type: RewardCardType): string | undefined {
   return REVEAL_ART_BY_TYPE[type];
+}
+
+const ALL_REVEAL_URLS: readonly string[] = [
+  ...Object.values(ART),
+  ...TREASURE_BLOCK_BACKS,
+  ...Object.values(CHARACTERS).map(c => c.imageUrl).filter(Boolean),
+];
+
+const preloadedArt = new Map<string, HTMLImageElement>();
+
+/** Decode card art and team avatars once so flips do not wait on the network. */
+export function preloadRevealArt() {
+  if (typeof window === 'undefined') return;
+  for (const src of ALL_REVEAL_URLS) {
+    if (preloadedArt.has(src)) continue;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+    img.decode?.().catch(() => {});
+    preloadedArt.set(src, img);
+  }
 }

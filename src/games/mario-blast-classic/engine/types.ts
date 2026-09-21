@@ -1,8 +1,8 @@
 import { BlockState, GameQuestion, GameView, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
-import type { MysteryBlockOutcome } from '../data/classicRewards';
+import type { MysteryBlockOutcome, SuperMushroomOffer } from '../data/classicRewards';
 import { EngineEffect } from '@/shared/engineFx';
 
-export type { MysteryBlockOutcome };
+export type { MysteryBlockOutcome, SuperMushroomOffer };
 
 export type RoundOverReason = 'cards' | 'gold_star' | 'bowser_revolution' | 'bowser_fury' | 'piranha' | 'host';
 
@@ -23,6 +23,7 @@ export interface ClassicState {
   pendingCard: RewardCard | null;
   pendingSlotIndex: number | null;
   mysteryOutcomes: MysteryBlockOutcome[] | null;
+  mushroomOffers: SuperMushroomOffer[] | null;
   roundOverReason: RoundOverReason | null;
   testMode: boolean;
 }
@@ -36,6 +37,7 @@ export type ClassicEvent =
   | { type: 'RESOLVE_CARD'; card: RewardCard; options?: RewardCardActionOptions }
   | { type: 'SKIP_CARD_ACTION' }
   | { type: 'RESOLVE_MYSTERY'; outcome: MysteryBlockOutcome }
+  | { type: 'RESOLVE_MUSHROOM'; coins: SuperMushroomOffer }
   | { type: 'END_ROUND'; reason?: RoundOverReason }
   | { type: 'CANCEL_EMPTY_ROUND' }
   | { type: 'CONTINUE_ROUND_OVER' }
@@ -68,6 +70,7 @@ export function createClassicState(blocks: BlockState[], testMode = false): Clas
     pendingCard: null,
     pendingSlotIndex: null,
     mysteryOutcomes: null,
+    mushroomOffers: null,
     roundOverReason: null,
     testMode,
   };
@@ -82,6 +85,7 @@ export function resetClassicRound(state: ClassicState): ClassicState {
     pendingCard: null,
     pendingSlotIndex: null,
     mysteryOutcomes: null,
+    mushroomOffers: null,
     roundOverReason: null,
   };
 }

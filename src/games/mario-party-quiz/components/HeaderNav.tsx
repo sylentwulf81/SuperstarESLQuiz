@@ -51,7 +51,7 @@ interface HeaderNavProps {
   onManualLoad?: () => Promise<boolean>;
 }
 
-export const HeaderNav: React.FC<HeaderNavProps> = ({
+export const HeaderNav = React.memo(function HeaderNav({
   theme,
   currentTeam,
   teams,
@@ -71,7 +71,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   isGameOver = false,
   onManualSync,
   onManualLoad,
-}) => {
+}: HeaderNavProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useBodyScrollLock(isMobileMenuOpen || showResetConfirm);
@@ -79,7 +79,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const gameTitle = theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'MARIO PARTY';
 
   return (
-    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
+    <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
       <div className="w-full max-w-[1750px] mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0">
         <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -283,9 +283,9 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           onClick={() => {
                             sounds.playClick();
                             setIsMobileMenuOpen(false);
-                            onExitToLauncher();
+                            setShowResetConfirm(true);
                           }}
-                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer transition-all"
+                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer"
                         >
                           <Library className="w-4 h-4 text-amber-300" />
                           <div>
@@ -565,10 +565,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         ARE YOU SURE?
                       </h3>
                       <p id="reset-modal-desc" className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
-                        Resetting will end this session and return you to the <strong>Setup Screen</strong>.
+                        This ends the live session. Choose the library or restart setup — scores and board progress will not come back.
                       </p>
                       <div className="mt-2.5 p-2.5 bg-slate-800/80 rounded-xl border border-white/10 text-xs text-indigo-200">
-                        <p className="font-semibold text-amber-300 mb-0.5">⚠️ The following will be reset:</p>
+                        <p className="font-semibold text-amber-300 mb-0.5">The following will be lost:</p>
                         <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px]">
                           <li>Board progress ({openedCount} of {totalBlocks} mystery blocks opened)</li>
                           <li>Current team scores, rankings, and active turn</li>
@@ -628,4 +628,4 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         )}
     </header>
   );
-};
+});

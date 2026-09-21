@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { AmbientParticles } from './components/AmbientParticles';
@@ -16,7 +16,8 @@ import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
 import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
-import { EngineEffect, playEngineSound } from '@/shared/engineFx';
+import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
   createTurnBasedState,
   reduceTurnBased,
@@ -49,6 +50,7 @@ export function MarioPartyQuiz({
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
   const handleToggleCatchUpNote = useCallback(() => {
     setShowCatchUpNote(prev => {
@@ -80,10 +82,20 @@ export function MarioPartyQuiz({
   const dispatch = useCallback((event: TurnBasedEvent) => {
     setState(prev => {
       const result = reduceTurnBased(prev, event);
-      queueMicrotask(() => runEffects(result.effects));
+      pendingEffectsRef.current = result.effects;
       return result.state;
     });
+    afterPaint(() => {
+      const effects = pendingEffectsRef.current;
+      if (effects.length === 0) return;
+      pendingEffectsRef.current = [];
+      runEffects(effects);
+    });
   }, [runEffects]);
+
+  useEffect(() => {
+    preloadRevealArt();
+  }, []);
 
   useEffect(() => {
     if (isLoggedIn && user) {

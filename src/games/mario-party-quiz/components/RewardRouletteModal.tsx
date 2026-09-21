@@ -11,6 +11,7 @@ import { shuffleRivalCoinTotals } from '@/games/mario-blast-classic/data/classic
 import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
+import { InkedPayoutReveal } from '@/shared/components/InkedPayoutReveal';
 import { TeamAvatar } from './TeamAvatar';
 import { DiceRoller } from './DiceRoller';
 import { GameModalShell } from '@/shared/components/GameModalShell';
@@ -286,40 +287,44 @@ function EffectHero({
     return <span className={`${markClass} text-yellow-300`}>×2</span>;
   }
   if (card.type === 'gold_star') {
-    const payout = bloopered ? 1 : mushroomBoost ? card.coins * 2 : card.coins;
+    const payout = mushroomBoost ? card.coins * 2 : card.coins;
     return (
       <div className="flex flex-col items-center gap-2 sm:gap-3">
-        <div className="inline-flex items-center gap-4 sm:gap-6">
-          <span className={`${markClass} text-yellow-300`}>+{payout}</span>
-          <MarioCoin size="2xl" />
-        </div>
-        {bloopered && (
-          <span className="font-mario text-xl sm:text-2xl text-indigo-200">🦑 INKED</span>
+        {bloopered ? (
+          <InkedPayoutReveal original={payout} />
+        ) : (
+          <div className="inline-flex items-center gap-4 sm:gap-6">
+            <span className={`${markClass} text-yellow-300`}>+{payout}</span>
+            <MarioCoin size="2xl" />
+          </div>
         )}
         <RoundOverStamp className="text-xl sm:text-3xl px-4 py-1.5 shadow-[0_0_24px_rgba(250,204,21,0.45)]" />
       </div>
     );
   }
   if (card.coins > 0) {
-    const payout = bloopered ? 1 : mushroomBoost ? card.coins * 2 : card.coins;
+    const payout = mushroomBoost ? card.coins * 2 : card.coins;
     return (
       <div className="flex flex-col items-center gap-2 sm:gap-3">
-        <div className="inline-flex items-center gap-4 sm:gap-6">
-          <span className={`${markClass} text-yellow-300`}>+{payout}</span>
-          <MarioCoin size="2xl" />
-        </div>
-        {bloopered && (
-          <span className="font-mario text-xl sm:text-2xl text-indigo-200">🦑 INKED — +1</span>
-        )}
-        {mushroomBoost && (
-          <div className="inline-flex items-center gap-2 rounded-2xl bg-red-800/90 border-2 border-yellow-300 px-3 py-1.5 shadow-[0_0_24px_rgba(250,204,21,0.35)]">
-            <img
-              src={getRevealArt('mushroom_x2')}
-              alt=""
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-yellow-200/80"
-            />
-            <span className="font-mario text-3xl sm:text-4xl text-yellow-200 text-shadow-mario leading-none">×2</span>
-          </div>
+        {bloopered ? (
+          <InkedPayoutReveal original={payout} />
+        ) : (
+          <>
+            <div className="inline-flex items-center gap-4 sm:gap-6">
+              <span className={`${markClass} text-yellow-300`}>+{payout}</span>
+              <MarioCoin size="2xl" />
+            </div>
+            {mushroomBoost && (
+              <div className="inline-flex items-center gap-2 rounded-2xl bg-red-800/90 border-2 border-yellow-300 px-3 py-1.5 shadow-[0_0_24px_rgba(250,204,21,0.35)]">
+                <img
+                  src={getRevealArt('mushroom_x2')}
+                  alt=""
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border border-yellow-200/80"
+                />
+                <span className="font-mario text-3xl sm:text-4xl text-yellow-200 text-shadow-mario leading-none">×2</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -360,6 +365,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   // POW Block: equalize to highest or lowest
   const [powChoice, setPowChoice] = useState<'highest' | 'lowest' | null>(null);
   const [blooperTargetTeamId, setBlooperTargetTeamId] = useState<string | null>(null);
+  const [inkClaimReady, setInkClaimReady] = useState(true);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
   const eligibleOpponents = teams.filter(t => t.id !== currentTeam.id);
@@ -378,6 +384,22 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     if (gameTheme !== 'classic' || phase !== 'reveal' || !selectedCard) return;
     if (selectedCard.type === 'gold_star') sounds.playSuperstar();
   }, [gameTheme, phase, selectedCard]);
+
+  useEffect(() => {
+    const inked =
+      gameTheme === 'classic' &&
+      phase === 'reveal' &&
+      Boolean(currentTeam.blooperNextCoin) &&
+      Boolean(selectedCard && selectedCard.coins > 0) &&
+      !currentTeam.skipNextCoinReward;
+    if (!inked) {
+      setInkClaimReady(true);
+      return;
+    }
+    setInkClaimReady(false);
+    const t = window.setTimeout(() => setInkClaimReady(true), 1450);
+    return () => window.clearTimeout(t);
+  }, [gameTheme, phase, currentTeam.blooperNextCoin, currentTeam.skipNextCoinReward, selectedCard]);
 
   const getCardIcon = (type: string, className: string) => {
     switch (type) {
@@ -653,7 +675,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     !blooperedPayout;
 
   return (
-    <GameModalShell barColor={charInfo.accentColor}>
+    <GameModalShell barColor={charInfo.accentColor} instant={startInReveal}>
         <div className={`${charInfo.bgColor} px-3 sm:px-6 py-2.5 sm:py-3 border-b-2 ${charInfo.borderColor} flex items-center justify-between gap-3 shrink-0`}>
           <div className="flex items-center gap-2 bg-black/35 border border-white/30 rounded-2xl px-2.5 py-1.5">
             <TeamAvatar
@@ -765,15 +787,17 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
               >
                 <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(16rem,38%)_minmax(0,1fr)] gap-3 lg:gap-5">
                   <motion.div
-                    initial={{ rotateY: 90, scale: 0.8 }}
-                    animate={{ rotateY: 0, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 180, damping: 16 }}
+                    initial={startInReveal ? false : { opacity: 0, scale: 0.96 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: startInReveal ? 0 : 0.18 }}
                     className={`relative min-h-[14rem] lg:min-h-0 h-full overflow-hidden rounded-3xl border-4 ${getCardTheme(selectedCard.type).glow}`}
                   >
                     {revealArt ? (
                       <img
                         src={revealArt}
                         alt=""
+                        decoding="async"
+                        fetchPriority="high"
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
@@ -793,16 +817,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                         <span className="font-mario text-xl sm:text-2xl text-yellow-300 text-shadow-mario">×2</span>
                       </div>
                     )}
-                    {blooperedPayout && (
-                      <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-indigo-900 border-2 border-indigo-200 font-mario text-sm sm:text-lg text-indigo-100">
-                        🦑 +1
-                      </div>
-                    )}
                     <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 bg-gradient-to-t from-black/85 via-black/50 to-transparent">
                       <h3 className="font-mario text-2xl sm:text-3xl text-yellow-100 text-shadow-mario leading-tight">
-                        {blooperedPayout
-                          ? '+1 Coin'
-                          : mushroomBoost && selectedCard.coins > 0
+                        {mushroomBoost && selectedCard.coins > 0
                             ? `+${selectedCard.coins * 2} Coins`
                             : selectedCard.title}
                       </h3>
@@ -1120,7 +1137,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                         <p className="text-xs sm:text-sm font-bold text-indigo-100/90 shrink-0">
                           Next coin card = <span className="font-mario text-yellow-300">+1</span>
                         </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 items-stretch">
                           {eligibleOpponents.map(opp => {
                             const oppChar = CHARACTERS[opp.characterId];
                             const isSelected = blooperTargetTeamId === opp.id;
@@ -1132,12 +1149,24 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                   setBlooperTargetTeamId(opp.id);
                                   sounds.playBlooper();
                                 }}
-                                className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold transition-all cursor-pointer flex flex-col items-center ${
+                                className={`relative h-full w-full rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center ${
                                   gameTheme === 'classic' ? 'p-2 gap-1' : 'p-3 gap-1.5'
                                 } ${
-                                  isSelected ? 'border-yellow-300 ring-4 ring-indigo-400 scale-105' : 'border-white/30 hover:scale-102'
+                                  isSelected ? 'border-yellow-300 ring-4 ring-indigo-400' : 'border-white/30 hover:brightness-110'
                                 }`}
                               >
+                                {isSelected && (
+                                  <span
+                                    className="absolute top-1 right-1 z-10 w-7 h-7 rounded-full overflow-hidden border-2 border-indigo-100 shadow-[0_0_10px_rgba(99,102,241,0.8)] pointer-events-none"
+                                    aria-hidden
+                                  >
+                                    <img
+                                      src={getRevealArt('blooper')}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </span>
+                                )}
                                 <TeamAvatar
                                   characterId={opp.characterId}
                                   size={gameTheme === 'classic' ? 'md' : 'lg'}
@@ -1145,9 +1174,6 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                 />
                                 <span className="text-xs sm:text-sm font-black truncate w-full text-center">{opp.name}</span>
                                 <CoinScore coins={opp.coins} />
-                                {isSelected && (
-                                  <span className="font-mario text-xs text-yellow-200">🦑 +1</span>
-                                )}
                               </button>
                             );
                           })}
@@ -1259,21 +1285,41 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                       </div>
                     )}
 
-                    {/* Standard Cards (Coins, Super Mushroom, Blue Shell, Gold Star) */}
-                    {isStandardRevealCard(selectedCard.type) && (
+                    {gameTheme === 'classic' &&
+                      (selectedCard.type === 'super_star_x2' || selectedCard.type === 'mushroom_x2') && (
+                      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={handleFinishStandard}
+                          className="px-8 py-4 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-mario text-xl sm:text-2xl rounded-2xl shadow-xl border-2 border-yellow-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                        >
+                          <Zap className="w-6 h-6" />
+                          PICK A SUPER CARD
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Standard Cards (Coins, Super Mushroom on Party Quiz, Blue Shell, Gold Star) */}
+                    {isStandardRevealCard(selectedCard.type) &&
+                      !(gameTheme === 'classic' &&
+                        (selectedCard.type === 'super_star_x2' || selectedCard.type === 'mushroom_x2')) && (
                       gameTheme === 'classic' ? (
                         <div className="flex-1 min-h-0 w-full flex flex-col">
                           <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-2">
                             <EffectHero card={selectedCard} mushroomBoost={mushroomBoost} bloopered={blooperedPayout} />
                           </div>
-                          <button
-                            type="button"
-                            onClick={handleFinishStandard}
-                            className="mt-auto shrink-0 w-full px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-400 hover:to-green-300 hover:shadow-[0_0_28px_rgba(52,211,153,0.5)] text-white font-mario text-2xl sm:text-3xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center justify-center gap-2 cursor-pointer"
-                          >
-                            <Sparkles className="w-7 h-7" />
-                            {selectedCard.type === 'gold_star' ? 'CLAIM — ROUND OVER' : 'CLAIM'}
-                          </button>
+                          <div className="mt-auto shrink-0 h-[4.5rem] flex items-center">
+                            {inkClaimReady && (
+                            <button
+                              type="button"
+                              onClick={handleFinishStandard}
+                              className="w-full px-8 py-4 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-400 hover:to-green-300 hover:shadow-[0_0_28px_rgba(52,211,153,0.5)] text-white font-mario text-2xl sm:text-3xl rounded-2xl shadow-xl border-2 border-emerald-300/70 flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <Sparkles className="w-7 h-7" />
+                              {selectedCard.type === 'gold_star' ? 'CLAIM — ROUND OVER' : 'CLAIM'}
+                            </button>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <div className="flex-1 flex flex-col items-center justify-center gap-5">

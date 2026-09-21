@@ -20,13 +20,13 @@ const SIZE_MAP = {
   '2xl': 'w-28 h-28 rounded-3xl text-5xl',
 };
 
-export const TeamAvatar: React.FC<TeamAvatarProps> = ({
+export const TeamAvatar = React.memo(function TeamAvatar({
   characterId,
   size = 'md',
   className = '',
   customUrl,
   showBorder = true,
-}) => {
+}: TeamAvatarProps) {
   const char = CHARACTERS[characterId];
   const [imgError, setImgError] = useState(false);
   const [storedUrl, setStoredUrl] = useState<string | null>(null);
@@ -71,4 +71,4 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
       )}
     </div>
   );
-};
+});

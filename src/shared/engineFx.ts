@@ -24,6 +24,16 @@ export type EngineEffect =
   | { kind: 'scheduleSuperstar'; ms: number }
   | { kind: 'clearPulse'; ms: number; stateId: string };
 
+/**
+ * Run engine FX after the browser paints. One rAF can still fire before paint;
+ * the nested rAF runs on the following frame so sounds do not hitch the flip.
+ */
+export function afterPaint(run: () => void) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(run);
+  });
+}
+
 export function playEngineSound(sound: EngineSound) {
   switch (sound) {
     case 'coin':

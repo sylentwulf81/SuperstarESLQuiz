@@ -20,7 +20,7 @@ const EN = {
     'Question Studio sets the lesson goal line (Have you ever, past tense, find the subject…) and lets you rewrite any prompt.',
   ],
   cards: [
-    'Super Mushroom: doubles that team’s next coin card — even if they did not pick the question. Then the mushroom is used up.',
+    'Super Mushroom: pick 1 of 3 super-cards (1, 3, 5, or 10 coins). That amount is doubled right now — it is not saved for later.',
     'King Boo: shuffles the other teams’ coins. Yours stay put.',
     'Gold Star: +15 coins, then Round Over.',
     'Blooper: ink one rival. Their next coin card pays only 1 coin.',
@@ -43,7 +43,7 @@ const JA = {
     'Question Studio でレッスンゴール（Have you ever / 過去形 / 主語は？など）を変え、問題文も編集できます。',
   ],
   cards: [
-    'スーパーキノコ：次のコインカードが2倍（問題を選んだチームでなくてもOK）。使ったら消えます。',
+    'スーパーキノコ：3枚から1枚（1 / 3 / 5 / 10コイン）を選び、すぐ2倍。次のカードには残らない。',
     'キングテレサ：他チームのコインをシャッフル。自分のコインはそのまま。',
     'ゴールドスター：+15コインのあとラウンド終了。',
     'ブルーパー：相手1チームにインク。次のコインカードが必ず+1。',

@@ -26,7 +26,7 @@ interface ClassicRoundModalProps {
   testGame?: boolean;
 }
 
-export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
+export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   question,
   lessonGoal,
   pickingTeam,
@@ -40,7 +40,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
   onEndRound,
   onCancelIfEmpty,
   testGame = false,
-}) => {
+}: ClassicRoundModalProps) {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
@@ -48,7 +48,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
     question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
 
   return (
-    <GameModalShell barColor={pickChar.accentColor}>
+    <GameModalShell barColor={pickChar.accentColor} instant>
         <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2 hshort:py-1.5 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <TeamAvatar
@@ -156,7 +156,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                       sounds.playPop();
                       onSelectTeam(team.id);
                     }}
-                    className={`relative flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-[7.25rem] max-w-[11rem] rounded-2xl border-2 text-white transition-all ${
+                    className={`relative flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-[7.25rem] max-w-[11rem] rounded-2xl border-2 text-white ${
                       alreadyDrew
                         ? 'bg-emerald-950/80 border-emerald-400 cursor-default'
                         : isSelected
@@ -220,11 +220,11 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative w-full aspect-[2/3] max-w-[min(100%,11.5rem)] max-h-[min(38dvh,22rem)] rounded-2xl border-2 overflow-hidden transition-all ${
+                    className={`relative w-full aspect-[2/3] max-w-[min(100%,11.5rem)] max-h-[min(38dvh,22rem)] rounded-2xl border-2 overflow-hidden ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
-                          ? 'border-amber-300 cursor-pointer hover:scale-105 hover:shadow-[0_0_20px_rgba(250,204,21,0.45)]'
+                          ? 'border-amber-300 cursor-pointer hover:brightness-110'
                           : 'border-white/15 opacity-70 cursor-not-allowed'
                     }`}
                   >
@@ -286,4 +286,4 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
         </div>
     </GameModalShell>
   );
-};
+});

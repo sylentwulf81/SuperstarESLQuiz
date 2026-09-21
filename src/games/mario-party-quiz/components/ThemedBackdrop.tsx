@@ -5,10 +5,10 @@ interface ThemedBackdropProps {
   theme: GameTheme;
 }
 
-export const ThemedBackdrop: React.FC<ThemedBackdropProps> = ({ theme }) => {
+export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: ThemedBackdropProps) {
   if (theme === 'classic') {
     return (
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none" style={{ contain: 'strict' }}>
         <svg
           viewBox="0 0 1920 1080"
           preserveAspectRatio="xMidYMid slice"
@@ -51,7 +51,7 @@ export const ThemedBackdrop: React.FC<ThemedBackdropProps> = ({ theme }) => {
 
   if (theme === 'summer') {
     return (
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none" style={{ contain: 'strict' }}>
         {/* Full-bleed responsive cartoony Nintendo-style Summer Landscape SVG */}
         <svg
           viewBox="0 0 1920 1080"
@@ -305,7 +305,7 @@ export const ThemedBackdrop: React.FC<ThemedBackdropProps> = ({ theme }) => {
 
   // Winter / Christmas Edition Backdrop
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none" style={{ contain: 'strict' }}>
       {/* Full-bleed responsive cartoony Nintendo-style Winter Landscape SVG */}
       <svg
         viewBox="0 0 1920 1080"
@@ -532,4 +532,4 @@ export const ThemedBackdrop: React.FC<ThemedBackdropProps> = ({ theme }) => {
       <div className="absolute inset-0 bg-gradient-to-b from-[#091026]/70 via-[#0b1636]/60 to-[#060a17]/85" />
     </div>
   );
-};
+});

@@ -13,6 +13,7 @@ export type {
   ClassicCardSlot,
   RoundOverReason,
   MysteryBlockOutcome,
+  SuperMushroomOffer,
 } from './types';
 export { reduceClassic } from './reduce';
 export { applyClassicReward } from './cards';
