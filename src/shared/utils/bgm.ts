@@ -98,15 +98,18 @@ class BgmEngine {
         { id: 'static_track_3', name: '🎵 Custom Party Soundtrack 3', category: 'custom', audioUrl: '/audio/track3.mp3' },
       ];
 
-      const detectedStaticTracks: BgmTrack[] = [];
-      for (const item of staticCandidates) {
-        try {
-          const res = await fetch(item.audioUrl!, { method: 'HEAD' });
-          if (res.ok) {
-            detectedStaticTracks.push(item);
-          }
-        } catch (_) {}
-      }
+      const staticTrackResults = await Promise.all(
+        staticCandidates.map(async (item) => {
+          try {
+            const res = await fetch(item.audioUrl!, { method: 'HEAD' });
+            if (res.ok) {
+              return item;
+            }
+          } catch (_) {}
+          return null;
+        })
+      );
+      const detectedStaticTracks = staticTrackResults.filter((item): item is BgmTrack => item !== null);
 
       const stored = await getAllStoredAudioTracks();
       const customTracks: BgmTrack[] = stored.map((item) => {
