@@ -145,7 +145,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             className={`flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
               isGameOver ? 'ring-2 ring-yellow-300 animate-pulse shadow-[0_0_20px_rgba(250,204,21,0.6)]' : ''
             }`}
-            title={isGameOver ? 'Game Over! View Final Leaderboard & Champion' : 'Crown the Superstar Winner!'}
+            title={isGameOver ? 'Finished! View final leaderboard & champion' : 'Crown the Superstar Winner!'}
           >
             <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950" />
             <span>{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
@@ -173,7 +173,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 onOpenRules();
               }}
               className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-yellow-300 rounded-lg transition-all cursor-pointer"
-              title="How to Play & Host Guide (English & 日本語)"
+              title="Host guide & activity rules (English & 日本語)"
             >
               <HelpCircle className="w-3.5 h-3.5 text-yellow-300" />
             </button>
@@ -216,7 +216,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-white/20'
             }`}
             title={isMobileMenuOpen ? 'Close Menu' : 'Open menu'}
-            aria-label="Toggle game options menu"
+            aria-label="Toggle activity options menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -259,7 +259,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         </div>
                         <div>
                           <h3 className="font-mario text-base sm:text-lg text-yellow-300 tracking-wider">
-                            GAME MENU
+                            HOST MENU
                           </h3>
                           <p className="text-[11px] text-indigo-200">Controls, music player & guide</p>
                         </div>
@@ -290,7 +290,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           <Library className="w-4 h-4 text-amber-300" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-white">Library</div>
-                            <div className="text-[10px] text-slate-400">Back to the game arcade</div>
+                            <div className="text-[10px] text-slate-400">Back to classroom activities</div>
                           </div>
                         </button>
                       )}
@@ -496,7 +496,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           <RotateCcw className="w-4 h-4 text-red-400" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-red-300">
-                              Restart / New Game
+                              Restart / New Activity
                             </div>
                             <div className="text-[10px] text-red-400/80">
                               Return to team setup screen
@@ -589,7 +589,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       }}
                       className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold border border-white/15 transition-all cursor-pointer"
                     >
-                      Keep Playing
+                      Keep Going
                     </button>
                     {onExitToLauncher && (
                       <button

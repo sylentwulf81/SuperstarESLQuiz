@@ -54,13 +54,13 @@ export interface GuideContent {
 export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
   en: {
     header: {
-      title: 'HOW TO PLAY & HOST GUIDE',
+      title: 'HOW TO HOST THIS ACTIVITY',
       subtitle: 'Complete manual for teachers, hosts, and classroom leaders',
       close: 'Close',
     },
     tabs: {
       guide: 'TEACHER & HOST GUIDE',
-      rules: 'GAME RULES',
+      rules: 'ACTIVITY RULES',
       cards: 'MYSTERY CARDS DECK',
     },
     hostGuide: {
@@ -69,7 +69,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       sections: [
         {
           id: 'step-1',
-          title: '1. Starting the Game & Team Setup',
+          title: '1. Starting the Activity & Team Setup',
           icon: 'Users',
           points: [
             'Select 2 to 8 active character teams (Mario, Luigi, Peach, Daisy, Yoshi, Donkey Kong, Rosalina, Toad).',
@@ -96,9 +96,9 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '3. Host Score Controls (+ / - Coins)',
           icon: 'Sliders',
           points: [
-            'You have full control over scores at any moment during the game!',
+            'You have full control over scores at any moment during the activity!',
             'On the team leaderboard, simply click the "+" or "-" buttons on any team to add or deduct coins directly.',
-            'Use this to award bonus points for great team collaboration, pronunciation, or to balance the game.',
+            'Use this to award bonus points for great team collaboration, pronunciation, or to balance the activity.',
           ],
           tip: 'Tip: Teams can have negative coins if Bowser strikes or Boo steals from a team with 0 coins!',
         },
@@ -118,7 +118,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '5. Customizing Questions & Cloud Sync',
           icon: 'Settings2',
           points: [
-            'Open Question Studio from the team setup screen, or tap Studio in the top header / hamburger menu during a game.',
+            'Open Question Studio from the team setup screen, or tap Studio in the top header / hamburger menu during an activity.',
             'In Question Studio, you can show a 1st-place catch-up note on mystery draws. It stays hidden by default so those draws remain a surprise. Blue Shell and Bowser cards are still banned for the leader.',
             'You can modify question prompts, answers, images, and coin values for all 60 blocks.',
             'Log into Google via the top-right Account menu to save your customized questions to the Cloud, making them instantly accessible from any classroom device!',
@@ -132,7 +132,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'You can click "Superstar!" in the header at ANY time or once all 60 blocks are opened.',
             'This opens the grand victory ceremony: celebration fanfare music, animated podium rankings, confetti, and complete coin statistics!',
-            'You can return to the board at any time or start a new game.',
+            'You can return to the board at any time or start a new activity.',
           ],
         },
         {
@@ -148,7 +148,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       ],
     },
     gameRules: {
-      title: 'Official Game Rules',
+      title: 'Official Activity Rules',
       overview:
         'Teams take turns selecting one of the 60 Mystery Brick Blocks from the board. Answer trivia, unscramble words, or draw lucky surprise cards to collect Mario Coins. The team with the most coins at the end is crowned the SUPERSTAR!',
       questionTypesTitle: 'Question & Challenge Categories',
@@ -187,11 +187,11 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       ],
       winningTitle: 'How to Win',
       winningDesc:
-        'The team with the most coins when the game concludes (or when all 60 blocks are opened) wins the Superstar Trophy! Click the Superstar button at any time to check final standings.',
+        'The team with the most coins when the activity concludes (or when all 60 blocks are opened) wins the Superstar Trophy! Click the Superstar button at any time to check final standings.',
     },
     mysteryCards: {
       title: 'Interactive Mystery Cards Deck',
-      subtitle: 'Click any card below to test authentic sound effects and preview game effects.',
+      subtitle: 'Click any card below to test authentic sound effects and preview board effects.',
       instructions:
         'When a team hits a Mystery Card block, 6 face-down cards are presented in a 2:3 ratio. The student chooses one card (1 to 6). Below is the complete deck of possible outcomes:',
       deckInfo: 'Complete Deck: 10 Special Cards',
@@ -249,18 +249,18 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
     },
     footer: {
       tagline: 'Super Mario Party • Classroom & Interactive Edition',
-      playButton: "LET'S PLAY!",
+      playButton: 'START ACTIVITY',
     },
   },
   ja: {
     header: {
-      title: 'ゲームの遊び方＆先生・司会者ガイド',
+      title: 'アクティビティの進め方＆先生・司会者ガイド',
       subtitle: '授業やイベントをスムーズに進行するための完全マニュアル',
       close: '閉じる',
     },
     tabs: {
       guide: '先生・司会者ガイド',
-      rules: 'ゲームのルール',
+      rules: 'アクティビティのルール',
       cards: 'サプライズカード一覧',
     },
     hostGuide: {
@@ -269,7 +269,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       sections: [
         {
           id: 'step-1',
-          title: '1. ゲームの準備とチーム設定',
+          title: '1. アクティビティの準備とチーム設定',
           icon: 'Users',
           points: [
             '参加するチームを2〜6チーム（マリオ、ルイージ、ピーチ、デイジー、ヨッシー、ドンキーコング）から選びます。',
@@ -317,7 +317,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '5. 問題のカスタマイズとクラウド保存',
           icon: 'Settings2',
           points: [
-            'チーム設定画面の「Question Studio」か、ゲーム中ヘッダー／メニューの「Studio」から、このエディション専用の全60問を編集できます。',
+            'チーム設定画面の「Question Studio」か、進行中ヘッダー／メニューの「Studio」から、このエディション専用の全60問を編集できます。',
             'Question Studioで「キャッチアップ注記」を表示にすると、1位がブルーシェル／クッパカードを引けない理由を生徒に説明できます。初期設定は非表示で、サプライズのままです。',
             '右上のアカウントメニューからGoogleログインすれば、作成したオリジナル問題をクラウドに保存可能！',
             '別の教室のパソコンや電子黒板でも、ボタン1つで同じクイズを即座に読み込んで授業ができます。',
@@ -346,9 +346,9 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       ],
     },
     gameRules: {
-      title: 'ゲームの基本ルール',
+      title: 'アクティビティの基本ルール',
       overview:
-        'チームが交代でボード上の60個のブロックから1つを選びます。クイズに答えたり、サプライズカードを引き当ててマリオコインを集めよう！ゲーム終了時に最もコインが多かったチームが栄光の「スーパースター（優勝）」に輝きます！',
+        'チームが交代でボード上の60個のブロックから1つを選びます。クイズに答えたり、サプライズカードを引き当ててマリオコインを集めよう！終了時に最もコインが多かったチームが栄光の「スーパースター（優勝）」に輝きます！',
       questionTypesTitle: '問題とチャレンジのカテゴリー',
       questionTypes: [
         {
@@ -389,7 +389,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
     },
     mysteryCards: {
       title: 'サプライズカード・テスターデッキ',
-      subtitle: '下のカードをクリックすると、実際の効果音とゲーム内効果を試聴・テストできます。',
+      subtitle: '下のカードをクリックすると、実際の効果音とボード上の効果を試聴・テストできます。',
       instructions:
         'ハテナブロックを開くと、2:3のトランプ比率の6枚のカードが提示されます。手番のチームが1〜6番の中から1枚を選択します。デッキに含まれるカードの効果は以下の通りです：',
       deckInfo: '全10種類の特別カード',
@@ -447,7 +447,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
     },
     footer: {
       tagline: 'スーパーマリオパーティ • 授業＆パーティー体験エディション',
-      playButton: 'ゲームを始める！',
+      playButton: 'アクティビティを始める！',
     },
   },
 };

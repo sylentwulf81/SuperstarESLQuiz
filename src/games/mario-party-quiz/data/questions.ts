@@ -316,7 +316,7 @@ export const DEFAULT_QUESTIONS: GameQuestion[] = [
     id: 24,
     blockNumber: 24,
     type: 'mystery_card',
-    title: 'Mid-Game Mystery Block!',
+    title: 'Mystery Block!',
     category: 'mystery',
     description: 'Time for a reward card roulette! Choose wisely: coins, double turns, or Bowser revolutions await!',
     rewardCoins: 5,

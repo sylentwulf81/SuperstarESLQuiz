@@ -231,12 +231,13 @@ function TeamCoinBank({ teams, currentTeamId }: { teams: Team[]; currentTeamId: 
   return (
     <div className="flex flex-wrap justify-center gap-1.5 w-full shrink-0">
       {teams.map(team => (
-        <TeamCoinChip
-          key={team.id}
-          team={team}
-          highlight={team.id === currentTeamId}
-          label={team.id === currentTeamId ? 'You' : undefined}
-        />
+        <React.Fragment key={team.id}>
+          <TeamCoinChip
+            team={team}
+            highlight={team.id === currentTeamId}
+            label={team.id === currentTeamId ? 'You' : undefined}
+          />
+        </React.Fragment>
       ))}
     </div>
   );

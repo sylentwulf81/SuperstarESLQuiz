@@ -126,7 +126,7 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
               <Trophy className="w-6 h-6 text-yellow-400" /> FINAL LEADERBOARD & STANDINGS
             </h3>
             <p className="text-xs text-indigo-200 font-semibold uppercase tracking-wider">
-              Official Game Results & Medals
+              Official Results & Medals
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
               className="px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 hover:scale-105 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border border-emerald-300/80 flex items-center gap-2 transition-all cursor-pointer"
             >
               <RotateCcw className="w-5 h-5" />
-              PLAY AGAIN / NEW GAME
+              START AGAIN
             </button>
           </div>
         </div>

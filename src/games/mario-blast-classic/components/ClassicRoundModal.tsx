@@ -6,11 +6,9 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
+import { ClassicCardSlot } from '../engine';
 
-export interface ClassicCardSlot {
-  claimedByTeamId?: string;
-  card?: RewardCard;
-}
+export type { ClassicCardSlot };
 
 interface ClassicRoundModalProps {
   question: GameQuestion;

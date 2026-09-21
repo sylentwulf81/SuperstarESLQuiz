@@ -1,7 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { InvasionTeam, factionOf } from './data/factions';
-import { sounds } from '@/shared/utils/sound';
 import { US_STATE_PATHS } from './data/usStatePaths';
 import { questionForState } from './data/invasionQuestions';
 import { InvasionSetup } from './components/InvasionSetup';
@@ -12,6 +11,14 @@ import { InvasionRulebookModal } from './components/InvasionRulebookModal';
 import { InvasionVictoryModal } from './components/InvasionVictoryModal';
 import { InvasionCinematic } from './components/InvasionCinematic';
 import { ENDING_SCENES, INTRO_SCENES } from './data/cinematicScenes';
+import { EngineEffect, playEngineSound } from '@/shared/engineFx';
+import {
+  createMapTakeoverState,
+  reduceMapTakeover,
+  stateCounts,
+  capturedCount,
+  MapTakeoverEvent,
+} from './engine';
 
 export const ALIEN_INVASION_MODULE = 'alien-invasion' as const;
 
@@ -21,77 +28,45 @@ export interface AlienInvasionProps {
   onToggleSound: () => void;
 }
 
-type InvasionView = 'setup' | 'intro' | 'board';
-
-const emptyOwners = (): Record<string, string | null> => {
-  const next: Record<string, string | null> = {};
-  for (const state of US_STATE_PATHS) next[state.id] = null;
-  return next;
-};
-
 export function AlienInvasion({
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
 }: AlienInvasionProps) {
-  const [view, setView] = useState<InvasionView>('setup');
-  const [teams, setTeams] = useState<InvasionTeam[]>([]);
-  const [owners, setOwners] = useState<Record<string, string | null>>(emptyOwners);
-  const [selectedStateId, setSelectedStateId] = useState<string | null>(null);
-  const [pulseId, setPulseId] = useState<string | null>(null);
-  const [isRulesOpen, setIsRulesOpen] = useState(false);
-  const [isVictoryOpen, setIsVictoryOpen] = useState(false);
-  const [isEndingOpen, setIsEndingOpen] = useState(false);
+  const [state, setState] = React.useState(createMapTakeoverState);
+  const [isRulesOpen, setIsRulesOpen] = React.useState(false);
 
-  const counts = useMemo(() => {
-    const next: Record<string, number> = {};
-    for (const team of teams) next[team.id] = 0;
-    for (const state of US_STATE_PATHS) {
-      const teamId = owners[state.id];
-      if (typeof teamId === 'string' && teamId in next) next[teamId] += 1;
+  const runEffects = useCallback((effects: EngineEffect[]) => {
+    for (const effect of effects) {
+      if (effect.kind === 'sound') playEngineSound(effect.sound);
+      if (effect.kind === 'clearPulse') {
+        window.setTimeout(() => {
+          setState(prev => reduceMapTakeover(prev, { type: 'CLEAR_PULSE', stateId: effect.stateId }).state);
+        }, effect.ms);
+      }
     }
-    return next;
-  }, [owners, teams]);
-
-  const capturedCount = US_STATE_PATHS.filter(state => Boolean(owners[state.id])).length;
-
-  const resetBoard = useCallback(() => {
-    setOwners(emptyOwners());
-    setSelectedStateId(null);
-    setPulseId(null);
-    setIsVictoryOpen(false);
-    setIsEndingOpen(false);
   }, []);
 
-  const handleStartGame = useCallback((nextTeams: InvasionTeam[]) => {
-    setTeams(nextTeams);
-    resetBoard();
-    setView('intro');
-  }, [resetBoard]);
+  const dispatch = useCallback((event: MapTakeoverEvent) => {
+    setState(prev => {
+      const result = reduceMapTakeover(prev, event);
+      queueMicrotask(() => runEffects(result.effects));
+      return result.state;
+    });
+  }, [runEffects]);
+
+  const { view, teams, owners, selectedStateId, pulseId, isVictoryOpen, isEndingOpen } = state;
+  const counts = useMemo(() => stateCounts(state), [state]);
+  const captured = capturedCount(state);
 
   const winnerFactionId = useMemo(() => {
     const sorted = [...teams].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0));
     return sorted[0] ? factionOf(sorted[0]).id : 'aliens';
   }, [counts, teams]);
 
-  const handleSelectState = useCallback((stateId: string) => {
-    sounds.playBlockHit();
-    setSelectedStateId(stateId);
-  }, []);
-
-  const handleCapture = useCallback((teamId: string) => {
-    if (!selectedStateId) return;
-    const previous = owners[selectedStateId];
-    const isSteal = Boolean(previous && previous !== teamId);
-    setOwners(current => ({ ...current, [selectedStateId]: teamId }));
-    setPulseId(selectedStateId);
-    setSelectedStateId(null);
-    if (isSteal) sounds.playStarCoin();
-    else sounds.playCorrect();
-    window.setTimeout(() => {
-      setPulseId(current => (current === selectedStateId ? null : current));
-    }, 900);
-  }, [owners, selectedStateId]);
+  const handleStartGame = useCallback((nextTeams: InvasionTeam[]) => {
+    dispatch({ type: 'START', teams: nextTeams });
+  }, [dispatch]);
 
   const selectedQuestion = selectedStateId ? questionForState(selectedStateId) : null;
 
@@ -118,7 +93,7 @@ export function AlienInvasion({
           <InvasionCinematic
             scenes={INTRO_SCENES}
             soundEnabled={soundEnabled}
-            onDone={() => setView('board')}
+            onDone={() => dispatch({ type: 'INTRO_DONE' })}
           />
         )}
 
@@ -127,16 +102,13 @@ export function AlienInvasion({
             <InvasionHeader
               teams={teams}
               counts={counts}
-              capturedCount={capturedCount}
+              capturedCount={captured}
               totalStates={US_STATE_PATHS.length}
               soundEnabled={soundEnabled}
               onToggleSound={onToggleSound}
               onOpenRules={() => setIsRulesOpen(true)}
-              onDeclareWinner={() => setIsEndingOpen(true)}
-              onResetGame={() => {
-                resetBoard();
-                setView('setup');
-              }}
+              onDeclareWinner={() => dispatch({ type: 'DECLARE_WINNER' })}
+              onResetGame={() => dispatch({ type: 'RESTART' })}
               onExitToLauncher={onExitToLauncher}
             />
             <div className="flex-1 min-h-0 p-2 sm:p-3">
@@ -146,7 +118,7 @@ export function AlienInvasion({
                   owners={owners}
                   selectedId={selectedStateId}
                   pulseId={pulseId}
-                  onSelect={handleSelectState}
+                  onSelect={stateId => dispatch({ type: 'SELECT_STATE', stateId })}
                 />
               </div>
             </div>
@@ -161,8 +133,8 @@ export function AlienInvasion({
             question={selectedQuestion}
             teams={teams}
             ownerTeamId={owners[selectedStateId] ?? null}
-            onCapture={handleCapture}
-            onClose={() => setSelectedStateId(null)}
+            onCapture={teamId => dispatch({ type: 'CAPTURE', teamId })}
+            onClose={() => dispatch({ type: 'CLOSE_QUESTION' })}
           />
         )}
       </AnimatePresence>
@@ -177,10 +149,7 @@ export function AlienInvasion({
             scenes={ENDING_SCENES[winnerFactionId]}
             soundEnabled={soundEnabled}
             skipLabel="SCORES"
-            onDone={() => {
-              setIsEndingOpen(false);
-              setIsVictoryOpen(true);
-            }}
+            onDone={() => dispatch({ type: 'ENDING_DONE' })}
           />
         )}
       </AnimatePresence>
@@ -190,11 +159,8 @@ export function AlienInvasion({
           <InvasionVictoryModal
             teams={teams}
             counts={counts}
-            onRestart={() => {
-              resetBoard();
-              setView('setup');
-            }}
-            onClose={() => setIsVictoryOpen(false)}
+            onRestart={() => dispatch({ type: 'RESTART' })}
+            onClose={() => dispatch({ type: 'CLOSE_VICTORY' })}
             onExitToLauncher={onExitToLauncher}
           />
         )}
