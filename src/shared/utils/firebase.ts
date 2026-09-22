@@ -15,6 +15,9 @@ import {
   setDoc,
   getDoc,
   getDocFromServer,
+  getDocs,
+  deleteDoc,
+  collection,
   serverTimestamp
 } from 'firebase/firestore';
 import firebaseConfig from '../../../firebase-applet-config.json';
@@ -24,6 +27,14 @@ import { THEME_UI } from '@/shared/themeMeta';
 export interface SavedQuestionSet {
   questions: Question[];
   lessonGoal?: string;
+}
+
+export interface CloudQuestionBank {
+  id: string;
+  name: string;
+  lessonGoal: string;
+  questions: Question[];
+  updatedAt: string;
 }
 
 // Initialize Firebase App
@@ -178,5 +189,88 @@ export async function loadQuestionsFromFirestore(
   } catch (err) {
     console.error('Failed to load questions from Firestore:', err);
     return null;
+  }
+}
+
+function newBankId(): string {
+  return `lib${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
+
+/**
+ * Save a named question bank to this user's cloud library.
+ */
+export async function saveQuestionBankToFirestore(
+  userId: string,
+  bank: { name: string; lessonGoal: string; questions: Question[] }
+): Promise<CloudQuestionBank | null> {
+  if (!userId) return null;
+  const name = bank.name.trim().slice(0, 40);
+  if (!name || !Array.isArray(bank.questions) || bank.questions.length === 0) return null;
+  const id = newBankId();
+  const saved: CloudQuestionBank = {
+    id,
+    name,
+    lessonGoal: bank.lessonGoal.trim(),
+    questions: bank.questions,
+    updatedAt: new Date().toISOString(),
+  };
+  try {
+    await setDoc(doc(db, 'users', userId, 'questionSets', id), {
+      id,
+      userId,
+      kind: 'library',
+      name: saved.name,
+      title: saved.name,
+      theme: 'classic',
+      lessonGoal: saved.lessonGoal,
+      questionsData: JSON.stringify(saved.questions),
+      updatedAt: saved.updatedAt,
+    });
+    return saved;
+  } catch (err) {
+    console.error('Failed to save question bank:', err);
+    return null;
+  }
+}
+
+export async function listQuestionBanksFromFirestore(userId: string): Promise<CloudQuestionBank[]> {
+  if (!userId) return [];
+  try {
+    const snap = await getDocs(collection(db, 'users', userId, 'questionSets'));
+    const banks: CloudQuestionBank[] = [];
+    snap.forEach(item => {
+      const data = item.data();
+      if (data.kind !== 'library') return;
+      if (typeof data.questionsData !== 'string' || typeof data.name !== 'string') return;
+      try {
+        const parsed = JSON.parse(data.questionsData);
+        if (!Array.isArray(parsed) || parsed.length === 0) return;
+        banks.push({
+          id: item.id,
+          name: data.name,
+          lessonGoal: typeof data.lessonGoal === 'string' ? data.lessonGoal : '',
+          questions: parsed,
+          updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : '',
+        });
+      } catch {
+        // skip a corrupt bank
+      }
+    });
+    banks.sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+    return banks;
+  } catch (err) {
+    console.error('Failed to list question banks:', err);
+    return [];
+  }
+}
+
+export async function deleteQuestionBankFromFirestore(userId: string, bankId: string): Promise<boolean> {
+  if (!userId || !bankId) return false;
+  try {
+    await deleteDoc(doc(db, 'users', userId, 'questionSets', bankId));
+    return true;
+  } catch (err) {
+    console.error('Failed to delete question bank:', err);
+    return false;
   }
 }

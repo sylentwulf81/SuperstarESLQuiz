@@ -7,6 +7,7 @@ import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
 import { ClassicCardSlot } from '../engine';
+import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 
 export type { ClassicCardSlot };
 
@@ -93,8 +94,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1 hshort:mb-0.5">
               {lessonGoal}
             </p>
-            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario">
-              {question.title}
+            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario text-balance">
+              <MarkedPrompt text={question.title} />
             </h2>
             {answerText && (
               <div

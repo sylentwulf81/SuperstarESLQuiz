@@ -17,7 +17,7 @@ const EN = {
     'Gold Star, Bowser’s Revolution, and Bowser’s Fury always end the round after their effect. Mystery Blocks can end the round only if the Piranha Plant is hit.',
     'You advance to the next question. Nothing auto-skips after a card.',
     'Hide a revealed answer if you clicked it by mistake. Skip action lets a team pass on a card without playing it.',
-    'Question Studio sets the lesson goal line (Have you ever, past tense, find the subject…) and lets you rewrite any prompt.',
+    'Question Studio sets the lesson goal, lets you tap a word to highlight it, and can save the set in the Question Library.',
   ],
   cards: [
     'Super Mushroom: pick 1 of 3 super-cards (1, 3, 5, or 10 coins). That amount is doubled right now — it is not saved for later.',
@@ -40,7 +40,7 @@ const JA = {
     'ゴールドスター、クッパレボリューション、クッパフューリーは効果のあと必ずラウンド終了。ミステリーブロックはパックンフラワーのときだけ終了します。',
     '次の問題へ進むのはホストがボタンを押したときです。',
     '答えを誤って出してしまったら Hide で隠せます。Skip action でカード効果を使わずに通せます。',
-    'Question Studio でレッスンゴール（Have you ever / 過去形 / 主語は？など）を変え、問題文も編集できます。',
+    'Question Studio でレッスンゴールを変え、変える単語をタップでオレンジにできます。セットは Question Library に保存できます。',
   ],
   cards: [
     'スーパーキノコ：3枚から1枚（1 / 3 / 5 / 10コイン）を選び、すぐ2倍。次のカードには残らない。',

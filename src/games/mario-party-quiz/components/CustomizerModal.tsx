@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target, FlaskConical } from 'lucide-react';
+import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target, FlaskConical, Library } from 'lucide-react';
 import { toast } from 'sonner';
 import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
@@ -10,10 +10,10 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avat
 import { ImageUploader } from './ImageUploader';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { shuffleWordLetters } from '@/shared/utils/shuffle';
-import {
-  CLASSIC_LESSON_GOAL_PRESETS,
-  DEFAULT_CLASSIC_LESSON_GOAL,
-} from '@/games/mario-blast-classic/data/classicLesson';
+import { DEFAULT_CLASSIC_LESSON_GOAL } from '@/games/mario-blast-classic/data/classicLesson';
+import { legacySlashesToMarks } from '@/shared/markedPrompt';
+import { PromptMarkField } from './PromptMarkField';
+import { QuestionLibraryPanel } from '@/games/mario-blast-classic/components/QuestionLibraryPanel';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 interface CustomizerModalProps {
@@ -31,6 +31,7 @@ interface CustomizerModalProps {
   onLessonGoalCommit?: (goal: string) => void;
   testGame?: boolean;
   onToggleTestGame?: () => void;
+  onApplyQuestionBank?: (questions: GameQuestion[], lessonGoal: string, name: string) => void;
 }
 
 export const CustomizerModal: React.FC<CustomizerModalProps> = ({
@@ -48,6 +49,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   onLessonGoalCommit,
   testGame = false,
   onToggleTestGame,
+  onApplyQuestionBank,
 }) => {
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
@@ -57,6 +59,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   const [editingQuestion, setEditingQuestion] = useState<GameQuestion>(currentBlock.question);
   const [isCloudBusy, setIsCloudBusy] = useState(false);
   const [isSavedRecently, setIsSavedRecently] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [isCustomPoints, setIsCustomPoints] = useState<boolean>(() => {
     const coins = currentBlock?.question?.rewardCoins;
     return coins !== undefined && ![1, 3, 5, 10].includes(coins);
@@ -86,6 +89,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
       : Math.max(1, Number(editingQuestion.rewardCoins) || 1);
     const sanitizedQuestion: GameQuestion = {
       ...editingQuestion,
+      title: legacySlashesToMarks(editingQuestion.title),
       rewardCoins: finalCoins,
     };
     onUpdateBlockQuestion(currentBlock.id, sanitizedQuestion);
@@ -341,6 +345,20 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 Lesson Goal
               </span>
               <span className="text-[11px] text-slate-400">Shown on every block</span>
+              {onApplyQuestionBank && (
+                <button
+                  id="studio-open-library"
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setLibraryOpen(true);
+                  }}
+                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer"
+                >
+                  <Library className="w-3.5 h-3.5" />
+                  Library
+                </button>
+              )}
             </div>
             <input
               type="text"
@@ -356,29 +374,6 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               placeholder={DEFAULT_CLASSIC_LESSON_GOAL}
               className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-400/50"
             />
-            <div className="flex flex-wrap gap-1.5">
-              {CLASSIC_LESSON_GOAL_PRESETS.map(preset => {
-                const selected = (lessonGoal ?? '').trim() === preset;
-                return (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      onLessonGoalChange(preset);
-                      onLessonGoalCommit?.(preset);
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border cursor-pointer transition-all ${
-                      selected
-                        ? 'bg-rose-500/30 text-rose-100 border-rose-300/50'
-                        : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
-                    }`}
-                  >
-                    {preset}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         )}
         {theme === 'classic' && onToggleTestGame && (
@@ -436,7 +431,21 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
           </div>
         )}
 
-        {/* Content */}
+        {libraryOpen && onApplyQuestionBank ? (
+          <QuestionLibraryPanel
+            questions={blocks.map(block =>
+              block.id === currentBlock.id
+                ? { ...editingQuestion, title: legacySlashesToMarks(editingQuestion.title) }
+                : block.question
+            )}
+            lessonGoal={lessonGoal ?? ''}
+            onApply={(bank) => {
+              onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name);
+              setLibraryOpen(false);
+            }}
+            onClose={() => setLibraryOpen(false)}
+          />
+        ) : (
         <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
           {/* Left Block selector grid */}
           <div className="md:col-span-4 bg-slate-950/70 p-3 sm:p-3.5 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
@@ -512,6 +521,13 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
             {/* Scrollable Form Fields with stable scrollbar */}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 [scrollbar-gutter:stable]">
+              {theme === 'classic' ? (
+                <PromptMarkField
+                  value={editingQuestion.title}
+                  onChange={(title) => setEditingQuestion({ ...editingQuestion, title })}
+                  onEnter={handleSaveCurrent}
+                />
+              ) : (
               <div>
                 <label className="text-xs font-bold text-indigo-200 block mb-1">
                   Question Prompt / Title:
@@ -529,6 +545,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
                 />
               </div>
+              )}
 
               {editingQuestion.type !== 'mystery_card' && theme !== 'classic' && (
                 <div>
@@ -697,6 +714,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             </div>
           </div>
         </div>
+        )}
       </motion.div>
     </div>
   );
