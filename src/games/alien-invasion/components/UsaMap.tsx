@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { InvasionTeam, factionOf } from '../data/factions';
 import { US_STATE_PATHS } from '../data/usStatePaths';
 import { BOARD_VIEWBOX, CHIP_STATE_IDS, STATE_HIT_CHIPS, STATE_LABEL_NUDGE } from '../data/stateHitChips';
@@ -13,23 +13,34 @@ interface UsaMapProps {
 
 const UNCLAIMED = '#e2e8f0';
 
-function teamColor(teams: InvasionTeam[], teamId: string | null | undefined): string {
-  if (!teamId) return UNCLAIMED;
-  const team = teams.find(t => t.id === teamId);
-  if (!team) return UNCLAIMED;
-  return factionOf(team).accentColor;
-}
-
-export const UsaMap: React.FC<UsaMapProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped UsaMap in React.memo to prevent full SVG re-renders when parent timer/state ticks.
+ * 2) Pre-compute team color map in useMemo to convert ~150 array lookups per frame to O(1) hash map lookups.
+ */
+export const UsaMap: React.FC<UsaMapProps> = React.memo(function UsaMap({
   teams,
   owners,
   selectedId,
   pulseId,
   onSelect,
-}) => {
+}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [labelPos, setLabelPos] = useState<Record<string, { x: number; y: number }>>({});
+
+  const teamColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const team of teams) {
+      map[team.id] = factionOf(team).accentColor;
+    }
+    return map;
+  }, [teams]);
+
+  const getTeamColor = (teamId: string | null | undefined): string => {
+    if (!teamId) return UNCLAIMED;
+    return teamColorMap[teamId] ?? UNCLAIMED;
+  };
 
   useLayoutEffect(() => {
     const svg = svgRef.current;
@@ -77,7 +88,7 @@ export const UsaMap: React.FC<UsaMapProps> = ({
       >
         <rect x="180" y="0" width="1100" height="760" fill="transparent" />
         {US_STATE_PATHS.map(state => {
-          const fill = teamColor(teams, owners[state.id]);
+          const fill = getTeamColor(owners[state.id]);
           const active = hoveredId === state.id || selectedId === state.id;
           const pulse = pulseId === state.id;
           return (
@@ -116,7 +127,7 @@ export const UsaMap: React.FC<UsaMapProps> = ({
           if (CHIP_STATE_IDS.has(state.id)) return null;
           const pos = labelPos[state.id];
           if (!pos) return null;
-          const fill = teamColor(teams, owners[state.id]);
+          const fill = getTeamColor(owners[state.id]);
           const claimed = fill !== UNCLAIMED;
           return (
             <text
@@ -139,7 +150,7 @@ export const UsaMap: React.FC<UsaMapProps> = ({
         })}
 
         {STATE_HIT_CHIPS.map(chip => {
-          const fill = teamColor(teams, owners[chip.id]);
+          const fill = getTeamColor(owners[chip.id]);
           const active = hoveredId === chip.id || selectedId === chip.id;
           return (
             <g
@@ -191,4 +202,4 @@ export const UsaMap: React.FC<UsaMapProps> = ({
       </svg>
     </div>
   );
-};
+});

@@ -8,13 +8,34 @@ interface SnesBoxArtProps {
   allowUpload?: boolean;
 }
 
-export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to prevent unnecessary re-renders of all card items
+ *    when typing search queries or switching library filter categories in LauncherScreen.
+ * 2) Lazy state initialization in useState() reads localStorage synchronously on mount
+ *    to eliminate post-mount cascading re-renders across all card items.
+ */
+export const SnesBoxArt: React.FC<SnesBoxArtProps> = React.memo(function SnesBoxArt({
   game,
   size = 'card',
   className = '',
   allowUpload = true,
-}) => {
-  const [customImage, setCustomImage] = useState<string | null>(null);
+}) {
+  const [customImage, setCustomImage] = useState<string | null>(() => {
+    try {
+      const key = `snes_box_art_v2_${game.id}`;
+      const stored = localStorage.getItem(key) || localStorage.getItem(`snes_box_art_${game.id}`);
+      if (stored) {
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, stored);
+        }
+        return stored;
+      }
+    } catch {
+      // Storage unavailable
+    }
+    return null;
+  });
   const [imageError, setImageError] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -22,12 +43,7 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
     try {
       const key = `snes_box_art_v2_${game.id}`;
       const stored = localStorage.getItem(key) || localStorage.getItem(`snes_box_art_${game.id}`);
-      if (stored) {
-        setCustomImage(stored);
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, stored);
-        }
-      }
+      setCustomImage(stored || null);
     } catch {
       // Storage unavailable
     }
@@ -111,4 +127,4 @@ export const SnesBoxArt: React.FC<SnesBoxArtProps> = ({
       )}
     </div>
   );
-};
+});
