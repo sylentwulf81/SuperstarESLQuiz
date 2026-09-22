@@ -267,6 +267,7 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
         effects,
       };
     }
+    case 'END_ROUND':
       return { state: { ...state, roundOverReason: event.reason ?? 'host' }, effects };
     case 'CANCEL_EMPTY_ROUND':
       return { state: resetClassicRound({ ...state, selectedBlockId: null }), effects };
