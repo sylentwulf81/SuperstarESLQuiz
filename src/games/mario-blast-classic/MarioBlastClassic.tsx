@@ -53,7 +53,8 @@ export interface MarioBlastClassicProps {
 
 const CLASSIC_THEME = 'classic' as const;
 
-const emptySlots = (): ClassicCardSlot[] => Array.from({ length: 6 }, () => ({}));
+const emptySlots = (teamCount: number): ClassicCardSlot[] =>
+  Array.from({ length: Math.max(2, Math.min(teamCount, 8)) }, () => ({}));
 
 export function MarioBlastClassic({
   onExitToLauncher,
@@ -69,7 +70,7 @@ export function MarioBlastClassic({
   const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
   const [blocks, setBlocks] = useState<BlockState[]>(() => createGameBlocks(theme));
   const [selectedBlockId, setSelectedBlockId] = useState<number | null>(null);
-  const [slots, setSlots] = useState<ClassicCardSlot[]>(emptySlots);
+  const [slots, setSlots] = useState<ClassicCardSlot[]>(() => emptySlots(6));
   const [drawnTeamIds, setDrawnTeamIds] = useState<string[]>([]);
   const [selectedAnsweringTeamId, setSelectedAnsweringTeamId] = useState<string | null>(null);
   const [pendingCard, setPendingCard] = useState<RewardCard | null>(null);
@@ -133,8 +134,8 @@ export function MarioBlastClassic({
   const answeringTeam = teams.find(t => t.id === selectedAnsweringTeamId) || activeTeam;
   const cardsRemaining = slots.filter(s => !s.claimedByTeamId).length;
 
-  const resetRound = () => {
-    setSlots(emptySlots());
+  const resetRound = (roster = teams) => {
+    setSlots(emptySlots(roster.length || 6));
     setDrawnTeamIds([]);
     setSelectedAnsweringTeamId(null);
     setPendingCard(null);
@@ -152,7 +153,7 @@ export function MarioBlastClassic({
     })));
     setCurrentTeamIndex(0);
     setBlocks(createGameBlocks(theme, undefined, true));
-    resetRound();
+    resetRound(configuredTeams);
     setSelectedBlockId(null);
     setView('board');
     showToast(`🎲 Questions shuffled! ${configuredTeams[0].name} picks the first block — anyone can answer!`);
@@ -174,7 +175,7 @@ export function MarioBlastClassic({
     resetRound();
     setSelectedBlockId(blockId);
     if (testGame) {
-      setSlots(fillClassicTestSlots(emptySlots()));
+      setSlots(current => fillClassicTestSlots(current));
     }
   };
 
@@ -694,6 +695,7 @@ export function MarioBlastClassic({
         {roundOverReason && (
           <RoundOverOverlay
             reason={roundOverReason}
+            cardCount={slots.length}
             onContinue={() => finishQuestionRound(roundOverReason, teams)}
           />
         )}

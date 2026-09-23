@@ -129,7 +129,8 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         </div>
 
         <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col">
-          <div className="flex-1 min-h-0 grid grid-cols-3 gap-3 sm:gap-5">
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+            <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-5 max-h-full">
             {outcomes.map((_, idx) => {
               const isChosen = pickedIndex === idx;
               const revealing = pickedIndex !== null;
@@ -140,7 +141,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                   type="button"
                   disabled={revealing}
                   onClick={() => handlePick(idx)}
-                  className={`relative h-full min-h-0 [perspective:900px] cursor-pointer disabled:cursor-default ${
+                  className={`relative shrink-0 h-[min(100%,42dvh,22rem)] aspect-[2/3] w-auto [perspective:900px] cursor-pointer disabled:cursor-default ${
                     isChosen ? 'z-[1]' : ''
                   }`}
                 >
@@ -223,6 +224,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                 </button>
               );
             })}
+            </div>
           </div>
 
           {picked ? (

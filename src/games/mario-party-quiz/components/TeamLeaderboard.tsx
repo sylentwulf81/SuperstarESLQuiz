@@ -35,21 +35,10 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const highestScore = sortedTeams[0]?.coins ?? 0;
 
-  const gridLayoutClasses =
-    teams.length <= 3
-      ? 'grid-cols-1 sm:grid-cols-3 max-w-6xl mx-auto'
-      : teams.length === 4
-      ? 'grid-cols-2 lg:grid-cols-4 max-w-7xl mx-auto'
-      : teams.length === 5
-      ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-5 max-w-[1600px] mx-auto'
-      : teams.length === 6
-      ? 'grid-cols-2 md:grid-cols-3 xl:grid-cols-6 max-w-[1750px] mx-auto'
-      : 'grid-cols-2 md:grid-cols-4 xl:grid-cols-8 max-w-[1750px] mx-auto';
-
   return (
     <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4 pt-1.5 pb-1 shrink-0">
       <div className="bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/15 p-2 sm:p-2.5 shadow-xl overflow-visible">
-        <div className={`grid gap-2 sm:gap-2.5 ${gridLayoutClasses}`}>
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
           {teams.map((team, idx) => {
             const char = CHARACTERS[team.characterId];
             const isActive = idx === currentTeamIndex;
@@ -61,17 +50,30 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
             return (
               <div
                 key={team.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${team.name}, ${team.coins} coins${isActive ? ', picking' : ''}`}
+                title={team.name}
                 onClick={() => {
                   if (!isActive) {
                     sounds.playPop();
                     onSelectTeamTurn(idx);
                   }
                 }}
-                className={`relative flex items-center gap-2 p-2 sm:p-2.5 rounded-xl transition-all duration-200 cursor-pointer select-none border shadow-md overflow-visible ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!isActive) {
+                      sounds.playPop();
+                      onSelectTeamTurn(idx);
+                    }
+                  }
+                }}
+                className={`relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl transition-all duration-200 cursor-pointer select-none border shadow-md overflow-visible ${
                   isStunned
                     ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-400/80 text-white'
                     : isActive
-                    ? `${char.bgColor} bg-opacity-35 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.35)] z-10 text-white scale-[1.01]`
+                    ? `${char.bgColor} bg-opacity-35 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.35)] z-10 text-white scale-[1.03]`
                     : isLeader
                     ? 'bg-amber-950/60 border-amber-400/50 hover:border-amber-400/80 text-slate-100'
                     : 'bg-slate-800/80 hover:bg-slate-800 border-white/15 text-slate-200 hover:border-white/25'
@@ -79,7 +81,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
               >
                 {showPodiumBadge && (
                   <span
-                    className={`absolute top-0.5 left-0.5 z-20 h-5 min-w-[1.7rem] px-1.5 rounded-md text-[10px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
+                    className={`absolute -top-1.5 -left-1.5 z-20 h-5 min-w-[1.7rem] px-1.5 rounded-md text-[10px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
                     title={`Rank ${rankLabel(rank)}`}
                   >
                     {rankLabel(rank)}
@@ -91,53 +93,40 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                     characterId={team.characterId}
                     size="md"
                     customUrl={team.customImageUrl}
-                    className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl shadow-md border ${
+                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md border ${
                       isActive ? 'ring-2 ring-yellow-300 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 'border-white/25'
                     }`}
                   />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <h4
-                    title={team.name}
-                    className="font-bold text-xs sm:text-[13px] leading-snug text-white drop-shadow-sm line-clamp-2 break-words"
-                  >
-                    {team.name}
-                  </h4>
-                  <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                  <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5">
                     {team.hasDoubleTurn && (
-                      <span className="shrink-0 bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
                         <Zap className="w-2.5 h-2.5 fill-yellow-300" />
-                        2x
                       </span>
                     )}
                     {team.doubleNextCoinReward && (
-                      <span className="shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
-                        <Zap className="w-2.5 h-2.5 fill-yellow-300" />
-                        2x$
+                      <span className="bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
+                        2x
                       </span>
                     )}
                     {team.skipNextCoinReward && (
-                      <span className="shrink-0 bg-sky-600 text-white px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
-                        Skip$
                       </span>
                     )}
                     {team.blooperNextCoin && (
-                      <span className="shrink-0 bg-indigo-800 text-indigo-100 px-1.5 py-px rounded-full text-[9px] font-black shadow-sm">
-                        🦑1
+                      <span className="bg-indigo-800 text-indigo-100 px-1 py-px rounded-full text-[9px] font-black shadow-sm">
+                        🦑
                       </span>
                     )}
                     {isStunned && (
-                      <span className="shrink-0 bg-sky-600 text-white px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
-                        Skip
                       </span>
                     )}
                     {team.streak > 1 && (
-                      <span className="flex items-center text-amber-300 font-bold text-[10px]">
-                        <Flame className="w-3 h-3 fill-amber-400 mr-0.5" />
-                        {team.streak}x
+                      <span className="flex items-center bg-black/70 text-amber-300 font-bold text-[9px] px-1 py-px rounded-full border border-amber-400/40">
+                        <Flame className="w-2.5 h-2.5 fill-amber-400" />
+                        {team.streak}
                       </span>
                     )}
                   </div>
@@ -152,7 +141,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                 >
                   <MarioCoin size="sm" animated={isActive} />
                   <span
-                    className={`font-mario text-lg sm:text-xl leading-none min-w-[22px] text-center transition-colors ${
+                    className={`font-mario text-xl sm:text-2xl leading-none min-w-[1.4rem] text-center transition-colors ${
                       team.coins < 0
                         ? 'text-red-500 font-black drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]'
                         : 'text-yellow-300 text-shadow-gold'
@@ -166,7 +155,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                         sounds.playPop();
                         onAdjustCoins(team.id, 1);
                       }}
-                      title="Add 1 coin"
+                      title={`Add 1 coin to ${team.name}`}
                       className="w-5 h-5 rounded-md bg-white/10 hover:bg-emerald-500/50 text-white flex items-center justify-center border border-white/20 hover:border-emerald-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Plus className="w-3 h-3" />
@@ -176,7 +165,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                         sounds.playPop();
                         onAdjustCoins(team.id, -1);
                       }}
-                      title="Deduct 1 coin"
+                      title={`Deduct 1 coin from ${team.name}`}
                       className="w-5 h-5 rounded-md bg-white/10 hover:bg-red-500/50 text-white flex items-center justify-center border border-white/20 hover:border-red-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Minus className="w-3 h-3" />

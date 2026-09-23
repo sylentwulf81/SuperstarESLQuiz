@@ -8,13 +8,14 @@ export type RoundOverReason = 'cards' | 'gold_star' | 'bowser_revolution' | 'bow
 
 interface RoundOverOverlayProps {
   reason: RoundOverReason;
+  cardCount?: number;
   onContinue: () => void;
 }
 
 const COPY: Record<RoundOverReason, { title: string; body: string; accent: string }> = {
   cards: {
     title: 'ROUND OVER!',
-    body: 'All 6 cards claimed',
+    body: 'All cards claimed',
     accent: 'from-amber-400 to-yellow-300',
   },
   gold_star: {
@@ -53,10 +54,14 @@ function ReasonMark({ reason }: { reason: RoundOverReason }) {
   return <Sparkles className="w-16 h-16 sm:w-24 sm:h-24 text-yellow-300" />;
 }
 
-export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({ reason, onContinue }) => {
+export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({ reason, cardCount, onContinue }) => {
   useBodyScrollLock();
   const copy = COPY[reason];
   const hitCard = reason === 'gold_star' || reason === 'bowser_revolution' || reason === 'bowser_fury' || reason === 'piranha';
+  const body =
+    reason === 'cards' && cardCount
+      ? `All ${cardCount} cards claimed`
+      : copy.body;
 
   useEffect(() => {
     if (reason === 'gold_star') sounds.playSuperstar();
@@ -93,7 +98,7 @@ export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({ reason, onCo
           >
             ROUND OVER!
           </motion.h2>
-          <p className="mt-4 font-mario text-xl sm:text-3xl text-white text-shadow-mario">{copy.body}</p>
+          <p className="mt-4 font-mario text-xl sm:text-3xl text-white text-shadow-mario">{body}</p>
           <button
             type="button"
             onClick={() => {

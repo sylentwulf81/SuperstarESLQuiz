@@ -74,7 +74,9 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                 Test
               </span>
             )}
-            <span className="font-mario text-sm text-white/95">{cardsRemaining}/6</span>
+            <span className="font-mario text-sm text-white/95">
+              {cardsRemaining}/{slots.length}
+            </span>
             <button
               type="button"
               onClick={() => {
@@ -210,23 +212,29 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
               })}
             </div>
 
-            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center">
-              <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 max-w-5xl mx-auto w-full justify-items-center">
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-hidden">
+              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2.5 content-center max-h-full">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
+                const cardHeight =
+                  slots.length <= 4
+                    ? 'h-[min(100%,42dvh,22rem)]'
+                    : slots.length <= 6
+                      ? 'h-[min(100%,36dvh,18rem)]'
+                      : 'h-[min(100%,30dvh,15rem)]';
                 return (
                   <button
                     key={idx}
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative w-full aspect-[2/3] max-w-[min(100%,11.5rem)] max-h-[min(38dvh,22rem)] rounded-2xl border-2 overflow-hidden transition-all ${
+                    className={`relative shrink-0 ${cardHeight} aspect-[2/3] w-auto rounded-2xl border-2 overflow-hidden transition-all ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
-                          ? 'border-amber-300 cursor-pointer hover:scale-105 hover:shadow-[0_0_20px_rgba(250,204,21,0.45)]'
+                          ? 'border-amber-300 cursor-pointer hover:brightness-110 hover:shadow-[0_0_20px_rgba(250,204,21,0.45)]'
                           : 'border-white/15 opacity-70 cursor-not-allowed'
                     }`}
                   >

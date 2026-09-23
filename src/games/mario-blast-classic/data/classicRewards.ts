@@ -101,18 +101,22 @@ export function persistClassicTestGame(on: boolean) {
   }
 }
 
-export function dealClassicTestCards(): RewardCard[] {
+export function dealClassicTestCards(count = CLASSIC_TEST_DECK_TYPES.length): RewardCard[] {
   const byType = new Map(CLASSIC_REWARD_CARDS.map(card => [card.type, card]));
-  return shuffleArray(
-    CLASSIC_TEST_DECK_TYPES.map((type, i) => {
-      const pick = byType.get(type) || CLASSIC_REWARD_CARDS[0];
-      return { ...pick, id: `${pick.type}_test_${Date.now()}_${i}` };
-    })
-  );
+  const base = CLASSIC_TEST_DECK_TYPES.map((type, i) => {
+    const pick = byType.get(type) || CLASSIC_REWARD_CARDS[0];
+    return { ...pick, id: `${pick.type}_test_${Date.now()}_${i}` };
+  });
+  while (base.length < count) {
+    const pick = CLASSIC_REWARD_CARDS[base.length % CLASSIC_REWARD_CARDS.length];
+    base.push({ ...pick, id: `${pick.type}_test_${Date.now()}_${base.length}` });
+  }
+  return shuffleArray(base.slice(0, count));
 }
 
 export function fillClassicTestSlots<T extends { card?: RewardCard; claimedByTeamId?: string }>(slots: T[]): T[] {
-  const deck = dealClassicTestCards();
+  const need = slots.filter(s => !s.claimedByTeamId && !s.card).length;
+  const deck = dealClassicTestCards(need);
   let i = 0;
   return slots.map(slot => {
     if (slot.claimedByTeamId || slot.card) return slot;
