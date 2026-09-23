@@ -25,6 +25,7 @@ import {
   persistClassicLessonGoal,
   resetClassicLessonGoal,
 } from './data/classicLesson';
+import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
 import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
@@ -201,6 +202,30 @@ export function MarioBlastClassic({
     setLessonGoal(resetClassicLessonGoal());
   };
 
+  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string) => {
+    const nextGoal = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
+    const normalized = questions.map(question => ({
+      ...question,
+      title: legacySlashesToMarks(question.title),
+    }));
+    setLessonGoal(nextGoal);
+    persistClassicLessonGoal(nextGoal);
+    const next = createGameBlocks(theme, normalized);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: next,
+      toast: `📚 ${name}`,
+    });
+    try {
+      localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(next.map(block => block.question)));
+    } catch {
+      // ignore
+    }
+    if (isLoggedIn && user) {
+      saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
+    }
+  }, [dispatch, isLoggedIn, saveQuestionsCloud, theme, user]);
+
   const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
@@ -334,7 +359,7 @@ export function MarioBlastClassic({
               onSelectTeamTurn={handleSelectTeamTurn}
               onAdjustCoins={handleAdjustCoins}
             />
-            <main className="flex-1 min-h-0 flex flex-col py-1">
+            <main className="flex-1 min-h-0 flex flex-col">
               <GameBoard
                 blocks={blocks}
                 teams={teams}
@@ -435,6 +460,7 @@ export function MarioBlastClassic({
             onLessonGoalCommit={commitLessonGoal}
             testGame={testMode}
             onToggleTestGame={handleToggleTestGame}
+            onApplyQuestionBank={handleApplyQuestionBank}
           />
         )}
       </AnimatePresence>

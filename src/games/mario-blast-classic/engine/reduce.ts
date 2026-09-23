@@ -1,7 +1,9 @@
 import { EngineEffect } from '@/shared/engineFx';
 import {
   drawClassicCard,
+  fillClassicRoundSlots,
   fillClassicTestSlots,
+  resolveClassicSlotCard,
   shuffleMysteryBlockOutcomes,
   shuffleSuperMushroomOffers,
 } from '../data/classicRewards';
@@ -12,6 +14,8 @@ import {
   ClassicState,
   RoundOverReason,
   classicActiveTeam,
+  classicOpenedCount,
+  classicSlotCount,
   emptyClassicSlots,
   resetClassicRound,
 } from './types';
@@ -102,8 +106,15 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
       }
       effects.push({ kind: 'sound', sound: 'blockHit' });
       let next = resetClassicRound({ ...state, selectedBlockId: event.blockId });
+      const opened = classicOpenedCount(state);
+      const slotShell = emptyClassicSlots(classicSlotCount(state.teams.length));
       if (state.testMode) {
-        next = { ...next, slots: fillClassicTestSlots(emptyClassicSlots()) };
+        next = { ...next, slots: fillClassicTestSlots(slotShell) };
+      } else {
+        next = {
+          ...next,
+          slots: fillClassicRoundSlots(slotShell, state.teams, opened, state.blocks.length),
+        };
       }
       return { state: next, effects };
     }
@@ -113,11 +124,20 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
       if (!state.selectedAnsweringTeamId || state.slots[event.slotIndex]?.claimedByTeamId) {
         return { state, effects };
       }
-      const card = state.slots[event.slotIndex]?.card
+      const raw =
+        state.slots[event.slotIndex]?.card
         ?? drawClassicCard(state.teams, state.selectedAnsweringTeamId);
+      const card = resolveClassicSlotCard(raw, state.teams, state.selectedAnsweringTeamId);
       effects.push({ kind: 'sound', sound: 'specialCard' });
       return {
-        state: { ...state, pendingSlotIndex: event.slotIndex, pendingCard: card },
+        state: {
+          ...state,
+          pendingSlotIndex: event.slotIndex,
+          pendingCard: card,
+          slots: state.slots.map((slot, i) =>
+            i === event.slotIndex ? { ...slot, card } : slot
+          ),
+        },
         effects,
       };
     }
@@ -298,9 +318,18 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
       const on = event.on;
       let slots = state.slots;
       if (state.selectedBlockId) {
+        const sized = emptyClassicSlots(classicSlotCount(state.teams.length)).map((slot, i) => {
+          const existing = state.slots[i];
+          return existing?.claimedByTeamId ? existing : slot;
+        });
         slots = on
-          ? fillClassicTestSlots(state.slots)
-          : state.slots.map(slot => (slot.claimedByTeamId ? slot : { ...slot, card: undefined }));
+          ? fillClassicTestSlots(sized)
+          : fillClassicRoundSlots(
+              sized,
+              state.teams,
+              classicOpenedCount(state),
+              state.blocks.length
+            );
       }
       return { state: { ...state, testMode: on, slots }, effects };
     }

@@ -143,16 +143,16 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = ({
                     ) : (
                       <>
                         <span className="font-mario text-[10px] sm:text-xs text-white/80">{face.base} ×2</span>
-                        <div className="inline-flex items-center gap-2">
-                          <span className="font-mario text-4xl sm:text-5xl text-yellow-300 leading-none text-shadow-mario">
+                        <div className="inline-flex items-center gap-2 sm:gap-3">
+                          <span className="font-mario text-[clamp(2.75rem,8vw,5.5rem)] text-yellow-300 leading-none text-shadow-mario">
                             +{face.doubled}
                           </span>
-                          <MarioCoin size="md" />
+                          <MarioCoin size="2xl" />
                         </div>
                         <img
                           src={MUSHROOM_ART}
                           alt=""
-                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-cover border-2 border-yellow-300"
+                          className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl object-cover border-2 border-yellow-300"
                         />
                       </>
                     )}
@@ -181,7 +181,7 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = ({
             >
               <Sparkles className="w-5 h-5" />
               CLAIM
-              <MarioCoin size="sm" />
+              <MarioCoin size="lg" />
             </button>
           </div>
         ) : (

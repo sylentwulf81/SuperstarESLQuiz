@@ -6,7 +6,9 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
+import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { ClassicCardSlot } from '../engine';
+import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 
 export type { ClassicCardSlot };
 
@@ -72,7 +74,9 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                 Test
               </span>
             )}
-            <span className="font-mario text-sm text-white/95">{cardsRemaining}/6</span>
+            <span className="font-mario text-sm text-white/95">
+              {cardsRemaining}/{slots.length}
+            </span>
             <button
               type="button"
               onClick={() => {
@@ -93,8 +97,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1 hshort:mb-0.5">
               {lessonGoal}
             </p>
-            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario">
-              {question.title}
+            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario text-balance">
+              <MarkedPrompt text={question.title} />
             </h2>
             {answerText && (
               <div
@@ -180,7 +184,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                           aria-hidden
                         >
                           <img
-                            src="/assets/effects/reveal_mariosupermushroom.jpeg"
+                            src={getRevealArt('mushroom_x2') || '/assets/effects/reveal_mariopblock.jpg'}
                             alt=""
                             className="w-5 h-5 rounded-full object-cover"
                           />
@@ -208,29 +212,34 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               })}
             </div>
 
-            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center">
-              <div className="grid grid-cols-6 gap-1.5 sm:gap-2.5 max-w-5xl mx-auto w-full justify-items-center">
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-stretch">
+              <div
+                className="grid gap-1.5 sm:gap-2.5 w-full h-full min-h-0"
+                style={{
+                  gridTemplateColumns: `repeat(${Math.max(slots.length, 1)}, minmax(0, 1fr))`,
+                }}
+              >
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
                 return (
-                  <button
-                    key={idx}
-                    type="button"
-                    disabled={!canPick}
-                    onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative w-full aspect-[2/3] max-w-[min(100%,11.5rem)] max-h-[min(38dvh,22rem)] rounded-2xl border-2 overflow-hidden ${
-                      slot.claimedByTeamId
-                        ? 'border-white/30 cursor-default'
-                        : canPick
-                          ? 'border-amber-300 cursor-pointer hover:brightness-110'
-                          : 'border-white/15 opacity-70 cursor-not-allowed'
-                    }`}
-                  >
+                  <div key={idx} className="min-h-0 min-w-0 h-full flex items-center justify-center">
+                    <button
+                      type="button"
+                      disabled={!canPick}
+                      onClick={() => canPick && onPickSlot(idx)}
+                      className={`@container/card relative h-full max-h-full aspect-[2/3] w-auto max-w-full rounded-2xl border-2 overflow-hidden ${
+                        slot.claimedByTeamId
+                          ? 'border-white/30 cursor-default'
+                          : canPick
+                            ? 'border-amber-300 cursor-pointer hover:brightness-110'
+                            : 'border-white/15 opacity-70 cursor-not-allowed'
+                      }`}
+                    >
                     {slot.claimedByTeamId && slot.card ? (
                       <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center gap-1 p-2">
-                        <span className="font-mario text-[10px] sm:text-xs text-yellow-200 text-center leading-tight">
+                        <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-200 text-center leading-tight">
                           {slot.card.title}
                         </span>
                         {(slot.card.type === 'gold_star' ||
@@ -254,16 +263,19 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                           {previewUnclaimed ? 'TEST' : '★'}
                         </span>
                         {previewUnclaimed ? (
-                          <span className="font-mario text-[10px] sm:text-xs text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
+                          <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
                             {slot.card?.title}
                           </span>
                         ) : (
-                          <span className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
+                          <span className="font-mario text-[clamp(1.75rem,28cqh,4.5rem)] text-yellow-300 text-shadow-mario leading-none">
+                            ?
+                          </span>
                         )}
-                        <span className="text-[9px] font-black text-amber-200">{idx + 1}</span>
+                        <span className="text-[9px] sm:text-[11px] font-black text-amber-200">{idx + 1}</span>
                       </div>
                     )}
-                  </button>
+                    </button>
+                  </div>
                 );
               })}
             </div>

@@ -1,6 +1,7 @@
 export {
   createClassicState,
   emptyClassicSlots,
+  classicSlotCount,
   resetClassicRound,
   classicActiveTeam,
   classicOpenedCount,

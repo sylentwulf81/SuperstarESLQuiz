@@ -79,79 +79,75 @@ export const HeaderNav = React.memo(function HeaderNav({
   const gameTitle = theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'MARIO PARTY';
 
   return (
-    <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
-      <div className="w-full max-w-[1750px] mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <h1 className="font-mario text-sm sm:text-base md:text-xl text-yellow-300 drop-shadow truncate">
-              {gameTitle}
-            </h1>
-            {theme !== 'classic' && (
-              <span
-                className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${
-                  theme === 'summer'
-                    ? 'bg-amber-400 text-slate-950 border-amber-300'
-                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
-                }`}
-              >
-                {THEME_UI[theme].short}
-              </span>
-            )}
-          </div>
-
+    <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2 sm:px-3 lg:px-4 py-1.5 shadow-xl shrink-0 w-full">
+      <div className="w-full max-w-[1750px] mx-auto grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+        {/* Brand + pass */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-self-start">
+          <h1 className="font-mario text-sm sm:text-base lg:text-lg text-yellow-300 drop-shadow truncate min-w-0">
+            {gameTitle}
+          </h1>
+          {theme !== 'classic' && (
+            <span
+              className={`hidden xl:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm shrink-0 ${
+                theme === 'summer'
+                  ? 'bg-amber-400 text-slate-950 border-amber-300'
+                  : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+              }`}
+            >
+              {THEME_UI[theme].short}
+            </span>
+          )}
           <button
             onClick={() => {
               sounds.playClick();
               onNextTurn();
             }}
             title="Pass turn to next team"
-            className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
+            className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 py-1 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
           >
             <SkipForward className="w-3.5 h-3.5 text-indigo-300" />
-            <span className="hidden md:inline">Pass</span>
+            <span className="hidden xl:inline">Pass</span>
           </button>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 shrink min-w-0">
-          <MusicPlayer />
-          <div className={`flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-xl border h-[34px] transition-all ${
-            isGameOver
-              ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
-              : 'bg-slate-800/60 border-white/10 text-slate-300'
-          }`}>
+        {/* Center: cleared always; full music player only when the row is wide enough */}
+        <div className="flex items-center justify-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-xl border h-[34px] shrink-0 ${
+              isGameOver
+                ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
+                : 'bg-slate-800/60 border-white/10 text-slate-300'
+            }`}
+          >
             <span className={isGameOver ? 'text-yellow-300 font-bold text-[11px]' : 'text-white/60 text-[11px]'}>
-              {isGameOver ? '🏁 Finished:' : 'Cleared:'}
+              {isGameOver ? '🏁' : 'Cleared'}
             </span>
             <span className={`font-bold font-pixel text-[10px] ${isGameOver ? 'text-yellow-300' : 'text-amber-300'}`}>
               {openedCount}/{totalBlocks}
             </span>
-            <div className="hidden 2xl:block w-14 bg-white/10 rounded-full h-1.5 overflow-hidden ml-0.5 border border-white/10">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  isGameOver ? 'bg-gradient-to-r from-emerald-400 to-yellow-300' : 'bg-gradient-to-r from-amber-400 to-yellow-300'
-                }`}
-                style={{ width: `${(openedCount / totalBlocks) * 100}%` }}
-              />
-            </div>
+          </div>
+          <div className="hidden 2xl:block shrink-0">
+            <MusicPlayer />
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Primary action + tools (tools collapse into menu below lg) */}
+        <div className="flex items-center gap-1.5 justify-self-end shrink-0">
           <button
             onClick={() => {
               sounds.playSuperstar();
               onDeclareWinner();
             }}
-            className={`flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
+            className={`inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-xs shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
               isGameOver ? 'ring-2 ring-yellow-300 animate-pulse shadow-[0_0_20px_rgba(250,204,21,0.6)]' : ''
             }`}
             title={isGameOver ? 'Finished! View final leaderboard & champion' : 'Crown the Superstar Winner!'}
           >
-            <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950" />
-            <span>{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
+            <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950 shrink-0" />
+            <span className="hidden min-[1000px]:inline">{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
           </button>
 
-          <div className="hidden sm:flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
+          <div className="hidden lg:flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
             <button
               onClick={() => {
                 sounds.playClick();

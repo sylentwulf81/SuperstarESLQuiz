@@ -55,7 +55,13 @@ export interface ClassicResult {
   effects: EngineEffect[];
 }
 
-export const emptyClassicSlots = (): ClassicCardSlot[] => Array.from({ length: 6 }, () => ({}));
+export const emptyClassicSlots = (count = 6): ClassicCardSlot[] =>
+  Array.from({ length: count }, () => ({}));
+
+/** At least 6 cards; one per team when there are 7–8 teams. */
+export function classicSlotCount(teamCount: number): number {
+  return Math.max(6, teamCount);
+}
 
 export function createClassicState(blocks: BlockState[], testMode = false): ClassicState {
   return {
@@ -64,7 +70,7 @@ export function createClassicState(blocks: BlockState[], testMode = false): Clas
     currentTeamIndex: 0,
     blocks,
     selectedBlockId: null,
-    slots: emptyClassicSlots(),
+    slots: emptyClassicSlots(6),
     drawnTeamIds: [],
     selectedAnsweringTeamId: null,
     pendingCard: null,
@@ -79,7 +85,7 @@ export function createClassicState(blocks: BlockState[], testMode = false): Clas
 export function resetClassicRound(state: ClassicState): ClassicState {
   return {
     ...state,
-    slots: emptyClassicSlots(),
+    slots: emptyClassicSlots(classicSlotCount(state.teams.length)),
     drawnTeamIds: [],
     selectedAnsweringTeamId: null,
     pendingCard: null,
