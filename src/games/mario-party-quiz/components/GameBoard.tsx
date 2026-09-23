@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Check, X as XIcon, Trophy } from 'lucide-react';
 import { BlockState, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -21,6 +21,16 @@ export const GameBoard = React.memo(function GameBoard({
   isGameOver,
   onOpenLeaderboard,
 }: GameBoardProps) {
+  // Bolt Performance Optimization: Precompute team lookup map to convert O(N_teams) array find
+  // calls per block (60 blocks per render) into O(1) hash map lookups.
+  const teamsMap = useMemo(() => {
+    const map: Record<string, Team> = {};
+    for (const team of teams) {
+      map[team.id] = team;
+    }
+    return map;
+  }, [teams]);
+
   return (
     <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
       <div className="relative max-h-full w-[min(100%,calc(100cqh*12/5))] max-lg:w-[min(100%,calc(100cqh*0.6))] aspect-[12/5] max-lg:aspect-[6/10]">
@@ -71,7 +81,7 @@ export const GameBoard = React.memo(function GameBoard({
             const isClearedWithX = isOpened && block.isIncorrectCleared;
             const openedTeam =
               isOpened && !isClearedWithX && block.openedByTeamId
-                ? teams.find(t => t.id === block.openedByTeamId)
+                ? teamsMap[block.openedByTeamId]
                 : null;
             const openedChar = openedTeam ? CHARACTERS[openedTeam.characterId] : null;
 

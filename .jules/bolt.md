@@ -5,3 +5,7 @@
 ## 2025-05-19 - Synchronous LocalStorage & SVG Path Lookup Optimizations
 **Learning:** High-density UI elements like interactive launcher box art cards and 50-state SVG map paths were causing cascading renders and linear array lookup overhead (~150 `.find()` scans per map render and 12+ post-mount `localStorage` state passes).
 **Action:** Use `useState(() => ...)` lazy initializers for synchronous `localStorage` reads and pre-computed `useMemo` hash maps for O(1) property lookups, combined with `React.memo` on high-frequency leaf components (`SnesBoxArt`, `UsaMap`).
+
+## 2025-05-20 - Constant Time Hash Map Lookups in Board & Leaderboard Renders
+**Learning:** High-density game boards (60 blocks) and team leaderboards were executing linear `teams.find()` and quadratic `sortedTeams.findIndex()` array scans inside map iteration callbacks on every game state tick / coin adjustment.
+**Action:** Memoize `teamsMap` and `teamRanksMap` in `useMemo` hooks in `GameBoard.tsx` and `TeamLeaderboard.tsx` to convert O(N) array scans into O(1) constant-time hash map lookups.
