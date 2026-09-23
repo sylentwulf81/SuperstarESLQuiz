@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
+  Trophy, BoxSelect, ArrowRightLeft, ArrowDown, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -177,22 +177,49 @@ function getCardTheme(type: string): CardTheme {
   return CARD_THEMES[type] || DEFAULT_THEME;
 }
 
-function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' }) {
-  const big = size === 'lg';
+function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' | 'xl' }) {
+  const big = size === 'lg' || size === 'xl';
+  const huge = size === 'xl';
   return (
     <div
       className={`inline-flex items-center gap-1.5 rounded-full bg-black/60 border border-yellow-300/50 ${
-        big ? 'px-3 py-1.5' : 'px-2 py-1'
+        huge ? 'px-3.5 py-2' : big ? 'px-3 py-1.5' : 'px-2 py-1'
       }`}
     >
-      <MarioCoin size={big ? 'md' : 'sm'} />
+      <MarioCoin size={huge ? 'lg' : big ? 'md' : 'sm'} />
       <span
-        className={`font-mario leading-none ${big ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'} ${
-          coins < 0 ? 'text-red-400' : 'text-yellow-300'
-        }`}
+        className={`font-mario leading-none ${
+          huge ? 'text-4xl sm:text-5xl' : big ? 'text-3xl sm:text-4xl' : 'text-xl sm:text-2xl'
+        } ${coins < 0 ? 'text-red-400' : 'text-yellow-300'}`}
       >
         {coins}
       </span>
+    </div>
+  );
+}
+
+/** Classic King Boo: keep old and new totals both huge so late lookers still see the change. */
+function ShuffleCoinPair({ before, after }: { before: number; after: number }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5 w-full">
+      <div className="inline-flex items-center gap-1.5 rounded-2xl bg-black/85 border-2 border-white/80 px-3 py-1.5">
+        <MarioCoin size="lg" />
+        <span className="font-mario text-4xl sm:text-5xl text-white leading-none line-through decoration-rose-400 decoration-[5px]">
+          {before}
+        </span>
+      </div>
+      <ArrowDown className="w-7 h-7 text-fuchsia-200 shrink-0" strokeWidth={3} aria-hidden />
+      <motion.div
+        key={`after-${after}`}
+        initial={{ scale: 1.28 }}
+        animate={{ scale: 1 }}
+        className="inline-flex items-center gap-1.5 rounded-2xl bg-black/85 border-2 border-yellow-300 px-3 py-1.5 shadow-[0_0_18px_rgba(250,204,21,0.35)]"
+      >
+        <MarioCoin size="lg" />
+        <span className="font-mario text-4xl sm:text-5xl text-yellow-300 leading-none text-shadow-mario">
+          {after}
+        </span>
+      </motion.div>
     </div>
   );
 }
@@ -927,16 +954,16 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                               Safe
                             </span>
                           </div>
-                          <div className="grid grid-cols-3 gap-2 content-start flex-1 min-h-0">
+                          <div className="grid grid-cols-3 gap-2 content-start flex-1 min-h-0 overflow-y-auto">
                             {eligibleOpponents.map(opp => {
                               const oppChar = CHARACTERS[opp.characterId];
                               const shown = kingBooShuffle?.[opp.id] ?? opp.coins;
-                              const changed = kingBooShuffle != null && shown !== opp.coins;
+                              const shuffled = kingBooShuffle != null;
                               return (
                                 <div
                                   key={opp.id}
-                                  className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold flex flex-col items-center p-2 gap-1 ${
-                                    changed ? 'border-yellow-300 ring-2 ring-fuchsia-400' : 'border-white/30'
+                                  className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold flex flex-col items-center p-2 gap-1.5 ${
+                                    shuffled ? 'border-yellow-300 ring-2 ring-fuchsia-400' : 'border-white/30'
                                   }`}
                                 >
                                   <TeamAvatar
@@ -944,21 +971,14 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                     size="md"
                                     customUrl={opp.customImageUrl}
                                   />
-                                  <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
-                                  <div className="flex items-center gap-1">
-                                    {changed && (
-                                      <span className="font-mario text-sm text-white/50 line-through leading-none">
-                                        {opp.coins}
-                                      </span>
-                                    )}
-                                    <motion.div
-                                      key={`${opp.id}-${shown}`}
-                                      initial={kingBooShuffle ? { scale: 1.35 } : false}
-                                      animate={{ scale: 1 }}
-                                    >
-                                      <CoinScore coins={shown} />
-                                    </motion.div>
-                                  </div>
+                                  {!shuffled && (
+                                    <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
+                                  )}
+                                  {shuffled ? (
+                                    <ShuffleCoinPair before={opp.coins} after={shown} />
+                                  ) : (
+                                    <CoinScore coins={shown} size="md" />
+                                  )}
                                 </div>
                               );
                             })}

@@ -100,7 +100,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                 <div className="min-w-0 flex-1">
                   <h4
                     title={team.name}
-                    className="font-bold text-xs sm:text-[13px] leading-snug text-white drop-shadow-sm line-clamp-2 break-words"
+                    className="font-bold text-xs sm:text-sm leading-none text-white drop-shadow-sm truncate"
                   >
                     {team.name}
                   </h4>
