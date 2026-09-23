@@ -4,7 +4,12 @@ import { Sparkles, X } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { MysteryBlockOutcome } from '@/games/mario-blast-classic/data/classicRewards';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
-import { getRevealArt, PIRANHA_REVEAL_ART, pickMysteryBlockBacks } from '@/games/mario-party-quiz/data/revealArt';
+import {
+  getRevealArt,
+  NABBIT_REVEAL_ART,
+  PIRANHA_REVEAL_ART,
+  pickMysteryBlockBacks,
+} from '@/games/mario-party-quiz/data/revealArt';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { InkedPayoutReveal } from '@/shared/components/InkedPayoutReveal';
@@ -24,7 +29,7 @@ function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean, bloo
     if (bloopered) return `Treasure +${coins}`;
     return `Treasure Block! +${coins}`;
   }
-  if (outcome.kind === 'bust') return 'Empty Block… 0 coins';
+  if (outcome.kind === 'bust') return 'Nabbit! 0 coins';
   return 'Piranha Plant! Round Over!';
 }
 
@@ -88,8 +93,9 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         }
         if (outcome.kind === 'bust') {
           return {
-            shell: 'from-slate-500 via-slate-700 to-slate-950',
-            title: 'EMPTY',
+            shell: 'from-violet-600 via-purple-800 to-slate-950',
+            art: NABBIT_REVEAL_ART,
+            title: 'NABBIT!',
             coins: 0,
             mushroom: false,
             inkOriginal: undefined,
@@ -202,7 +208,11 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                           <img src={face.art} alt="" className="absolute inset-0 w-full h-full object-cover" />
                           <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/85 via-black/45 to-transparent flex flex-col items-center">
                             <span className="font-mario text-lg sm:text-xl text-white text-shadow-mario">{face.title}</span>
-                            <span className="font-mario text-sm sm:text-base text-yellow-100">Round Over</span>
+                            {face.coins === 0 ? (
+                              <span className="font-mario text-2xl sm:text-3xl text-yellow-200 leading-none">0</span>
+                            ) : (
+                              <span className="font-mario text-sm sm:text-base text-yellow-100">Round Over</span>
+                            )}
                           </div>
                         </>
                       ) : isChosen && bloopered && face.inkOriginal != null ? (
@@ -217,14 +227,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
                           </div>
                           <span className="font-mario text-base sm:text-xl text-white text-shadow-mario">{face.title}</span>
                         </>
-                      ) : (
-                        <>
-                          <span className="font-mario text-[clamp(3rem,9vw,6rem)] text-slate-100 leading-none text-shadow-mario">
-                            0
-                          </span>
-                          <span className="font-mario text-base sm:text-xl text-white text-shadow-mario">{face.title}</span>
-                        </>
-                      )}
+                      ) : null}
                       {face.mushroom && (
                         <img
                           src={getRevealArt('mushroom_x2')}

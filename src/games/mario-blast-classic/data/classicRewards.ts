@@ -3,20 +3,51 @@ import { REWARD_CARDS, isCatchUpRestrictedTeam } from '@/games/mario-party-quiz/
 import { shuffleArray } from '@/shared/utils/shuffle';
 
 export const CLASSIC_ROUND_ENDER_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury'];
-export const CLASSIC_ACTION_TYPES: RewardCardType[] = ['gold_star', 'bowser_revolution', 'bowser_fury', 'mystery_blocks'];
+
+/** Face-down catch-up / chaos actions — 1st place still soft-restricted at pick time. */
+export const CLASSIC_CATCH_UP_TYPES: RewardCardType[] = ['bowser_revolution', 'bowser_fury'];
+
+/** Interactive / chaos cards (not straight coin payouts). */
+export const CLASSIC_ACTION_CARD_TYPES: RewardCardType[] = [
+  'blooper',
+  'ghost_steal_5',
+  'boo_steal_5',
+  'king_boo',
+  'boo_steal_10',
+  'super_star_x2',
+  'mushroom_x2',
+  'bowser_revolution',
+  'bowser_fury',
+  'mystery_blocks',
+];
+
+/** King Boo + Bowser cards — odds rise with board progress and relative coin wealth. */
+export const CLASSIC_ESCALATION_TYPES: RewardCardType[] = [
+  'king_boo',
+  'bowser_revolution',
+  'bowser_fury',
+];
+
+/** @deprecated Prefer CLASSIC_ACTION_CARD_TYPES / CLASSIC_CATCH_UP_TYPES */
+export const CLASSIC_ACTION_TYPES: RewardCardType[] = [
+  'gold_star',
+  'bowser_revolution',
+  'bowser_fury',
+  'mystery_blocks',
+];
 
 const CLASSIC_OVERRIDES: Partial<Record<RewardCardType, Partial<RewardCard>>> = {
   super_star_x2: {
     title: 'Super Mushroom',
     subtitle: 'Pick 1 of 3 Super Cards — then ×2!',
     description:
-      'Pick 1 of 3 super-cards worth 1, 3, 5, or 10 coins. That amount is doubled immediately — it is not saved for later.',
+      'Pick 1 of 3 super-cards worth 2, 3, 5, or 7 coins. That amount is doubled immediately — it is not saved for later.',
   },
   mushroom_x2: {
     title: 'Super Mushroom',
     subtitle: 'Pick 1 of 3 Super Cards — then ×2!',
     description:
-      'Pick 1 of 3 super-cards worth 1, 3, 5, or 10 coins. That amount is doubled immediately — it is not saved for later.',
+      'Pick 1 of 3 super-cards worth 2, 3, 5, or 7 coins. That amount is doubled immediately — it is not saved for later.',
   },
   blue_shell: {
     title: 'Blue Shell',
@@ -111,10 +142,14 @@ export function persistClassicTestGame(on: boolean) {
   }
 }
 
-export function dealClassicTestCards(): RewardCard[] {
+export function dealClassicTestCards(slotCount = 6): RewardCard[] {
   const byType = new Map(CLASSIC_REWARD_CARDS.map(card => [card.type, card]));
+  const types = [...CLASSIC_TEST_DECK_TYPES];
+  while (types.length < slotCount) {
+    types.push('great_coins_3');
+  }
   return shuffleArray(
-    CLASSIC_TEST_DECK_TYPES.map((type, i) => {
+    types.slice(0, slotCount).map((type, i) => {
       const pick = byType.get(type) || CLASSIC_REWARD_CARDS[0];
       return { ...pick, id: `${pick.type}_test_${Date.now()}_${i}` };
     })
@@ -122,7 +157,7 @@ export function dealClassicTestCards(): RewardCard[] {
 }
 
 export function fillClassicTestSlots<T extends { card?: RewardCard; claimedByTeamId?: string }>(slots: T[]): T[] {
-  const deck = dealClassicTestCards();
+  const deck = dealClassicTestCards(slots.length);
   let i = 0;
   return slots.map(slot => {
     if (slot.claimedByTeamId || slot.card) return slot;
@@ -141,22 +176,167 @@ export const CLASSIC_REWARD_CARDS: RewardCard[] = [
   BLOOPER,
 ];
 
+const byType = () => new Map(CLASSIC_REWARD_CARDS.map(card => [card.type, card]));
+
+function cloneCard(type: RewardCardType, tag: string): RewardCard {
+  const pick = byType().get(type) || CLASSIC_REWARD_CARDS[0];
+  return { ...pick, id: `${pick.type}_${tag}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
+}
+
+function clamp01(n: number): number {
+  return Math.max(0, Math.min(1, n));
+}
+
+/**
+ * 0–1 “game heat” from board progress + relative coin wealth.
+ * Soft targets scale with progress so 2–3 team games still heat up without huge totals.
+ */
+export function classicGameHeat(
+  teams: Team[],
+  openedCount: number,
+  totalBlocks: number
+): number {
+  const board = totalBlocks > 0 ? openedCount / totalBlocks : 0;
+  const n = Math.max(1, teams.length);
+  const totalCoins = teams.reduce((sum, t) => sum + Math.max(0, t.coins), 0);
+  const avgCoins = totalCoins / n;
+  const maxCoins = Math.max(0, ...teams.map(t => t.coins));
+  // Soft “busy game” average: ~3 early → ~25 late
+  const expectedAvg = 3 + board * 22;
+  const coinByLevel = clamp01(avgCoins / Math.max(1, expectedAvg));
+  const leadByLevel = clamp01(maxCoins / Math.max(1, expectedAvg * 1.35));
+  const coinHeat = 0.65 * coinByLevel + 0.35 * leadByLevel;
+  return clamp01(0.5 * board + 0.5 * coinHeat);
+}
+
+/** Plain coin payouts — the bulk of every round (~70% of slots). */
+const COIN_DEAL_WEIGHTS: Partial<Record<RewardCardType, number>> = {
+  great_coins_3: 38,
+  wonderful_coins_5: 32,
+  super_coins_10: 18,
+  // Rare round-ender treated as a coin haul, not an “action”
+  gold_star: 2,
+};
+
+const REGULAR_ACTION_WEIGHTS: Partial<Record<RewardCardType, number>> = {
+  super_star_x2: 28,
+  ghost_steal_5: 24,
+  blooper: 24,
+  mystery_blocks: 16,
+};
+
+function pickWeightedType(
+  weights: Partial<Record<RewardCardType, number>>,
+  exclude: Set<RewardCardType> = new Set()
+): RewardCardType {
+  const entries = Object.entries(weights).filter(
+    ([type, w]) => (w ?? 0) > 0 && !exclude.has(type as RewardCardType)
+  ) as [RewardCardType, number][];
+  const total = entries.reduce((s, [, w]) => s + w, 0);
+  if (total <= 0) return 'great_coins_3';
+  let roll = Math.random() * total;
+  for (const [type, w] of entries) {
+    roll -= w;
+    if (roll <= 0) return type;
+  }
+  return entries[0][0];
+}
+
+/** ~70% coin / ~30% action across the table (usually 1–2 actions). */
+function pickActionCountForRound(slotCount: number): number {
+  const target = Math.round(slotCount * 0.3); // 2 for 6–7 cards, 2 for 8
+  const r = Math.random();
+  if (r < 0.1) return Math.max(0, target - 1); // sometimes lean coin-heavier
+  if (r < 0.85) return Math.min(2, Math.max(1, target));
+  return Math.min(2, target + 1);
+}
+
+function pickEscalationType(heat: number): RewardCardType {
+  const weights: Partial<Record<RewardCardType, number>> = {
+    king_boo: 40,
+    bowser_fury: Math.round(12 + heat * 28),
+    bowser_revolution: Math.round(8 + heat * 32),
+  };
+  return pickWeightedType(weights);
+}
+
+/**
+ * Pre-deal a round’s face-down cards: mostly coins, about 1–2 actions.
+ * King Boo / Bowser odds rise with game heat — never guaranteed.
+ */
+export function dealClassicRoundCards(opts: {
+  slotCount: number;
+  teams: Team[];
+  openedCount: number;
+  totalBlocks: number;
+}): RewardCard[] {
+  const { slotCount, teams, openedCount, totalBlocks } = opts;
+  const heat = classicGameHeat(teams, openedCount, totalBlocks);
+  const actionTarget = Math.min(pickActionCountForRound(slotCount), slotCount);
+  const used = new Set<RewardCardType>();
+  const types: RewardCardType[] = [];
+
+  // Chance an action slot is an escalation card: ~6% cold → ~48% hot (never 100%).
+  const escalationChance = 0.06 + heat * 0.42;
+
+  for (let i = 0; i < actionTarget; i++) {
+    let type: RewardCardType;
+    if (Math.random() < escalationChance) {
+      type = pickEscalationType(heat);
+    } else {
+      type = pickWeightedType(REGULAR_ACTION_WEIGHTS, used);
+    }
+    // Prefer unique actions in the same round when possible
+    if (used.has(type) && CLASSIC_ACTION_CARD_TYPES.includes(type)) {
+      type = pickWeightedType(REGULAR_ACTION_WEIGHTS, used);
+    }
+    used.add(type);
+    types.push(type);
+  }
+
+  while (types.length < slotCount) {
+    types.push(pickWeightedType(COIN_DEAL_WEIGHTS));
+  }
+
+  return shuffleArray(types.map((type, i) => cloneCard(type, `round_${i}`)));
+}
+
+export function fillClassicRoundSlots<T extends { card?: RewardCard; claimedByTeamId?: string }>(
+  slots: T[],
+  teams: Team[],
+  openedCount: number,
+  totalBlocks: number
+): T[] {
+  const deck = dealClassicRoundCards({
+    slotCount: slots.length,
+    teams,
+    openedCount,
+    totalBlocks,
+  });
+  let i = 0;
+  return slots.map(slot => {
+    if (slot.claimedByTeamId) return slot;
+    const next = deck[i++];
+    return next ? { ...slot, card: next } : slot;
+  });
+}
+
 const BASE_WEIGHTS: Partial<Record<RewardCardType, number>> = {
-  great_coins_3: 22,
-  coins_3: 22,
-  wonderful_coins_5: 20,
-  coins_5: 20,
-  super_coins_10: 12,
-  coins_10: 12,
-  blooper: 10,
-  ghost_steal_5: 10,
-  boo_steal_5: 10,
-  king_boo: 6,
-  boo_steal_10: 6,
-  super_star_x2: 12,
-  mushroom_x2: 12,
-  bowser_fury: 6,
-  bowser_revolution: 4,
+  great_coins_3: 38,
+  coins_3: 38,
+  wonderful_coins_5: 32,
+  coins_5: 32,
+  super_coins_10: 18,
+  coins_10: 18,
+  blooper: 5,
+  ghost_steal_5: 5,
+  boo_steal_5: 5,
+  king_boo: 3,
+  boo_steal_10: 3,
+  super_star_x2: 6,
+  mushroom_x2: 6,
+  bowser_fury: 2,
+  bowser_revolution: 2,
   mystery_blocks: 4,
   gold_star: 3,
 };
@@ -166,9 +346,9 @@ function weightFor(type: RewardCardType, isFirstPlace: boolean): number {
   const base = BASE_WEIGHTS[type] ?? 8;
   if (!isFirstPlace) return base;
 
-  if (type === 'bowser_fury') return 0;
-  if (CLASSIC_ACTION_TYPES.includes(type)) {
-    return Math.max(1, Math.round(base * 0.25));
+  if (CLASSIC_CATCH_UP_TYPES.includes(type)) return 0;
+  if (CLASSIC_ACTION_CARD_TYPES.includes(type)) {
+    return Math.max(1, Math.round(base * 0.35));
   }
   return base;
 }
@@ -185,6 +365,17 @@ export function drawClassicCard(teams: Team[], drawingTeamId: string): RewardCar
   });
   const pick = weighted[Math.floor(Math.random() * weighted.length)] || CLASSIC_REWARD_CARDS[0];
   return { ...pick, id: `${pick.type}_${Date.now()}_${Math.floor(Math.random() * 9999)}` };
+}
+
+/** If 1st place opens a pre-dealt catch-up card, swap it for a coin card. */
+export function resolveClassicSlotCard(
+  card: RewardCard,
+  teams: Team[],
+  drawingTeamId: string
+): RewardCard {
+  if (!isCatchUpRestrictedTeam(teams, drawingTeamId)) return card;
+  if (!CLASSIC_CATCH_UP_TYPES.includes(card.type)) return card;
+  return cloneCard(pickWeightedType(COIN_DEAL_WEIGHTS), 'catchup_swap');
 }
 
 export function applyCoinPayout(team: Team, amount: number): {
@@ -291,10 +482,10 @@ export function shuffleMysteryBlockOutcomes(): MysteryBlockOutcome[] {
   return outcomes;
 }
 
-export const SUPER_MUSHROOM_AMOUNTS = [1, 3, 5, 10] as const;
+export const SUPER_MUSHROOM_AMOUNTS = [2, 3, 5, 7] as const;
 export type SuperMushroomOffer = (typeof SUPER_MUSHROOM_AMOUNTS)[number];
 
-/** Three distinct super-cards from 1 / 3 / 5 / 10. Payout is that amount ×2. */
+/** Three distinct super-cards from 2 / 3 / 5 / 7. Payout is that amount ×2. */
 export function shuffleSuperMushroomOffers(): SuperMushroomOffer[] {
   return shuffleArray([...SUPER_MUSHROOM_AMOUNTS]).slice(0, 3);
 }

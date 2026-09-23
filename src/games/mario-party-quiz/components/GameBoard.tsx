@@ -14,6 +14,10 @@ interface GameBoardProps {
   onOpenLeaderboard?: () => void;
 }
 
+/**
+ * Primary desktop (lg+): centered 12×5 landscape board with square cells.
+ * Narrower views: compressed 6×10 portrait board.
+ */
 export const GameBoard = React.memo(function GameBoard({
   blocks,
   teams,
@@ -23,7 +27,13 @@ export const GameBoard = React.memo(function GameBoard({
 }: GameBoardProps) {
   return (
     <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
-      <div className="relative max-h-full w-[min(100%,calc(100cqh*12/5))] max-lg:w-[min(100%,calc(100cqh*0.6))] aspect-[12/5] max-lg:aspect-[6/10]">
+      <div
+        className="
+          relative max-h-full
+          w-[min(100%,calc(100cqh*0.6))] aspect-[6/10]
+          lg:w-[min(100%,calc(100cqh*12/5))] lg:aspect-[12/5]
+        "
+      >
         {isGameOver && (
           <div className="absolute inset-x-2 top-2 z-30 flex justify-center pointer-events-none">
             <div className="pointer-events-auto w-[min(100%,48rem)]">
@@ -65,7 +75,7 @@ export const GameBoard = React.memo(function GameBoard({
           </div>
         )}
 
-        <div className="w-full h-full grid grid-cols-6 lg:grid-cols-12 grid-rows-10 lg:grid-rows-5 gap-[clamp(0.2rem,0.8vmin,0.65rem)]">
+        <div className="w-full h-full grid grid-cols-6 grid-rows-10 lg:grid-cols-12 lg:grid-rows-5 gap-[clamp(0.2rem,0.8vmin,0.65rem)]">
           {blocks.map(block => {
             const isOpened = block.isOpened;
             const isClearedWithX = isOpened && block.isIncorrectCleared;

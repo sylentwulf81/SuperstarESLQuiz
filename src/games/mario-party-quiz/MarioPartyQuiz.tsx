@@ -274,7 +274,7 @@ export function MarioPartyQuiz({
               onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
               onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
             />
-            <main className="flex-1 min-h-0 flex flex-col py-1">
+            <main className="flex-1 min-h-0 flex flex-col">
               <GameBoard
                 blocks={blocks}
                 teams={teams}

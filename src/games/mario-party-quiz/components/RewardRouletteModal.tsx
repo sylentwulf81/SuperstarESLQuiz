@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, ArrowDown, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
+  Trophy, BoxSelect, ArrowRightLeft, ArrowDown, ArrowRight, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -198,30 +198,40 @@ function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' |
   );
 }
 
-/** Classic King Boo: keep old and new totals both huge so late lookers still see the change. */
+/** Classic King Boo: before→after both big; sizes clamp to the team cell so the grid never clips. */
 function ShuffleCoinPair({ before, after }: { before: number; after: number }) {
+  const numClass =
+    'font-mario text-[clamp(1.15rem,min(22cqw,28cqh),2.75rem)] leading-none tabular-nums';
   return (
-    <div className="flex flex-col items-center gap-0.5 w-full">
-      <div className="inline-flex items-center gap-1.5 rounded-2xl bg-black/85 border-2 border-white/80 px-3 py-1.5">
-        <MarioCoin size="lg" />
-        <span className="font-mario text-4xl sm:text-5xl text-white leading-none line-through decoration-rose-400 decoration-[5px]">
+    <div className="flex items-center justify-center gap-0.5 sm:gap-1 w-full min-h-0 flex-1">
+      <div className="inline-flex items-center gap-0.5 rounded-xl bg-black/85 border-2 border-white/70 px-1 py-0.5 min-w-0">
+        <MarioCoin size="sm" />
+        <span className={`${numClass} text-white line-through decoration-rose-400 decoration-[3px]`}>
           {before}
         </span>
       </div>
-      <ArrowDown className="w-7 h-7 text-fuchsia-200 shrink-0" strokeWidth={3} aria-hidden />
+      <ArrowRight
+        className="w-[clamp(0.85rem,10cqh,1.35rem)] h-[clamp(0.85rem,10cqh,1.35rem)] text-fuchsia-200 shrink-0"
+        strokeWidth={3}
+        aria-hidden
+      />
       <motion.div
         key={`after-${after}`}
-        initial={{ scale: 1.28 }}
+        initial={{ scale: 1.2 }}
         animate={{ scale: 1 }}
-        className="inline-flex items-center gap-1.5 rounded-2xl bg-black/85 border-2 border-yellow-300 px-3 py-1.5 shadow-[0_0_18px_rgba(250,204,21,0.35)]"
+        className="inline-flex items-center gap-0.5 rounded-xl bg-black/85 border-2 border-yellow-300 px-1 py-0.5 min-w-0 shadow-[0_0_14px_rgba(250,204,21,0.35)]"
       >
-        <MarioCoin size="lg" />
-        <span className="font-mario text-4xl sm:text-5xl text-yellow-300 leading-none text-shadow-mario">
-          {after}
-        </span>
+        <MarioCoin size="sm" />
+        <span className={`${numClass} text-yellow-300 text-shadow-mario`}>{after}</span>
       </motion.div>
     </div>
   );
+}
+
+function kingBooShuffleColumns(opponentCount: number): number {
+  if (opponentCount <= 3) return Math.max(1, opponentCount);
+  if (opponentCount <= 6) return 3;
+  return 4;
 }
 
 const TeamCoinChip: React.FC<{
@@ -700,6 +710,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     Boolean(selectedCard && selectedCard.coins > 0) &&
     !currentTeam.skipNextCoinReward &&
     !blooperedPayout;
+  const isClassicKingBooShuffle =
+    gameTheme === 'classic' &&
+    Boolean(selectedCard && (selectedCard.type === 'king_boo' || selectedCard.type === 'boo_steal_10'));
 
   return (
     <GameModalShell barColor={charInfo.accentColor} instant={startInReveal}>
@@ -716,6 +729,13 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
               <span className="text-sm font-bold text-white block max-w-[140px] truncate">{currentTeam.name}</span>
             </div>
             <CoinScore coins={currentTeam.coins} />
+            {phase === 'reveal' &&
+              gameTheme === 'classic' &&
+              (selectedCard?.type === 'king_boo' || selectedCard?.type === 'boo_steal_10') && (
+                <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shrink-0">
+                  Safe
+                </span>
+              )}
           </div>
           <div className="text-center flex-1 min-w-0">
             <h2 className="font-mario text-xl sm:text-3xl lg:text-4xl text-white text-shadow-mario tracking-wide">
@@ -749,7 +769,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
           )}
         </div>
 
-        <div className={`flex-1 min-h-0 p-3 sm:p-5 lg:p-6 ${phase === 'pick' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
+        <div className={`flex-1 min-h-0 p-2.5 sm:p-4 lg:p-5 ${phase === 'pick' ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <AnimatePresence mode="wait">
             {phase === 'pick' && (
               <motion.div
@@ -812,12 +832,22 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 className="h-full min-h-0 flex flex-col gap-3"
               >
-                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(16rem,38%)_minmax(0,1fr)] gap-3 lg:gap-5">
+                <div
+                  className={`flex-1 min-h-0 grid grid-cols-1 gap-2 lg:gap-4 ${
+                    isClassicKingBooShuffle
+                      ? 'lg:grid-cols-[minmax(10rem,32%)_minmax(0,1fr)]'
+                      : 'lg:grid-cols-[minmax(18rem,48%)_minmax(0,1fr)]'
+                  }`}
+                >
                   <motion.div
                     initial={startInReveal ? false : { opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: startInReveal ? 0 : 0.18 }}
-                    className={`relative min-h-[14rem] lg:min-h-0 h-full overflow-hidden rounded-3xl border-4 ${getCardTheme(selectedCard.type).glow}`}
+                    className={`relative ${
+                      isClassicKingBooShuffle
+                        ? 'min-h-[10rem] sm:min-h-[12rem]'
+                        : 'min-h-[16rem] sm:min-h-[20rem]'
+                    } lg:min-h-0 h-full overflow-hidden rounded-3xl border-4 ${getCardTheme(selectedCard.type).glow}`}
                   >
                     {revealArt ? (
                       <img
@@ -825,7 +855,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                         alt=""
                         decoding="async"
                         fetchPriority="high"
-                        className="absolute inset-0 w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover object-center"
                       />
                     ) : (
                       <div className={`absolute inset-0 bg-gradient-to-b ${getCardTheme(selectedCard.type).shell} flex items-center justify-center`}>
@@ -856,8 +886,11 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     </div>
                   </motion.div>
 
-                  <div className="@container/reveal min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-3 sm:p-4 flex flex-col gap-2 overflow-x-hidden overflow-y-auto">
-                    {gameTheme === 'classic' && isClassicInteractive && (
+                  <div className="@container/reveal min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-2.5 sm:p-3 flex flex-col gap-2 overflow-x-hidden overflow-y-hidden">
+                    {gameTheme === 'classic' &&
+                      isClassicInteractive &&
+                      selectedCard.type !== 'king_boo' &&
+                      selectedCard.type !== 'boo_steal_10' && (
                       <TeamCoinBank teams={teams} currentTeamId={currentTeam.id} />
                     )}
                     {gameTheme !== 'classic' && (
@@ -938,23 +971,18 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     {/* 2. KING BOO: Classic shuffles rival coins; Party Quiz steals from each */}
                     {(selectedCard.type === 'king_boo' || selectedCard.type === 'boo_steal_10') && (
                       gameTheme === 'classic' ? (
-                        <div className="flex-1 w-full p-2.5 gap-2 overflow-hidden flex flex-col min-h-0 bg-fuchsia-950/80 rounded-2xl border border-fuchsia-500/50">
-                          <div className="flex items-center justify-center gap-2 shrink-0 text-fuchsia-200">
-                            <Crown className="w-6 h-6 text-fuchsia-300" />
-                            <h4 className="font-mario text-xl sm:text-2xl text-white">SHUFFLE</h4>
+                        <div className="flex-1 w-full p-1.5 sm:p-2 gap-1.5 overflow-hidden flex flex-col min-h-0 bg-fuchsia-950/80 rounded-2xl border border-fuchsia-500/50">
+                          <div className="flex items-center justify-center gap-1.5 shrink-0 text-fuchsia-200">
+                            <Crown className="w-5 h-5 text-fuchsia-300" />
+                            <h4 className="font-mario text-lg sm:text-xl text-white leading-none">SHUFFLE</h4>
                           </div>
-                          <div className="flex items-center justify-center gap-2 shrink-0">
-                            <TeamAvatar
-                              characterId={currentTeam.characterId}
-                              size="md"
-                              customUrl={currentTeam.customImageUrl}
-                            />
-                            <CoinScore coins={currentTeam.coins} />
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest">
-                              Safe
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 content-start flex-1 min-h-0 overflow-y-auto">
+                          <div
+                            className="grid gap-1.5 flex-1 min-h-0 overflow-hidden"
+                            style={{
+                              gridTemplateColumns: `repeat(${kingBooShuffleColumns(eligibleOpponents.length)}, minmax(0, 1fr))`,
+                              gridAutoRows: '1fr',
+                            }}
+                          >
                             {eligibleOpponents.map(opp => {
                               const oppChar = CHARACTERS[opp.characterId];
                               const shown = kingBooShuffle?.[opp.id] ?? opp.coins;
@@ -962,22 +990,27 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                               return (
                                 <div
                                   key={opp.id}
-                                  className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold flex flex-col items-center p-2 gap-1.5 ${
+                                  className={`@container/cell rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold flex flex-col items-center justify-center p-1 sm:p-1.5 gap-0.5 min-h-0 h-full overflow-hidden ${
                                     shuffled ? 'border-yellow-300 ring-2 ring-fuchsia-400' : 'border-white/30'
                                   }`}
                                 >
                                   <TeamAvatar
                                     characterId={opp.characterId}
-                                    size="md"
+                                    size="sm"
                                     customUrl={opp.customImageUrl}
+                                    className="shrink-0"
                                   />
                                   {!shuffled && (
-                                    <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
+                                    <span className="text-[10px] sm:text-xs font-black truncate w-full text-center shrink-0">
+                                      {opp.name}
+                                    </span>
                                   )}
                                   {shuffled ? (
                                     <ShuffleCoinPair before={opp.coins} after={shown} />
                                   ) : (
-                                    <CoinScore coins={shown} size="md" />
+                                    <div className="flex-1 min-h-0 flex items-center justify-center">
+                                      <CoinScore coins={shown} size="md" />
+                                    </div>
                                   )}
                                 </div>
                               );
@@ -990,18 +1023,18 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                 setKingBooShuffle(shuffleRivalCoinTotals(teams, currentTeam.id));
                                 sounds.playBoo();
                               }}
-                              className="w-full shrink-0 px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                              className="w-full shrink-0 px-4 py-2 sm:py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-base sm:text-lg rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
-                              <Shuffle className="w-6 h-6" />
+                              <Shuffle className="w-5 h-5" />
                               SHUFFLE
                             </button>
                           ) : (
                             <button
                               type="button"
                               onClick={handleFinishKingBooShuffle}
-                              className="w-full shrink-0 px-4 py-3 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                              className="w-full shrink-0 px-4 py-2 sm:py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-base sm:text-lg rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
-                              <Crown className="w-6 h-6" />
+                              <Crown className="w-5 h-5" />
                               CLAIM
                             </button>
                           )}

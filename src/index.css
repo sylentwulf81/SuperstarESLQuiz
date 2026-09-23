@@ -4,6 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant hshort (@media (max-height: 900px));
 @custom-variant htall (@media (min-height: 1000px));
+/* Board orientation from available space, not viewport width breakpoints */
+@custom-variant board-wide (@container board (min-aspect-ratio: 1.15));
 
 @theme inline {
   --color-background: var(--background);
