@@ -14,16 +14,26 @@ interface GameBoardProps {
   onOpenLeaderboard?: () => void;
 }
 
-export const GameBoard: React.FC<GameBoardProps> = ({
+/**
+ * Primary desktop (lg+): centered 12×5 landscape board with square cells.
+ * Narrower views: compressed 6×10 portrait board.
+ */
+export const GameBoard = React.memo(function GameBoard({
   blocks,
   teams,
   onSelectBlock,
   isGameOver,
   onOpenLeaderboard,
-}) => {
+}: GameBoardProps) {
   return (
     <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
-      <div className="relative max-h-full w-[min(100%,calc(100cqh*12/5))] max-lg:w-[min(100%,calc(100cqh*0.6))] aspect-[12/5] max-lg:aspect-[6/10]">
+      <div
+        className="
+          relative max-h-full
+          w-[min(100%,calc(100cqh*0.6))] aspect-[6/10]
+          lg:w-[min(100%,calc(100cqh*12/5))] lg:aspect-[12/5]
+        "
+      >
         {isGameOver && (
           <div className="absolute inset-x-2 top-2 z-30 flex justify-center pointer-events-none">
             <div className="pointer-events-auto w-[min(100%,48rem)]">
@@ -35,7 +45,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                   <div>
                     <div className="flex items-center justify-center sm:justify-start gap-2">
                       <span className="bg-red-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow">
-                        GAME COMPLETE
+                        BOARD CLEAR
                       </span>
                       <span className="font-mario text-yellow-300 text-base sm:text-lg text-shadow-gold">
                         ALL {blocks.length} QUESTIONS ANSWERED!
@@ -65,7 +75,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </div>
         )}
 
-        <div className="w-full h-full grid grid-cols-6 lg:grid-cols-12 grid-rows-10 lg:grid-rows-5 gap-[clamp(0.2rem,0.8vmin,0.65rem)]">
+        <div className="w-full h-full grid grid-cols-6 grid-rows-10 lg:grid-cols-12 lg:grid-rows-5 gap-[clamp(0.2rem,0.8vmin,0.65rem)]">
           {blocks.map(block => {
             const isOpened = block.isOpened;
             const isClearedWithX = isOpened && block.isIncorrectCleared;
@@ -90,7 +100,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
                     ? isClearedWithX
                       ? 'bg-red-950/40 border border-red-500/30 opacity-70 shadow-inner cursor-not-allowed'
                       : 'bg-slate-900/60 border border-white/10 opacity-75 shadow-inner cursor-not-allowed'
-                    : 'gold-mario-block cursor-pointer shadow-md hover:scale-105 active:scale-95 hover:z-20'
+                    : 'gold-mario-block cursor-pointer shadow-md hover:brightness-110 active:brightness-95 hover:z-20'
                 }`}
               >
                 {!isOpened ? (
@@ -133,4 +143,4 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       </div>
     </div>
   );
-};
+});

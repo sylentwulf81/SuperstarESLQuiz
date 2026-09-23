@@ -117,6 +117,8 @@ export interface RewardCardActionOptions {
   targetTeamId?: string;
   dieRoll?: number;
   powChoice?: 'highest' | 'lowest';
+  /** King Boo (Classic): shuffled coin totals for every team except the drawer. */
+  coinTotals?: Record<string, number>;
 }
 
 export interface RewardCard {

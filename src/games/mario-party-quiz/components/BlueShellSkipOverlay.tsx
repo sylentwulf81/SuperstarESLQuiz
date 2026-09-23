@@ -136,7 +136,7 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
               className="w-full sm:w-auto px-7 py-3 bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-mario text-base sm:text-lg rounded-2xl shadow-xl border-2 border-sky-300/80 flex items-center justify-center gap-2 transition-all cursor-pointer hover:scale-105 active:scale-95 shadow-sky-950/60"
             >
               <CheckCircle className="w-5 h-5 text-sky-200" />
-              CONTINUE GAME ({secondsLeft}s)
+              CONTINUE ({secondsLeft}s)
             </button>
           </div>
         </motion.div>

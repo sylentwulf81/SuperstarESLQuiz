@@ -20,13 +20,13 @@ const SIZE_MAP = {
   '2xl': 'w-28 h-28 rounded-3xl text-5xl',
 };
 
-export const TeamAvatar: React.FC<TeamAvatarProps> = ({
+export const TeamAvatar = React.memo(function TeamAvatar({
   characterId,
   size = 'md',
   className = '',
   customUrl,
   showBorder = true,
-}) => {
+}: TeamAvatarProps) {
   const char = CHARACTERS[characterId];
   const [imgError, setImgError] = useState(false);
   const [storedUrl, setStoredUrl] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
   }, [customUrl, storedUrl, characterId]);
 
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
-  const stockAvatar = char?.imageUrl ? `/avatars/${characterId}.png` : undefined;
+  const stockAvatar = char?.imageUrl;
   const activeImageUrl = customUrl || storedUrl || stockAvatar;
 
   return (
@@ -62,7 +62,7 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
           alt={char?.name || 'Team Emblem'}
           onError={() => setImgError(true)}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover select-none pointer-events-none"
+          className="w-full h-full object-contain select-none pointer-events-none"
         />
       ) : char ? (
         <TeamEmblem characterId={characterId} className="w-full h-full object-cover" />
@@ -71,4 +71,4 @@ export const TeamAvatar: React.FC<TeamAvatarProps> = ({
       )}
     </div>
   );
-};
+});

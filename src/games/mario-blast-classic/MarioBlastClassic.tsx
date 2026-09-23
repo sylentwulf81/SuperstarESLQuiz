@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { AmbientParticles } from '@/games/mario-party-quiz/components/AmbientParticles';
@@ -10,37 +10,33 @@ import { SuperstarModal } from '@/games/mario-party-quiz/components/SuperstarMod
 import { SetupScreen } from '@/games/mario-party-quiz/components/SetupScreen';
 import { ThemedBackdrop } from '@/games/mario-party-quiz/components/ThemedBackdrop';
 import { CustomizerModal } from '@/games/mario-party-quiz/components/CustomizerModal';
-import { ClassicRoundModal, ClassicCardSlot } from './components/ClassicRoundModal';
+import { ClassicRoundModal } from './components/ClassicRoundModal';
 import { ClassicRulebookModal } from './components/ClassicRulebookModal';
 import { MysteryBlocksMiniGame } from './components/MysteryBlocksMiniGame';
-import { RoundOverOverlay, RoundOverReason } from './components/RoundOverOverlay';
+import { SuperMushroomMiniGame } from './components/SuperMushroomMiniGame';
+import { RoundOverOverlay } from './components/RoundOverOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
-import {
-  Team,
-  BlockState,
-  GameQuestion,
-  RewardCard,
-  GameView,
-  RewardCardActionOptions,
-} from '@/shared/types';
+import { GameQuestion, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party-quiz/data/rewards';
-import {
-  applyCoinPayout,
-  drawClassicCard,
-  fillClassicTestSlots,
-  isClassicRoundEnder,
-  loadClassicTestGame,
-  MysteryBlockOutcome,
-  persistClassicTestGame,
-  shuffleMysteryBlockOutcomes,
-} from './data/classicRewards';
+import { loadClassicTestGame, persistClassicTestGame } from './data/classicRewards';
 import {
   DEFAULT_CLASSIC_LESSON_GOAL,
   loadClassicLessonGoal,
   persistClassicLessonGoal,
   resetClassicLessonGoal,
 } from './data/classicLesson';
-import { sounds } from '@/shared/utils/sound';
+import { legacySlashesToMarks } from '@/shared/markedPrompt';
+import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
+import {
+  createClassicState,
+  reduceClassic,
+  classicActiveTeam,
+  classicOpenedCount,
+  classicBoardCleared,
+  ClassicEvent,
+} from './engine';
+import type { MysteryBlockOutcome, SuperMushroomOffer } from './engine';
 import { createGameBlocks, TOTAL_BLOCKS } from '@/games/mario-party-quiz/createBlocks';
 
 export const MARIO_BLAST_CLASSIC_MODULE = 'mario-blast-classic' as const;
@@ -53,9 +49,6 @@ export interface MarioBlastClassicProps {
 
 const CLASSIC_THEME = 'classic' as const;
 
-const emptySlots = (teamCount: number): ClassicCardSlot[] =>
-  Array.from({ length: Math.max(2, Math.min(teamCount, 8)) }, () => ({}));
-
 export function MarioBlastClassic({
   onExitToLauncher,
   soundEnabled,
@@ -63,25 +56,13 @@ export function MarioBlastClassic({
 }: MarioBlastClassicProps) {
   const { user, isLoggedIn, saveQuestionsCloud, loadQuestionsCloud } = useAuth();
   const theme = CLASSIC_THEME;
-
-  const [view, setView] = useState<GameView>('setup');
+  const [state, setState] = useState(() => createClassicState(createGameBlocks(theme), loadClassicTestGame()));
   const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
-  const [blocks, setBlocks] = useState<BlockState[]>(() => createGameBlocks(theme));
-  const [selectedBlockId, setSelectedBlockId] = useState<number | null>(null);
-  const [slots, setSlots] = useState<ClassicCardSlot[]>(() => emptySlots(6));
-  const [drawnTeamIds, setDrawnTeamIds] = useState<string[]>([]);
-  const [selectedAnsweringTeamId, setSelectedAnsweringTeamId] = useState<string | null>(null);
-  const [pendingCard, setPendingCard] = useState<RewardCard | null>(null);
-  const [pendingSlotIndex, setPendingSlotIndex] = useState<number | null>(null);
-  const [mysteryOutcomes, setMysteryOutcomes] = useState<MysteryBlockOutcome[] | null>(null);
-  const [roundOverReason, setRoundOverReason] = useState<RoundOverReason | null>(null);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
-  const [testGame, setTestGame] = useState(loadClassicTestGame);
+  const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
   const handleToggleCatchUpNote = useCallback(() => {
     setShowCatchUpNote(prev => {
@@ -91,19 +72,6 @@ export function MarioBlastClassic({
     });
   }, []);
 
-  const handleToggleTestGame = useCallback(() => {
-    setTestGame(prev => {
-      const next = !prev;
-      persistClassicTestGame(next);
-      setSlots(current => {
-        if (!selectedBlockId) return current;
-        if (next) return fillClassicTestSlots(current);
-        return current.map(slot => (slot.claimedByTeamId ? slot : { ...slot, card: undefined }));
-      });
-      return next;
-    });
-  }, [selectedBlockId]);
-
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -111,13 +79,46 @@ export function MarioBlastClassic({
     }, 4500);
   }, []);
 
+  const runEffects = useCallback((effects: EngineEffect[]) => {
+    for (const effect of effects) {
+      if (effect.kind === 'sound') playEngineSound(effect.sound);
+      if (effect.kind === 'toast') showToast(effect.message);
+      if (effect.kind === 'scheduleSuperstar') {
+        window.setTimeout(() => {
+          setState(prev => reduceClassic(prev, { type: 'DECLARE_SUPERSTAR' }).state);
+        }, effect.ms);
+      }
+    }
+  }, [showToast]);
+
+  const dispatch = useCallback((event: ClassicEvent) => {
+    setState(prev => {
+      const result = reduceClassic(prev, event);
+      pendingEffectsRef.current = result.effects;
+      return result.state;
+    });
+    afterPaint(() => {
+      const effects = pendingEffectsRef.current;
+      if (effects.length === 0) return;
+      pendingEffectsRef.current = [];
+      runEffects(effects);
+    });
+  }, [runEffects]);
+
+  useEffect(() => {
+    preloadRevealArt();
+  }, []);
+
   useEffect(() => {
     if (isLoggedIn && user) {
       loadQuestionsCloud(theme)
         .then(cloud => {
           if (cloud && cloud.questions.length > 0) {
-            setBlocks(createGameBlocks(theme, cloud.questions));
-            showToast(`☁️ Synced ${cloud.questions.length} custom questions from Firestore!`);
+            dispatch({
+              type: 'SET_BLOCKS',
+              blocks: createGameBlocks(theme, cloud.questions),
+              toast: `☁️ Synced ${cloud.questions.length} custom questions from Firestore!`,
+            });
           }
           if (cloud?.lessonGoal?.trim()) {
             setLessonGoal(cloud.lessonGoal.trim());
@@ -126,74 +127,21 @@ export function MarioBlastClassic({
         })
         .catch(() => {});
     }
-  }, [isLoggedIn, user?.uid, theme]);
+  }, [isLoggedIn, user?.uid, theme, dispatch]);
 
-  const activeTeam = teams[currentTeamIndex] || teams[0];
-  const openedBlocksCount = blocks.filter(b => b.isOpened).length;
-  const isGameOver = blocks.length > 0 && openedBlocksCount === blocks.length;
+  const {
+    view, teams, currentTeamIndex, blocks, selectedBlockId, slots, drawnTeamIds,
+    selectedAnsweringTeamId, pendingCard, mysteryOutcomes, mushroomOffers, roundOverReason, testMode,
+  } = state;
+  const activeTeam = classicActiveTeam(state);
+  const openedBlocksCount = classicOpenedCount(state);
+  const boardCleared = classicBoardCleared(state);
   const answeringTeam = teams.find(t => t.id === selectedAnsweringTeamId) || activeTeam;
   const cardsRemaining = slots.filter(s => !s.claimedByTeamId).length;
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  const selectedQuestion = selectedBlock?.question;
 
-  const resetRound = (roster = teams) => {
-    setSlots(emptySlots(roster.length || 6));
-    setDrawnTeamIds([]);
-    setSelectedAnsweringTeamId(null);
-    setPendingCard(null);
-    setPendingSlotIndex(null);
-    setMysteryOutcomes(null);
-    setRoundOverReason(null);
-  };
-
-  const handleStartGame = (configuredTeams: Team[]) => {
-    setTeams(configuredTeams.map(t => ({
-      ...t,
-      doubleNextCoinReward: false,
-      skipNextCoinReward: false,
-      blooperNextCoin: false,
-    })));
-    setCurrentTeamIndex(0);
-    setBlocks(createGameBlocks(theme, undefined, true));
-    resetRound(configuredTeams);
-    setSelectedBlockId(null);
-    setView('board');
-    showToast(`🎲 Questions shuffled! ${configuredTeams[0].name} picks the first block — anyone can answer!`);
-  };
-
-  const handleShuffleBoard = () => {
-    sounds.playShuffle();
-    setBlocks(createGameBlocks(theme, undefined, true));
-    showToast('🎲 All 60 prompts reshuffled!');
-  };
-
-  const handleSelectBlock = (blockId: number) => {
-    const block = blocks.find(b => b.id === blockId);
-    if (!block || block.isOpened) {
-      sounds.playWrong();
-      return;
-    }
-    sounds.playBlockHit();
-    resetRound();
-    setSelectedBlockId(blockId);
-    if (testGame) {
-      setSlots(current => fillClassicTestSlots(current));
-    }
-  };
-
-  const advanceTurn = (currentTeams?: Team[]) => {
-    const roster = currentTeams ?? teams;
-    if (roster.length === 0) return;
-    const nextIndex = (currentTeamIndex + 1) % roster.length;
-    setCurrentTeamIndex(nextIndex);
-    showToast(`🎯 ${roster[nextIndex].name} picks the next block!`);
-  };
-
-  const handleSelectTeamTurn = (targetIdx: number) => {
-    if (!teams[targetIdx]) return;
-    sounds.playPop();
-    setCurrentTeamIndex(targetIdx);
-  };
-
-  const persistQuestions = (updatedBlocks: BlockState[]) => {
+  const persistQuestions = (updatedBlocks: typeof blocks) => {
     const rawQuestions = updatedBlocks.map(b => b.question);
     try {
       localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(rawQuestions));
@@ -204,6 +152,16 @@ export function MarioBlastClassic({
       saveQuestionsCloud(theme, rawQuestions, { lessonGoal }).catch(() => {});
     }
   };
+
+  const handleStartGame = (configuredTeams: Team[]) => {
+    dispatch({ type: 'START', teams: configuredTeams, blocks: createGameBlocks(theme, undefined, true) });
+  };
+
+  const handleToggleTestGame = useCallback(() => {
+    const next = !testMode;
+    persistClassicTestGame(next);
+    dispatch({ type: 'SET_TEST_MODE', on: next });
+  }, [dispatch, testMode]);
 
   const handleLessonGoalChange = (goal: string) => {
     setLessonGoal(goal);
@@ -219,307 +177,13 @@ export function MarioBlastClassic({
     }
   };
 
-  const finishQuestionRound = (reason: RoundOverReason, roster: Team[]) => {
-    if (selectedBlockId === null) return;
-    const nextBlocks = blocks.map(b =>
-      b.id === selectedBlockId
-        ? { ...b, isOpened: true, openedByTeamId: activeTeam?.id }
-        : b
-    );
-    setBlocks(nextBlocks);
-    setRoundOverReason(null);
-    setSelectedBlockId(null);
-    resetRound();
-
-    const willBeGameOver = nextBlocks.length > 0 && nextBlocks.every(b => b.isOpened);
-    if (willBeGameOver) {
-      sounds.playSuperstar();
-      showToast(`🏁 ALL ${nextBlocks.length} QUESTIONS ANSWERED! GAME OVER! 🏆`);
-      setTimeout(() => setView('superstar'), 900);
-    } else {
-      advanceTurn(roster);
-    }
-  };
-
-  const applyPayoutToTeam = (roster: Team[], teamId: string, amount: number) => {
-    let awarded = 0;
-    let skipped = false;
-    let doubled = false;
-    let bloopered = false;
-    const next = roster.map(t => {
-      if (t.id !== teamId) return t;
-      const result = applyCoinPayout(t, amount);
-      awarded = result.awarded;
-      skipped = result.skipped;
-      doubled = result.doubled;
-      bloopered = result.bloopered;
-      return result.team;
-    });
-    return { teams: next, awarded, skipped, doubled, bloopered };
-  };
-
-  const applyReward = (
-    card: RewardCard,
-    drawingTeam: Team,
-    roster: Team[],
-    options?: RewardCardActionOptions
-  ): { teams: Team[]; endsRound: boolean } => {
-    let nextTeams = [...roster];
-    let endsRound = isClassicRoundEnder(card.type);
-
-    switch (card.type) {
-      case 'great_coins_3':
-      case 'coins_3':
-      case 'wonderful_coins_5':
-      case 'coins_5':
-      case 'super_coins_10':
-      case 'coins_10':
-      case 'coins_1':
-      case 'gold_star': {
-        const amount = card.coins || (card.type === 'gold_star' ? 15 : 0);
-        const payout = applyPayoutToTeam(nextTeams, drawingTeam.id, amount);
-        nextTeams = payout.teams;
-        if (payout.skipped) {
-          sounds.playBlueShell();
-          showToast(`🐢 ${drawingTeam.name}'s coin reward was skipped by Blue Shell!`);
-        } else if (payout.bloopered) {
-          sounds.playBlooper();
-          showToast(`🦑 INKED! ${drawingTeam.name} got +1 coin!`);
-        } else {
-          if (payout.doubled) sounds.playPowerUp();
-          else sounds.playCoin();
-          showToast(
-            `${payout.doubled ? '🍄 2x! ' : ''}🪙 ${drawingTeam.name} gained +${payout.awarded} coins!`
-          );
-        }
-        break;
-      }
-      case 'blooper': {
-        sounds.playBlooper();
-        const target = options?.targetTeamId
-          ? nextTeams.find(t => t.id === options.targetTeamId)
-          : nextTeams.find(t => t.id !== drawingTeam.id);
-        if (target) {
-          nextTeams = nextTeams.map(t =>
-            t.id === target.id ? { ...t, blooperNextCoin: true } : t
-          );
-          showToast(`🦑 BLOOPER! ${target.name}'s next coin card pays only 1!`);
-        }
-        break;
-      }
-      case 'pow_block':
-      case 'hidden_block': {
-        sounds.playPowBlock();
-        const choice = options?.powChoice || 'highest';
-        const allCoins = nextTeams.map(t => t.coins);
-        const target = choice === 'highest' ? Math.max(...allCoins) : Math.min(...allCoins);
-        nextTeams = nextTeams.map(t => ({ ...t, coins: target }));
-        showToast(`💥 POW BLOCK! All teams equalized to ${choice.toUpperCase()} (${target})!`);
-        break;
-      }
-      case 'super_star_x2':
-      case 'mushroom_x2': {
-        sounds.playPowerUp();
-        nextTeams = nextTeams.map(t =>
-          t.id === drawingTeam.id ? { ...t, doubleNextCoinReward: true } : t
-        );
-        showToast(`🍄 SUPER MUSHROOM! ${drawingTeam.name}'s next coin reward is doubled!`);
-        break;
-      }
-      case 'ghost_steal_5':
-      case 'boo_steal_5': {
-        sounds.playBoo();
-        const stolenCoins = options?.dieRoll || 5;
-        const target = options?.targetTeamId
-          ? nextTeams.find(t => t.id === options.targetTeamId)
-          : null;
-        if (target) {
-          nextTeams = nextTeams.map(t => {
-            if (t.id === drawingTeam.id) {
-              return { ...t, coins: t.coins + stolenCoins, coinsStolen: (t.coinsStolen || 0) + stolenCoins };
-            }
-            if (t.id === target.id) return { ...t, coins: t.coins - stolenCoins };
-            return t;
-          });
-          showToast(`👻 Boo stole ${stolenCoins} coins from ${target.name}!`);
-        }
-        break;
-      }
-      case 'king_boo':
-      case 'boo_steal_10': {
-        sounds.playBoo();
-        const dieValue = options?.dieRoll || 5;
-        const rivals = nextTeams.filter(t => t.id !== drawingTeam.id);
-        const totalStolen = dieValue * rivals.length;
-        nextTeams = nextTeams.map(t => {
-          if (t.id === drawingTeam.id) {
-            return { ...t, coins: t.coins + totalStolen, coinsStolen: (t.coinsStolen || 0) + totalStolen };
-          }
-          return { ...t, coins: t.coins - dieValue };
-        });
-        showToast(`👑 KING BOO stole ${dieValue} from each rival (+${totalStolen})!`);
-        break;
-      }
-      case 'blue_shell': {
-        sounds.playBlueShell();
-        const maxCoins = Math.max(...nextTeams.map(t => t.coins));
-        const leaders = nextTeams.filter(t => t.coins === maxCoins && t.coins > 0);
-        nextTeams = nextTeams.map(t =>
-          leaders.some(l => l.id === t.id) ? { ...t, skipNextCoinReward: true } : t
-        );
-        const names = leaders.map(l => l.name).join(', ') || '1st place';
-        showToast(`🐢 BLUE SHELL! ${names} will skip their next coin reward!`);
-        break;
-      }
-      case 'bowser_revolution': {
-        sounds.playBowser();
-        const target = options?.targetTeamId
-          ? nextTeams.find(t => t.id === options.targetTeamId)
-          : nextTeams.find(t => t.id !== drawingTeam.id);
-        if (target && target.id !== drawingTeam.id) {
-          const activeCoins = drawingTeam.coins;
-          const targetCoins = target.coins;
-          nextTeams = nextTeams.map(t => {
-            if (t.id === drawingTeam.id) return { ...t, coins: targetCoins };
-            if (t.id === target.id) return { ...t, coins: activeCoins };
-            return t;
-          });
-          showToast(`💥 BOWSER'S REVOLUTION! ${drawingTeam.name} swapped with ${target.name}!`);
-        }
-        break;
-      }
-      case 'bowser_fury': {
-        sounds.playBowserFury();
-        nextTeams = nextTeams.map(t => (t.id !== drawingTeam.id ? { ...t, coins: t.coins - 5 } : t));
-        showToast(`🔥 BOWSER'S FURY! -5 coins to every rival!`);
-        break;
-      }
-      default:
-        break;
-    }
-
-    nextTeams = nextTeams.map(t =>
-      t.id === drawingTeam.id ? { ...t, streak: t.streak + 1 } : t
-    );
-
-    return { teams: nextTeams, endsRound };
-  };
-
-  const commitCardToSlot = (card: RewardCard, slotIndex: number, teamId: string) => {
-    setSlots(prev =>
-      prev.map((slot, i) => (i === slotIndex ? { claimedByTeamId: teamId, card } : slot))
-    );
-    setDrawnTeamIds(prev => (prev.includes(teamId) ? prev : [...prev, teamId]));
-  };
-
-  const handleSkipCardAction = () => {
-    const drawingTeam = teams.find(t => t.id === selectedAnsweringTeamId);
-    if (!drawingTeam || pendingSlotIndex === null || !pendingCard) return;
-
-    commitCardToSlot(pendingCard, pendingSlotIndex, drawingTeam.id);
-    setPendingCard(null);
-    setPendingSlotIndex(null);
-    setSelectedAnsweringTeamId(null);
-
-    const remainingAfter = slots.filter((s, i) => i !== pendingSlotIndex && !s.claimedByTeamId).length;
-    if (remainingAfter <= 0) {
-      setRoundOverReason('cards');
-    }
-  };
-
-  const handleRewardResolved = (card: RewardCard, options?: RewardCardActionOptions) => {
-    const drawingTeam = teams.find(t => t.id === selectedAnsweringTeamId);
-    if (!drawingTeam || pendingSlotIndex === null) return;
-
-    if (card.type === 'mystery_blocks') {
-      commitCardToSlot(card, pendingSlotIndex, drawingTeam.id);
-      setPendingCard(null);
-      setMysteryOutcomes(shuffleMysteryBlockOutcomes());
-      return;
-    }
-
-    const { teams: nextTeams, endsRound } = applyReward(card, drawingTeam, teams, options);
-    setTeams(nextTeams);
-    commitCardToSlot(card, pendingSlotIndex, drawingTeam.id);
-    setPendingCard(null);
-    setPendingSlotIndex(null);
-    setSelectedAnsweringTeamId(null);
-
-    const remainingAfter = slots.filter((s, i) => i !== pendingSlotIndex && !s.claimedByTeamId).length;
-    if (endsRound) {
-      const reason: RoundOverReason =
-        card.type === 'gold_star'
-          ? 'gold_star'
-          : card.type === 'bowser_fury'
-            ? 'bowser_fury'
-            : 'bowser_revolution';
-      setRoundOverReason(reason);
-    } else if (remainingAfter <= 0) {
-      setRoundOverReason('cards');
-    }
-  };
-
-  const handleMysteryResolved = (outcome: MysteryBlockOutcome) => {
-    const drawingTeam = teams.find(t => t.id === selectedAnsweringTeamId);
-    setMysteryOutcomes(null);
-    if (!drawingTeam) {
-      setSelectedAnsweringTeamId(null);
-      setPendingSlotIndex(null);
-      return;
-    }
-
-    let nextTeams = [...teams];
-    if (outcome.kind === 'treasure') {
-      const payout = applyPayoutToTeam(nextTeams, drawingTeam.id, outcome.coins);
-      nextTeams = payout.teams;
-      if (payout.skipped) {
-        sounds.playBlueShell();
-        showToast(`🐢 Treasure skipped by Blue Shell!`);
-      } else if (payout.bloopered) {
-        sounds.playBlooper();
-        showToast(`🦑 INKED! Treasure became +1 for ${drawingTeam.name}!`);
-      } else {
-        if (payout.doubled) sounds.playPowerUp();
-        showToast(`${payout.doubled ? '🍄 2x! ' : ''}💎 Treasure Block! ${drawingTeam.name} +${payout.awarded} coins!`);
-      }
-    } else if (outcome.kind === 'bust') {
-      showToast(`💨 Empty block… ${drawingTeam.name} got 0 coins.`);
-    }
-
-    nextTeams = nextTeams.map(t =>
-      t.id === drawingTeam.id ? { ...t, streak: t.streak + 1 } : t
-    );
-    setTeams(nextTeams);
-    setSelectedAnsweringTeamId(null);
-    setPendingSlotIndex(null);
-
-    if (outcome.kind === 'piranha') {
-      setRoundOverReason('piranha');
-    } else if (slots.every(s => s.claimedByTeamId)) {
-      setRoundOverReason('cards');
-    }
-  };
-
-  const handlePickSlot = (slotIndex: number) => {
-    if (!selectedAnsweringTeamId || slots[slotIndex]?.claimedByTeamId) return;
-    const card = slots[slotIndex]?.card ?? drawClassicCard(teams, selectedAnsweringTeamId);
-    sounds.playSpecialCardFanfare();
-    setPendingSlotIndex(slotIndex);
-    setPendingCard(card);
-  };
-
-  const handleAdjustCoins = (teamId: string, delta: number) => {
-    setTeams(prev => prev.map(t => (t.id === teamId ? { ...t, coins: t.coins + delta } : t)));
-  };
-
   const handleUpdateBlockQuestion = (blockId: number, updatedQuestion: GameQuestion) => {
-    const sanitizedQuestion: GameQuestion = {
+    dispatch({ type: 'UPDATE_QUESTION', blockId, question: updatedQuestion });
+    const sanitized: GameQuestion = {
       ...updatedQuestion,
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(0, Number(updatedQuestion.rewardCoins) || 0),
     };
-    const updated = blocks.map(b => (b.id === blockId ? { ...b, question: sanitizedQuestion } : b));
-    setBlocks(updated);
-    persistQuestions(updated);
+    persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
     toast.success(`Block #${blockId} Question Saved!`);
   };
 
@@ -530,12 +194,39 @@ export function MarioBlastClassic({
       // ignore
     }
     const defaultBlocks = createGameBlocks(theme);
-    setBlocks(defaultBlocks);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: defaultBlocks,
+      toast: `🔄 Restored the default Have You Ever lesson (${defaultBlocks.length} prompts)!`,
+    });
     setLessonGoal(resetClassicLessonGoal());
-    showToast(`🔄 Restored the default Have You Ever lesson (${defaultBlocks.length} prompts)!`);
   };
 
-  const handleManualSync = async () => {
+  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string) => {
+    const nextGoal = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
+    const normalized = questions.map(question => ({
+      ...question,
+      title: legacySlashesToMarks(question.title),
+    }));
+    setLessonGoal(nextGoal);
+    persistClassicLessonGoal(nextGoal);
+    const next = createGameBlocks(theme, normalized);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: next,
+      toast: `📚 ${name}`,
+    });
+    try {
+      localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(next.map(block => block.question)));
+    } catch {
+      // ignore
+    }
+    if (isLoggedIn && user) {
+      saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
+    }
+  }, [dispatch, isLoggedIn, saveQuestionsCloud, theme, user]);
+
+  const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
       return false;
@@ -543,9 +234,9 @@ export function MarioBlastClassic({
     const success = await saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal });
     showToast(success ? '☁️ Questions backed up to Firestore!' : '⚠️ Could not sync to Firestore.');
     return success;
-  };
+  }, [isLoggedIn, saveQuestionsCloud, blocks, lessonGoal, showToast]);
 
-  const handleManualLoad = async () => {
+  const handleManualLoad = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to load your cloud questions.');
       return false;
@@ -553,21 +244,61 @@ export function MarioBlastClassic({
     const cloud = await loadQuestionsCloud(theme);
     if (cloud && cloud.questions.length > 0) {
       const next = createGameBlocks(theme, cloud.questions);
-      setBlocks(next);
+      dispatch({ type: 'SET_BLOCKS', blocks: next, toast: `☁️ Loaded ${cloud.questions.length} custom questions!` });
       persistQuestions(next);
       if (cloud.lessonGoal?.trim()) {
         setLessonGoal(cloud.lessonGoal.trim());
         persistClassicLessonGoal(cloud.lessonGoal);
       }
-      showToast(`☁️ Loaded ${cloud.questions.length} custom questions!`);
       return true;
     }
     showToast('ℹ️ No custom Classic questions found in Firestore.');
     return false;
-  };
+  }, [isLoggedIn, loadQuestionsCloud, dispatch, showToast]);
 
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
-  const selectedQuestion = selectedBlock?.question;
+  const handleRewardResolved = useCallback((card: RewardCard, options?: RewardCardActionOptions) => {
+    dispatch({ type: 'RESOLVE_CARD', card, options });
+  }, [dispatch]);
+
+  const handleOpenRules = useCallback(() => setIsRulesModalOpen(true), []);
+  const handleOpenCustomizer = useCallback(() => setIsCustomizerOpen(true), []);
+  const handleDeclareWinner = useCallback(() => dispatch({ type: 'DECLARE_SUPERSTAR' }), [dispatch]);
+  const handleResetGame = useCallback(() => dispatch({ type: 'RESTART_SETUP' }), [dispatch]);
+  const handleShuffleBoard = useCallback(() => {
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: createGameBlocks(theme, undefined, true),
+      playShuffle: true,
+      toast: '🎲 All 60 prompts reshuffled!',
+    });
+  }, [dispatch]);
+  const handleNextTurn = useCallback(() => dispatch({ type: 'PASS_TURN' }), [dispatch]);
+  const handleSelectTeamTurn = useCallback((idx: number) => {
+    dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx });
+  }, [dispatch]);
+  const handleAdjustCoins = useCallback((teamId: string, delta: number) => {
+    dispatch({ type: 'ADJUST_COINS', teamId, delta });
+  }, [dispatch]);
+  const handleSelectBlock = useCallback((blockId: number) => {
+    dispatch({ type: 'SELECT_BLOCK', blockId });
+  }, [dispatch]);
+  const handleSelectAnsweringTeam = useCallback((teamId: string) => {
+    dispatch({ type: 'SELECT_ANSWERING_TEAM', teamId });
+  }, [dispatch]);
+  const handlePickSlot = useCallback((slotIndex: number) => {
+    dispatch({ type: 'PICK_SLOT', slotIndex });
+  }, [dispatch]);
+  const handleEndRound = useCallback(() => dispatch({ type: 'END_ROUND', reason: 'host' }), [dispatch]);
+  const handleCancelEmptyRound = useCallback(() => dispatch({ type: 'CANCEL_EMPTY_ROUND' }), [dispatch]);
+  const handleSkipCardAction = useCallback(() => dispatch({ type: 'SKIP_CARD_ACTION' }), [dispatch]);
+  const handleResolveMystery = useCallback((outcome: MysteryBlockOutcome) => {
+    dispatch({ type: 'RESOLVE_MYSTERY', outcome });
+  }, [dispatch]);
+  const handleResolveMushroom = useCallback((coins: SuperMushroomOffer) => {
+    dispatch({ type: 'RESOLVE_MUSHROOM', coins });
+  }, [dispatch]);
+  const handleContinueRoundOver = useCallback(() => dispatch({ type: 'CONTINUE_ROUND_OVER' }), [dispatch]);
+  const handleCloseSuperstar = useCallback(() => dispatch({ type: 'CLOSE_SUPERSTAR' }), [dispatch]);
 
   return (
     <div className="h-dvh max-h-dvh overflow-hidden text-slate-100 flex flex-col relative selection:bg-amber-400 selection:text-slate-950 bg-slate-950">
@@ -609,16 +340,16 @@ export function MarioBlastClassic({
               onToggleSound={onToggleSound}
               showCatchUpNote={showCatchUpNote}
               onToggleCatchUpNote={handleToggleCatchUpNote}
-              onOpenRules={() => setIsRulesModalOpen(true)}
-              onOpenCustomizer={() => setIsCustomizerOpen(true)}
-              onDeclareWinner={() => setView('superstar')}
-              onResetGame={() => setView('setup')}
+              onOpenRules={handleOpenRules}
+              onOpenCustomizer={handleOpenCustomizer}
+              onDeclareWinner={handleDeclareWinner}
+              onResetGame={handleResetGame}
               onExitToLauncher={onExitToLauncher}
               onShuffleBoard={handleShuffleBoard}
-              onNextTurn={() => advanceTurn()}
+              onNextTurn={handleNextTurn}
               openedCount={openedBlocksCount}
               totalBlocks={blocks.length || TOTAL_BLOCKS}
-              isGameOver={isGameOver}
+              isGameOver={boardCleared}
               onManualSync={handleManualSync}
               onManualLoad={handleManualLoad}
             />
@@ -628,13 +359,13 @@ export function MarioBlastClassic({
               onSelectTeamTurn={handleSelectTeamTurn}
               onAdjustCoins={handleAdjustCoins}
             />
-            <main className="flex-1 min-h-0 flex flex-col py-1">
+            <main className="flex-1 min-h-0 flex flex-col">
               <GameBoard
                 blocks={blocks}
                 teams={teams}
                 onSelectBlock={handleSelectBlock}
-                isGameOver={isGameOver}
-                onOpenLeaderboard={() => setView('superstar')}
+                isGameOver={boardCleared}
+                onOpenLeaderboard={handleDeclareWinner}
               />
             </main>
           </div>
@@ -646,20 +377,17 @@ export function MarioBlastClassic({
           <ClassicRoundModal
             question={selectedQuestion}
             lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
-            pickingTeam={activeTeam}
+            pickingTeam={activeTeam!}
             teams={teams}
             slots={slots}
             drawnTeamIds={drawnTeamIds}
             selectedTeamId={selectedAnsweringTeamId}
             cardsRemaining={cardsRemaining}
-            onSelectTeam={teamId => setSelectedAnsweringTeamId(teamId)}
+            onSelectTeam={handleSelectAnsweringTeam}
             onPickSlot={handlePickSlot}
-            onEndRound={() => setRoundOverReason('host')}
-            onCancelIfEmpty={() => {
-              setSelectedBlockId(null);
-              resetRound();
-            }}
-            testGame={testGame}
+            onEndRound={handleEndRound}
+            onCancelIfEmpty={handleCancelEmptyRound}
+            testGame={testMode}
           />
         )}
       </AnimatePresence>
@@ -685,8 +413,19 @@ export function MarioBlastClassic({
           <MysteryBlocksMiniGame
             currentTeam={answeringTeam}
             outcomes={mysteryOutcomes}
-            onResolved={handleMysteryResolved}
-            testMode={testGame}
+            onResolved={handleResolveMystery}
+            testMode={testMode}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mushroomOffers && answeringTeam && (
+          <SuperMushroomMiniGame
+            currentTeam={answeringTeam}
+            offers={mushroomOffers}
+            onResolved={handleResolveMushroom}
+            testMode={testMode}
           />
         )}
       </AnimatePresence>
@@ -696,7 +435,7 @@ export function MarioBlastClassic({
           <RoundOverOverlay
             reason={roundOverReason}
             cardCount={slots.length}
-            onContinue={() => finishQuestionRound(roundOverReason, teams)}
+            onContinue={handleContinueRoundOver}
           />
         )}
       </AnimatePresence>
@@ -712,20 +451,17 @@ export function MarioBlastClassic({
             blocks={blocks}
             onUpdateBlockQuestion={handleUpdateBlockQuestion}
             onResetAllQuestions={handleResetAllQuestions}
-            onSaveCloud={async () => {
-              await handleManualSync();
-            }}
-            onLoadCloud={async () => {
-              await handleManualLoad();
-            }}
+            onSaveCloud={async () => { await handleManualSync(); }}
+            onLoadCloud={async () => { await handleManualLoad(); }}
             onClose={() => setIsCustomizerOpen(false)}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
             lessonGoal={lessonGoal}
             onLessonGoalChange={handleLessonGoalChange}
             onLessonGoalCommit={commitLessonGoal}
-            testGame={testGame}
+            testGame={testMode}
             onToggleTestGame={handleToggleTestGame}
+            onApplyQuestionBank={handleApplyQuestionBank}
           />
         )}
       </AnimatePresence>
@@ -734,8 +470,8 @@ export function MarioBlastClassic({
         {view === 'superstar' && (
           <SuperstarModal
             teams={teams}
-            onRestart={() => setView('setup')}
-            onClose={() => setView('board')}
+            onRestart={handleResetGame}
+            onClose={handleCloseSuperstar}
             onExitToLauncher={onExitToLauncher}
           />
         )}

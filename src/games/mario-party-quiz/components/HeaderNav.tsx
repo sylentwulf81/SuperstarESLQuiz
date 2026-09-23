@@ -51,7 +51,7 @@ interface HeaderNavProps {
   onManualLoad?: () => Promise<boolean>;
 }
 
-export const HeaderNav: React.FC<HeaderNavProps> = ({
+export const HeaderNav = React.memo(function HeaderNav({
   theme,
   currentTeam,
   teams,
@@ -71,7 +71,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   isGameOver = false,
   onManualSync,
   onManualLoad,
-}) => {
+}: HeaderNavProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useBodyScrollLock(isMobileMenuOpen || showResetConfirm);
@@ -79,79 +79,75 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
   const gameTitle = theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'MARIO PARTY';
 
   return (
-    <header className="relative z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/15 px-2.5 sm:px-4 lg:px-6 py-1.5 shadow-xl shrink-0 w-full">
-      <div className="w-full max-w-[1750px] mx-auto flex items-center justify-between gap-2 sm:gap-3 min-w-0">
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0 min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <h1 className="font-mario text-sm sm:text-base md:text-xl text-yellow-300 drop-shadow truncate">
-              {gameTitle}
-            </h1>
-            {theme !== 'classic' && (
-              <span
-                className={`hidden sm:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm ${
-                  theme === 'summer'
-                    ? 'bg-amber-400 text-slate-950 border-amber-300'
-                    : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
-                }`}
-              >
-                {THEME_UI[theme].short}
-              </span>
-            )}
-          </div>
-
+    <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2 sm:px-3 lg:px-4 py-1.5 shadow-xl shrink-0 w-full">
+      <div className="w-full max-w-[1750px] mx-auto grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+        {/* Brand + pass */}
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-self-start">
+          <h1 className="font-mario text-sm sm:text-base lg:text-lg text-yellow-300 drop-shadow truncate min-w-0">
+            {gameTitle}
+          </h1>
+          {theme !== 'classic' && (
+            <span
+              className={`hidden xl:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm shrink-0 ${
+                theme === 'summer'
+                  ? 'bg-amber-400 text-slate-950 border-amber-300'
+                  : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+              }`}
+            >
+              {THEME_UI[theme].short}
+            </span>
+          )}
           <button
             onClick={() => {
               sounds.playClick();
               onNextTurn();
             }}
             title="Pass turn to next team"
-            className="hidden sm:flex items-center gap-1 text-[11px] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
+            className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 py-1 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
           >
             <SkipForward className="w-3.5 h-3.5 text-indigo-300" />
-            <span className="hidden md:inline">Pass</span>
+            <span className="hidden xl:inline">Pass</span>
           </button>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 shrink min-w-0">
-          <MusicPlayer />
-          <div className={`flex items-center gap-1.5 2xl:gap-2 text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-xl border h-[34px] transition-all ${
-            isGameOver
-              ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
-              : 'bg-slate-800/60 border-white/10 text-slate-300'
-          }`}>
+        {/* Center: cleared always; full music player only when the row is wide enough */}
+        <div className="flex items-center justify-center gap-2">
+          <div
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-xl border h-[34px] shrink-0 ${
+              isGameOver
+                ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
+                : 'bg-slate-800/60 border-white/10 text-slate-300'
+            }`}
+          >
             <span className={isGameOver ? 'text-yellow-300 font-bold text-[11px]' : 'text-white/60 text-[11px]'}>
-              {isGameOver ? '🏁 Finished:' : 'Cleared:'}
+              {isGameOver ? '🏁' : 'Cleared'}
             </span>
             <span className={`font-bold font-pixel text-[10px] ${isGameOver ? 'text-yellow-300' : 'text-amber-300'}`}>
               {openedCount}/{totalBlocks}
             </span>
-            <div className="hidden 2xl:block w-14 bg-white/10 rounded-full h-1.5 overflow-hidden ml-0.5 border border-white/10">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  isGameOver ? 'bg-gradient-to-r from-emerald-400 to-yellow-300' : 'bg-gradient-to-r from-amber-400 to-yellow-300'
-                }`}
-                style={{ width: `${(openedCount / totalBlocks) * 100}%` }}
-              />
-            </div>
+          </div>
+          <div className="hidden 2xl:block shrink-0">
+            <MusicPlayer />
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Primary action + tools (tools collapse into menu below lg) */}
+        <div className="flex items-center gap-1.5 justify-self-end shrink-0">
           <button
             onClick={() => {
               sounds.playSuperstar();
               onDeclareWinner();
             }}
-            className={`flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
+            className={`inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 active:scale-95 text-slate-950 font-bold px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-xs shadow-md border border-yellow-200/80 transition-all cursor-pointer glass-glow-gold ${
               isGameOver ? 'ring-2 ring-yellow-300 animate-pulse shadow-[0_0_20px_rgba(250,204,21,0.6)]' : ''
             }`}
-            title={isGameOver ? 'Game Over! View Final Leaderboard & Champion' : 'Crown the Superstar Winner!'}
+            title={isGameOver ? 'Finished! View final leaderboard & champion' : 'Crown the Superstar Winner!'}
           >
-            <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950" />
-            <span>{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
+            <Trophy className="w-3.5 h-3.5 fill-amber-950 text-amber-950 shrink-0" />
+            <span className="hidden min-[1000px]:inline">{isGameOver ? 'Leaderboard' : 'Superstar!'}</span>
           </button>
 
-          <div className="hidden sm:flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
+          <div className="hidden lg:flex items-center gap-0.5 bg-slate-800/60 p-0.5 rounded-xl border border-white/10">
             <button
               onClick={() => {
                 sounds.playClick();
@@ -173,7 +169,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 onOpenRules();
               }}
               className="p-1.5 hover:bg-slate-700 text-slate-300 hover:text-yellow-300 rounded-lg transition-all cursor-pointer"
-              title="How to Play & Host Guide (English & 日本語)"
+              title="Host guide & activity rules (English & 日本語)"
             >
               <HelpCircle className="w-3.5 h-3.5 text-yellow-300" />
             </button>
@@ -216,7 +212,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-white/20'
             }`}
             title={isMobileMenuOpen ? 'Close Menu' : 'Open menu'}
-            aria-label="Toggle game options menu"
+            aria-label="Toggle activity options menu"
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -259,7 +255,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         </div>
                         <div>
                           <h3 className="font-mario text-base sm:text-lg text-yellow-300 tracking-wider">
-                            GAME MENU
+                            HOST MENU
                           </h3>
                           <p className="text-[11px] text-indigo-200">Controls, music player & guide</p>
                         </div>
@@ -283,14 +279,14 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           onClick={() => {
                             sounds.playClick();
                             setIsMobileMenuOpen(false);
-                            onExitToLauncher();
+                            setShowResetConfirm(true);
                           }}
-                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer transition-all"
+                          className="w-full p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-750 active:scale-97 text-left border border-white/15 shadow-sm flex items-center gap-2.5 cursor-pointer"
                         >
                           <Library className="w-4 h-4 text-amber-300" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-white">Library</div>
-                            <div className="text-[10px] text-slate-400">Back to the game arcade</div>
+                            <div className="text-[10px] text-slate-400">Back to classroom activities</div>
                           </div>
                         </button>
                       )}
@@ -496,7 +492,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                           <RotateCcw className="w-4 h-4 text-red-400" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-red-300">
-                              Restart / New Game
+                              Restart / New Activity
                             </div>
                             <div className="text-[10px] text-red-400/80">
                               Return to team setup screen
@@ -565,10 +561,10 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                         ARE YOU SURE?
                       </h3>
                       <p id="reset-modal-desc" className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
-                        Resetting will end this session and return you to the <strong>Setup Screen</strong>.
+                        This ends the live session. Choose the library or restart setup — scores and board progress will not come back.
                       </p>
                       <div className="mt-2.5 p-2.5 bg-slate-800/80 rounded-xl border border-white/10 text-xs text-indigo-200">
-                        <p className="font-semibold text-amber-300 mb-0.5">⚠️ The following will be reset:</p>
+                        <p className="font-semibold text-amber-300 mb-0.5">The following will be lost:</p>
                         <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px]">
                           <li>Board progress ({openedCount} of {totalBlocks} mystery blocks opened)</li>
                           <li>Current team scores, rankings, and active turn</li>
@@ -589,7 +585,7 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
                       }}
                       className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 active:scale-95 text-slate-300 hover:text-white text-xs sm:text-sm font-semibold border border-white/15 transition-all cursor-pointer"
                     >
-                      Keep Playing
+                      Keep Going
                     </button>
                     {onExitToLauncher && (
                       <button
@@ -628,4 +624,4 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
         )}
     </header>
   );
-};
+});

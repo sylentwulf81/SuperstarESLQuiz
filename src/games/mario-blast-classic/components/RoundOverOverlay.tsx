@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { Sparkles, Star, Flame, Bug } from 'lucide-react';
 import { sounds } from '@/shared/utils/sound';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { RoundOverReason } from '../engine';
 
-export type RoundOverReason = 'cards' | 'gold_star' | 'bowser_revolution' | 'bowser_fury' | 'piranha' | 'host';
+export type { RoundOverReason } from '../engine';
 
 interface RoundOverOverlayProps {
   reason: RoundOverReason;

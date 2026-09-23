@@ -6,11 +6,11 @@ import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
+import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
+import { ClassicCardSlot } from '../engine';
+import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 
-export interface ClassicCardSlot {
-  claimedByTeamId?: string;
-  card?: RewardCard;
-}
+export type { ClassicCardSlot };
 
 interface ClassicRoundModalProps {
   question: GameQuestion;
@@ -28,7 +28,7 @@ interface ClassicRoundModalProps {
   testGame?: boolean;
 }
 
-export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
+export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   question,
   lessonGoal,
   pickingTeam,
@@ -42,7 +42,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
   onEndRound,
   onCancelIfEmpty,
   testGame = false,
-}) => {
+}: ClassicRoundModalProps) {
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
@@ -50,7 +50,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
     question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
 
   return (
-    <GameModalShell barColor={pickChar.accentColor}>
+    <GameModalShell barColor={pickChar.accentColor} instant>
         <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2 hshort:py-1.5 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
           <div className="flex items-center gap-2.5 min-w-0">
             <TeamAvatar
@@ -97,8 +97,8 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
             <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.22em] text-rose-200 mb-1 hshort:mb-0.5">
               {lessonGoal}
             </p>
-            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario">
-              {question.title}
+            <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario text-balance">
+              <MarkedPrompt text={question.title} />
             </h2>
             {answerText && (
               <div
@@ -160,7 +160,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                       sounds.playPop();
                       onSelectTeam(team.id);
                     }}
-                    className={`relative flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-[7.25rem] max-w-[11rem] rounded-2xl border-2 text-white transition-all ${
+                    className={`relative flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-2 min-w-[7.25rem] max-w-[11rem] rounded-2xl border-2 text-white ${
                       alreadyDrew
                         ? 'bg-emerald-950/80 border-emerald-400 cursor-default'
                         : isSelected
@@ -184,7 +184,7 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                           aria-hidden
                         >
                           <img
-                            src="/assets/effects/reveal_mariosupermushroom.jpeg"
+                            src={getRevealArt('mushroom_x2') || '/assets/effects/reveal_mariopblock.jpg'}
                             alt=""
                             className="w-5 h-5 rounded-full object-cover"
                           />
@@ -230,17 +230,17 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`relative shrink-0 ${cardHeight} aspect-[2/3] w-auto rounded-2xl border-2 overflow-hidden transition-all ${
+                    className={`@container/card relative shrink-0 ${cardHeight} aspect-[2/3] w-auto rounded-2xl border-2 overflow-hidden ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
-                          ? 'border-amber-300 cursor-pointer hover:brightness-110 hover:shadow-[0_0_20px_rgba(250,204,21,0.45)]'
+                          ? 'border-amber-300 cursor-pointer hover:brightness-110'
                           : 'border-white/15 opacity-70 cursor-not-allowed'
                     }`}
                   >
                     {slot.claimedByTeamId && slot.card ? (
                       <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center gap-1 p-2">
-                        <span className="font-mario text-[10px] sm:text-xs text-yellow-200 text-center leading-tight">
+                        <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-200 text-center leading-tight">
                           {slot.card.title}
                         </span>
                         {(slot.card.type === 'gold_star' ||
@@ -264,13 +264,15 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
                           {previewUnclaimed ? 'TEST' : '★'}
                         </span>
                         {previewUnclaimed ? (
-                          <span className="font-mario text-[10px] sm:text-xs text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
+                          <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
                             {slot.card?.title}
                           </span>
                         ) : (
-                          <span className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-mario">?</span>
+                          <span className="font-mario text-[clamp(1.75rem,28cqh,4.5rem)] text-yellow-300 text-shadow-mario leading-none">
+                            ?
+                          </span>
                         )}
-                        <span className="text-[9px] font-black text-amber-200">{idx + 1}</span>
+                        <span className="text-[9px] sm:text-[11px] font-black text-amber-200">{idx + 1}</span>
                       </div>
                     )}
                   </button>
@@ -296,4 +298,4 @@ export const ClassicRoundModal: React.FC<ClassicRoundModalProps> = ({
         </div>
     </GameModalShell>
   );
-};
+});

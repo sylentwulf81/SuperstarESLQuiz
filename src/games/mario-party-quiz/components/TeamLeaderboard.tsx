@@ -26,19 +26,20 @@ function rankLabel(rank: number) {
   return `${rank}th`;
 }
 
-export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
+/** Live board score row: avatar + coins only. Names live on setup, pickers, and ceremonies. */
+export const TeamLeaderboard = React.memo(function TeamLeaderboard({
   teams,
   currentTeamIndex,
   onSelectTeamTurn,
   onAdjustCoins,
-}) => {
+}: TeamLeaderboardProps) {
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const highestScore = sortedTeams[0]?.coins ?? 0;
 
   return (
-    <div className="w-full max-w-[1750px] mx-auto px-2 sm:px-4 pt-1.5 pb-1 shrink-0">
-      <div className="bg-slate-900/85 backdrop-blur-md rounded-2xl border border-white/15 p-2 sm:p-2.5 shadow-xl overflow-visible">
-        <div className="flex flex-wrap justify-center gap-2 sm:gap-2.5">
+    <div className="w-full max-w-[1750px] mx-auto px-1.5 sm:px-3 pt-1 pb-0.5 shrink-0">
+      <div className="bg-slate-900/95 rounded-xl sm:rounded-2xl border border-white/15 p-1.5 sm:p-2 shadow-xl overflow-visible">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {teams.map((team, idx) => {
             const char = CHARACTERS[team.characterId];
             const isActive = idx === currentTeamIndex;
@@ -69,7 +70,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                     }
                   }
                 }}
-                className={`relative flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 sm:py-2 rounded-xl transition-all duration-200 cursor-pointer select-none border shadow-md overflow-visible ${
+                className={`relative flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-xl cursor-pointer select-none border shadow-md overflow-visible ${
                   isStunned
                     ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-400/80 text-white'
                     : isActive
@@ -81,7 +82,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
               >
                 {showPodiumBadge && (
                   <span
-                    className={`absolute -top-1.5 -left-1.5 z-20 h-5 min-w-[1.7rem] px-1.5 rounded-md text-[10px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
+                    className={`absolute -top-1.5 -left-1.5 z-20 h-4 min-w-[1.5rem] px-1 rounded-md text-[9px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
                     title={`Rank ${rankLabel(rank)}`}
                   >
                     {rankLabel(rank)}
@@ -91,9 +92,9 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                 <div className="relative shrink-0">
                   <TeamAvatar
                     characterId={team.characterId}
-                    size="md"
+                    size="sm"
                     customUrl={team.customImageUrl}
-                    className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl shadow-md border ${
+                    className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl shadow-md border ${
                       isActive ? 'ring-2 ring-yellow-300 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 'border-white/25'
                     }`}
                   />
@@ -133,15 +134,15 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                 </div>
 
                 <div
-                  className={`flex items-center gap-1 px-1.5 py-1 rounded-xl border shrink-0 transition-colors ${
+                  className={`flex items-center gap-0.5 sm:gap-1 px-1 sm:px-1.5 py-0.5 sm:py-1 rounded-lg sm:rounded-xl border shrink-0 ${
                     team.coins < 0
                       ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_12px_rgba(239,68,68,0.4)] ring-1 ring-red-500/50'
                       : 'bg-black/50 border-white/15 shadow-inner'
                   }`}
                 >
-                  <MarioCoin size="sm" animated={isActive} />
+                  <MarioCoin size="sm" />
                   <span
-                    className={`font-mario text-xl sm:text-2xl leading-none min-w-[1.4rem] text-center transition-colors ${
+                    className={`font-mario text-lg sm:text-2xl leading-none min-w-[1.35rem] text-center ${
                       team.coins < 0
                         ? 'text-red-500 font-black drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]'
                         : 'text-yellow-300 text-shadow-gold'
@@ -156,7 +157,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                         onAdjustCoins(team.id, 1);
                       }}
                       title={`Add 1 coin to ${team.name}`}
-                      className="w-5 h-5 rounded-md bg-white/10 hover:bg-emerald-500/50 text-white flex items-center justify-center border border-white/20 hover:border-emerald-300 cursor-pointer transition-colors active:scale-95"
+                      className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-white/10 hover:bg-emerald-500/50 text-white flex items-center justify-center border border-white/20 hover:border-emerald-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
@@ -166,7 +167,7 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
                         onAdjustCoins(team.id, -1);
                       }}
                       title={`Deduct 1 coin from ${team.name}`}
-                      className="w-5 h-5 rounded-md bg-white/10 hover:bg-red-500/50 text-white flex items-center justify-center border border-white/20 hover:border-red-300 cursor-pointer transition-colors active:scale-95"
+                      className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-white/10 hover:bg-red-500/50 text-white flex items-center justify-center border border-white/20 hover:border-red-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
@@ -179,4 +180,4 @@ export const TeamLeaderboard: React.FC<TeamLeaderboardProps> = ({
       </div>
     </div>
   );
-};
+});

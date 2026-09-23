@@ -91,23 +91,6 @@ class BgmEngine {
 
   private async loadStoredTracks() {
     try {
-      // 1. Check for bundled /audio/ static files (e.g. track1.mp3, track2.mp3, track3.mp3)
-      const staticCandidates: BgmTrack[] = [
-        { id: 'static_track_1', name: '🎵 Custom Party Soundtrack 1', category: 'custom', audioUrl: '/audio/track1.mp3' },
-        { id: 'static_track_2', name: '🎵 Custom Party Soundtrack 2', category: 'custom', audioUrl: '/audio/track2.mp3' },
-        { id: 'static_track_3', name: '🎵 Custom Party Soundtrack 3', category: 'custom', audioUrl: '/audio/track3.mp3' },
-      ];
-
-      const detectedStaticTracks: BgmTrack[] = [];
-      for (const item of staticCandidates) {
-        try {
-          const res = await fetch(item.audioUrl!, { method: 'HEAD' });
-          if (res.ok) {
-            detectedStaticTracks.push(item);
-          }
-        } catch (_) {}
-      }
-
       const stored = await getAllStoredAudioTracks();
       const customTracks: BgmTrack[] = stored.map((item) => {
         const url = URL.createObjectURL(item.blob);
@@ -121,8 +104,8 @@ class BgmEngine {
         };
       });
 
-      if (detectedStaticTracks.length > 0 || customTracks.length > 0) {
-        this.tracks = [...detectedStaticTracks, ...customTracks, ...PRESET_TRACKS];
+      if (customTracks.length > 0) {
+        this.tracks = [...customTracks, ...PRESET_TRACKS];
         this.notify();
       }
     } catch (e) {

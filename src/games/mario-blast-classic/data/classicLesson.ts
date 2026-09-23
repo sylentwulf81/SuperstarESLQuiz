@@ -1,11 +1,5 @@
 export const DEFAULT_CLASSIC_LESSON_GOAL = 'Make this into a “Have you ever…?” question';
 
-export const CLASSIC_LESSON_GOAL_PRESETS = [
-  'Make this into a “Have you ever…?” question',
-  'Make this sentence past tense',
-  'What is the subject of the sentence?',
-] as const;
-
 const STORAGE_KEY = 'mp_classic_lesson_goal_v1';
 
 export function loadClassicLessonGoal(): string {

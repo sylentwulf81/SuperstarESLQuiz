@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Play,
   Pause,
@@ -110,13 +110,21 @@ export const MusicPlayer: React.FC = () => {
     await bgm.deleteCustomTrack(trackId);
   };
 
-  const synthTracks = bgmState.tracks
-    .map((track, idx) => ({ track, idx }))
-    .filter(({ track }) => track.category === 'synth');
+  const synthTracks = useMemo(
+    () =>
+      bgmState.tracks
+        .map((track, idx) => ({ track, idx }))
+        .filter(({ track }) => track.category === 'synth'),
+    [bgmState.tracks]
+  );
 
-  const customTracks = bgmState.tracks
-    .map((track, idx) => ({ track, idx }))
-    .filter(({ track }) => track.category === 'custom');
+  const customTracks = useMemo(
+    () =>
+      bgmState.tracks
+        .map((track, idx) => ({ track, idx }))
+        .filter(({ track }) => track.category === 'custom'),
+    [bgmState.tracks]
+  );
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return '';
@@ -126,8 +134,8 @@ export const MusicPlayer: React.FC = () => {
 
   return (
     <div className="relative" ref={tracklistRef}>
-      {/* Mini Player Bar */}
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none">
+      {/* Mini Player Bar — keep intrinsic width; never let the header squash controls */}
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none w-max max-w-none shrink-0">
         {/* Track Title (Clickable to open Tracklist) */}
         <button
           id="music-track-title-btn"
@@ -136,7 +144,7 @@ export const MusicPlayer: React.FC = () => {
             sounds.playClick();
             setShowTracklist((prev) => !prev);
           }}
-          className="flex items-center gap-1.5 min-w-[120px] max-w-[160px] text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="flex items-center gap-1.5 w-[9.5rem] shrink-0 text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
           title="Click to view tracklist & choose songs"
         >
           <Music className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:scale-110 transition-transform" />
@@ -164,7 +172,7 @@ export const MusicPlayer: React.FC = () => {
         </button>
 
         {/* Control Buttons */}
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5 shrink-0">
           <button
             id="music-prev-btn"
             onClick={handlePrev}
@@ -200,8 +208,8 @@ export const MusicPlayer: React.FC = () => {
             <SkipForward className="w-3.5 h-3.5" />
           </button>
 
-          {/* Volume / Mute with mini slider toggle */}
-          <div className="flex items-center gap-1">
+          {/* Volume / Mute with mini slider */}
+          <div className="flex items-center gap-1 shrink-0">
             <button
               id="music-mute-btn"
               onClick={handleToggleMute}
@@ -226,7 +234,7 @@ export const MusicPlayer: React.FC = () => {
               value={bgmState.isMuted ? 0 : bgmState.volume}
               onChange={handleVolumeChange}
               title={`Volume ${bgmState.isMuted ? '0' : Math.round(bgmState.volume * 100)}%`}
-              className="w-16 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400"
+              className="w-16 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400 shrink-0"
             />
           </div>
 
@@ -237,7 +245,7 @@ export const MusicPlayer: React.FC = () => {
               sounds.playClick();
               setShowTracklist((prev) => !prev);
             }}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer border-l border-white/20 pl-1.5 ${
+            className={`p-1.5 rounded-lg transition-colors cursor-pointer border-l border-white/20 pl-1.5 shrink-0 ${
               showTracklist
                 ? 'text-amber-300 bg-white/20'
                 : 'text-indigo-300 hover:text-white hover:bg-white/10'

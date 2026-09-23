@@ -1,14 +1,14 @@
 ---
-description: Visual-first ESL classroom UI — follow DESIGN.md for all game screens
+description: Visual-first ESL classroom UI — follow DESIGN.md for all activity screens
 alwaysApply: true
 ---
 
 # ESL classroom design
 
-Follow `DESIGN.md`. These are arcade games for Japanese ESL students on a projector.
+Follow `DESIGN.md`. These are educational activities for Japanese ESL students on a projector. In the UI, call them **activities**, not games.
 
 - Default to **simple, clear, visual**. If a graphic, number, animation, or sound can explain a mechanic, use that instead of a sentence.
-- In-game English must be short and glanceable. Never bury coins, scores, or damage inside a paragraph.
+- On-board English must be short and glanceable. Never bury coins, scores, or damage inside a paragraph.
 - Teacher/host copy may be a bit richer, but still scannable. Keep long explanations in the rulebook, not on the live board.
 - Big, bright graphics, animations, and sounds trump detailed explanations.
 

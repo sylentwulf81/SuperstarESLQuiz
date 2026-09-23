@@ -445,7 +445,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                           className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-xs font-bold text-slate-950 flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
                         >
                           <Zap className="w-3 h-3 text-slate-950 fill-slate-950" />
-                          Apply in Game
+                          Apply on Board
                         </button>
                       )}
                     </div>

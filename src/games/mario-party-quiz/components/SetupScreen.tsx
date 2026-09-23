@@ -117,10 +117,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                     onBackToLauncher();
                   }}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all shadow-md cursor-pointer group whitespace-nowrap shrink-0"
-                  title="Return to ALT Games Launcher Library"
+                  title="Return to the activity library"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-300" />
-                  Game Library
+                  Activity Library
                 </button>
               ) : (
                 <span />
@@ -333,8 +333,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 <Shuffle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
-                    ? 'All 60 prompts shuffle on game start. Any team can answer!'
-                    : 'All 60 question & mystery card locations are automatically randomized on game start!'}
+                    ? 'All 60 prompts shuffle at the start. Any team can answer!'
+                    : 'All 60 question & mystery card locations are automatically randomized at the start!'}
                 </span>
               </div>
             </div>

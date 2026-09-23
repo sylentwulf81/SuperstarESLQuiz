@@ -1,6 +1,8 @@
 # Superstar ESL Quiz — Design Bible
 
-All titles in this launcher are **classroom arcade games for Japanese ESL students**, usually projected on a big screen with a teacher hosting. Design for a noisy room, mixed reading levels, and glanceability from the back row.
+All titles in this launcher are **educational activities for Japanese ESL students**, usually projected on a big screen with a teacher hosting. Design for a noisy room, mixed reading levels, and glanceability from the back row.
+
+On the frontend, call them **activities** (or educational activities) — never “games.” “Game” reads as a time-waster; these are classroom lessons with arcade energy.
 
 ## Core rule
 
@@ -8,10 +10,10 @@ All titles in this launcher are **classroom arcade games for Japanese ESL studen
 
 ## Audience
 
-- **Students:** Japanese ESL learners. Keep in-game English short, high-frequency, and optional when a picture will do.
+- **Students:** Japanese ESL learners. Keep on-board English short, high-frequency, and optional when a picture will do.
 - **Teachers:** Hosts running the room. Their instructions may be a little more detailed, but still scannable — never a paragraph when a label will do.
 
-## In-game UI (student-facing)
+## Live activity UI (student-facing)
 
 - Prefer **icons, avatars, coins, colors, and motion** over sentences.
 - Put the important number **big and alone** (coins, stars, timer, −5). Never nest it inside a long English sentence.

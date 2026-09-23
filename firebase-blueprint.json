@@ -68,7 +68,7 @@
     },
     "/users/{userId}/questionSets/{questionSetId}": {
       "schema": "QuestionSet",
-      "description": "Private customized question sets belonging to the user"
+      "description": "The active deck for a theme, or a named Question Library bank when kind is library"
     }
   }
 }
