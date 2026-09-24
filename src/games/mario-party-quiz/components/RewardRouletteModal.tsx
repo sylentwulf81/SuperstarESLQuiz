@@ -619,6 +619,28 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
   const renderCardFront = (card: RewardCard, picked: boolean, compact = false) => {
     const theme = getCardTheme(card.type);
+    const art = getRevealArt(card.type);
+    const specialLabel =
+      card.type === 'pow_block'
+        ? 'POW'
+        : card.type === 'blooper'
+          ? 'INK +1'
+          : card.type === 'bowser_revolution'
+            ? 'SWAP'
+            : card.type === 'bowser_fury'
+              ? '-5 ALL'
+              : card.type === 'ghost_steal_5'
+                ? 'DIE STEAL'
+                : card.type === 'king_boo' || card.type === 'boo_steal_10'
+                  ? gameTheme === 'classic'
+                    ? 'SHUFFLE'
+                    : 'ALL STEAL'
+                  : card.type === 'blue_shell'
+                    ? 'SKIP #1'
+                    : card.type === 'mushroom_x2' || card.type === 'super_star_x2'
+                      ? '×2 TURN'
+                      : 'SPECIAL';
+
     return (
       <div
         style={{
@@ -626,58 +648,110 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
           WebkitBackfaceVisibility: 'hidden',
           transform: 'rotateY(180deg) translateZ(2px)',
         }}
-        className={`absolute inset-0 rounded-2xl overflow-hidden border-2 sm:border-3 p-2.5 sm:p-3 flex flex-col justify-between text-center bg-slate-950 transition-all duration-300 ${
+        className={`absolute inset-0 rounded-2xl overflow-hidden border-2 sm:border-3 flex flex-col justify-between text-center bg-slate-950 transition-all duration-300 ${
+          art ? 'p-0' : 'p-2.5 sm:p-3'
+        } ${
           picked
             ? `border-yellow-300 ${theme.glow} ring-4 ring-yellow-300/80 shadow-2xl z-20`
             : 'border-white/30 brightness-95 contrast-105 z-10'
         }`}
       >
-        <div className={`absolute inset-0 bg-gradient-to-b ${theme.shell} opacity-95 pointer-events-none`} />
-        <div className="absolute inset-1 rounded-xl border border-white/25 pointer-events-none" />
+        {art ? (
+          <>
+            <img
+              src={art}
+              alt=""
+              draggable={false}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/45 pointer-events-none" />
+            <div className="absolute inset-1.5 rounded-xl border border-white/25 pointer-events-none" />
 
-        {/* Top Header Badge */}
-        <div className="relative z-10 min-h-[22px] flex items-center justify-center">
-          {picked ? (
-            <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
-              ★ YOUR PICK ★
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 bg-black/60 text-yellow-300 font-bold text-[9px] sm:text-[10px] rounded-full uppercase tracking-wider border border-white/20">
-              REWARD
-            </span>
-          )}
-        </div>
-
-        {/* Center Graphic & Title */}
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-1.5 px-1 my-0.5">
-          <div className={`rounded-2xl bg-black/45 border-2 border-white/30 shadow-lg ${compact ? 'p-1.5' : 'p-2 sm:p-2.5'}`}>
-            {getCardIcon(card.type, compact ? 'w-8 h-8' : 'w-10 h-10 sm:w-12 sm:h-12')}
-          </div>
-          <h4 className={`font-mario text-yellow-100 text-shadow-mario leading-tight ${compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>
-            {card.title}
-          </h4>
-          {!compact && (
-            <p className="text-[10px] sm:text-xs text-white/95 font-medium leading-snug line-clamp-2 px-0.5">
-              {card.subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* Bottom Reward Pill */}
-        <div className="relative z-10 min-h-[26px] flex items-center justify-center">
-          {card.coins > 0 ? (
-            <div className="bg-black/60 border border-yellow-300/70 rounded-full py-0.5 px-2.5 flex items-center gap-1 shadow-md">
-              <span className="font-mario text-amber-200 text-xs sm:text-sm">+{card.coins}</span>
-              <MarioCoin size="xs" />
+            <div className="relative z-10 min-h-[22px] flex items-center justify-center pt-2 px-2">
+              {picked ? (
+                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
+                  ★ YOUR PICK ★
+                </span>
+              ) : null}
             </div>
-          ) : (
-            <div className="bg-black/50 border border-white/25 rounded-full py-0.5 px-2 flex items-center gap-1">
-              <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
-                {card.type === 'pow_block' ? 'POW' : card.type === 'blooper' ? 'INK +1' : card.type === 'bowser_revolution' ? 'SWAP' : card.type === 'bowser_fury' ? '-5 ALL' : card.type === 'ghost_steal_5' ? 'DIE STEAL' : card.type === 'king_boo' || card.type === 'boo_steal_10' ? (gameTheme === 'classic' ? 'SHUFFLE' : 'ALL STEAL') : 'SPECIAL'}
-              </span>
+
+            <div className="relative z-10 mt-auto pb-2.5 px-2 flex flex-col items-center gap-1">
+              <h4
+                className={`font-mario text-yellow-100 text-shadow-mario leading-tight ${
+                  compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'
+                }`}
+              >
+                {card.title}
+              </h4>
+              {card.coins > 0 ? (
+                <div className="bg-black/70 border border-yellow-300/80 rounded-full py-0.5 px-2.5 flex items-center gap-1 shadow-md">
+                  <span className="font-mario text-amber-200 text-xs sm:text-sm">+{card.coins}</span>
+                  <MarioCoin size="xs" />
+                </div>
+              ) : (
+                <div className="bg-black/70 border border-white/30 rounded-full py-0.5 px-2">
+                  <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
+                    {specialLabel}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            <div className={`absolute inset-0 bg-gradient-to-b ${theme.shell} opacity-95 pointer-events-none`} />
+            <div className="absolute inset-1 rounded-xl border border-white/25 pointer-events-none" />
+
+            <div className="relative z-10 min-h-[22px] flex items-center justify-center">
+              {picked ? (
+                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
+                  ★ YOUR PICK ★
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 bg-black/60 text-yellow-300 font-bold text-[9px] sm:text-[10px] rounded-full uppercase tracking-wider border border-white/20">
+                  REWARD
+                </span>
+              )}
+            </div>
+
+            <div className="relative z-10 flex-1 flex flex-col items-center justify-center gap-1.5 px-1 my-0.5">
+              <div
+                className={`rounded-2xl bg-black/45 border-2 border-white/30 shadow-lg ${
+                  compact ? 'p-1.5' : 'p-2 sm:p-2.5'
+                }`}
+              >
+                {getCardIcon(card.type, compact ? 'w-8 h-8' : 'w-10 h-10 sm:w-12 sm:h-12')}
+              </div>
+              <h4
+                className={`font-mario text-yellow-100 text-shadow-mario leading-tight ${
+                  compact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'
+                }`}
+              >
+                {card.title}
+              </h4>
+              {!compact && (
+                <p className="text-[10px] sm:text-xs text-white/95 font-medium leading-snug line-clamp-2 px-0.5">
+                  {card.subtitle}
+                </p>
+              )}
+            </div>
+
+            <div className="relative z-10 min-h-[26px] flex items-center justify-center">
+              {card.coins > 0 ? (
+                <div className="bg-black/60 border border-yellow-300/70 rounded-full py-0.5 px-2.5 flex items-center gap-1 shadow-md">
+                  <span className="font-mario text-amber-200 text-xs sm:text-sm">+{card.coins}</span>
+                  <MarioCoin size="xs" />
+                </div>
+              ) : (
+                <div className="bg-black/50 border border-white/25 rounded-full py-0.5 px-2 flex items-center gap-1">
+                  <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
+                    {specialLabel}
+                  </span>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
     );
   };

@@ -2,9 +2,11 @@ import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { RewardCardType } from '@/shared/types';
 
 const ART = {
-  coins: '/assets/effects/reveal_supercoins.jpg',
-  mushroom: '/assets/effects/reveal_mariopblock.jpg',
-  goldStar: '/assets/effects/reveal_supercoins.jpg',
+  coin1: '/assets/effects/reveal_mariocoin_1.jpg',
+  coins3: '/assets/effects/reveal_mariocoins_3.jpg',
+  mushroom: '/assets/effects/reveal_mariosupermushroom.jpeg',
+  powBlock: '/assets/effects/reveal_mariopblock.jpg',
+  goldStar: '/assets/effects/reveal_mariogoldenstar.jpeg',
   blooper: '/assets/effects/reveal_blooperink.jpg',
   piranha: '/assets/effects/reveal_piranhaplant.jpg',
   nabbit: '/assets/effects/reveal_nabbit.jpg',
@@ -15,18 +17,20 @@ const ART = {
 } as const;
 
 const REVEAL_ART_BY_TYPE: Partial<Record<RewardCardType, string>> = {
-  great_coins_3: ART.coins,
-  coins_1: ART.coins,
-  coins_3: ART.coins,
-  wonderful_coins_5: ART.coins,
-  coins_5: ART.coins,
-  super_coins_10: ART.coins,
-  coins_10: ART.coins,
+  coins_1: ART.coin1,
+  great_coins_3: ART.coins3,
+  coins_3: ART.coins3,
+  wonderful_coins_5: ART.coins3,
+  coins_5: ART.coins3,
+  super_coins_10: ART.coins3,
+  coins_10: ART.coins3,
   gold_star: ART.goldStar,
-  mystery_blocks: ART.coins,
+  mystery_blocks: ART.coins3,
   blooper: ART.blooper,
   super_star_x2: ART.mushroom,
   mushroom_x2: ART.mushroom,
+  pow_block: ART.powBlock,
+  hidden_block: ART.powBlock,
   bowser_revolution: ART.bowserRevolution,
   bowser_fury: ART.bowserFury,
   king_boo: ART.kingBoo,
@@ -62,6 +66,7 @@ const ALL_REVEAL_URLS: readonly string[] = [
   ...Object.values(ART),
   ...TREASURE_BLOCK_BACKS,
   ...Object.values(CHARACTERS).map(c => c.imageUrl).filter(Boolean),
+  ...Object.values(CHARACTERS).map(c => c.victoryImageUrl).filter(Boolean),
 ];
 
 const preloadedArt = new Map<string, HTMLImageElement>();
