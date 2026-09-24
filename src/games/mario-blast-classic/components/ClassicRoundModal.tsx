@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Eye, EyeOff, X, Check, OctagonX } from 'lucide-react';
 import { GameQuestion, RewardCard, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -44,6 +44,22 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   testGame = false,
 }: ClassicRoundModalProps) {
   const [answerRevealed, setAnswerRevealed] = useState(false);
+
+  /**
+   * Bolt Performance Optimization:
+   * 1) Pre-compute teamsMap in useMemo to convert linear teams.find() scans per slot into O(1) lookups.
+   * 2) Pre-compute drawnTeamSet in useMemo to convert linear drawnTeamIds.includes() scans into O(1) lookups.
+   */
+  const teamsMap = useMemo(() => {
+    const map = new Map<string, Team>();
+    for (const team of teams) {
+      map.set(team.id, team);
+    }
+    return map;
+  }, [teams]);
+
+  const drawnTeamSet = useMemo(() => new Set(drawnTeamIds), [drawnTeamIds]);
+
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
   const answerText =
@@ -146,7 +162,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 shrink-0">
               {teams.map(team => {
                 const char = CHARACTERS[team.characterId];
-                const alreadyDrew = drawnTeamIds.includes(team.id);
+                const alreadyDrew = drawnTeamSet.has(team.id);
                 const isSelected = selectedTeamId === team.id;
                 return (
                   <button
@@ -215,7 +231,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-x-auto overflow-y-hidden px-1">
               <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
               {slots.map((slot, idx) => {
-                const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
+                const claimedTeam = slot.claimedByTeamId ? teamsMap.get(slot.claimedByTeamId) ?? null : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
                 const cardCount = Math.max(slots.length, 1);
