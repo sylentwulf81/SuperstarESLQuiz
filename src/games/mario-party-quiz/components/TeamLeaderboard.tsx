@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Plus, Minus, Flame, Zap, ShieldAlert } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -33,8 +33,19 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
   onSelectTeamTurn,
   onAdjustCoins,
 }: TeamLeaderboardProps) {
-  const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
-  const highestScore = sortedTeams[0]?.coins ?? 0;
+  // Bolt Performance Optimization: Precompute team ranks map and highest score in useMemo
+  // to avoid O(N^2) sortedTeams.findIndex calls when iterating through teams in leaderboard render.
+  const { teamRanksMap, highestScore } = useMemo(() => {
+    const sorted = [...teams].sort((a, b) => b.coins - a.coins);
+    const ranks: Record<string, number> = {};
+    sorted.forEach((team, idx) => {
+      ranks[team.id] = idx + 1;
+    });
+    return {
+      teamRanksMap: ranks,
+      highestScore: sorted[0]?.coins ?? 0,
+    };
+  }, [teams]);
 
   return (
     <div className="w-full max-w-[1750px] mx-auto px-1.5 sm:px-3 pt-1 pb-0.5 shrink-0">
@@ -44,7 +55,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
             const char = CHARACTERS[team.characterId];
             const isActive = idx === currentTeamIndex;
             const isLeader = team.coins === highestScore && team.coins > 0;
-            const rank = sortedTeams.findIndex((t) => t.id === team.id) + 1;
+            const rank = teamRanksMap[team.id];
             const isStunned = (team.skipTurns ?? 0) > 0;
             const showPodiumBadge = rank <= 3 && team.coins > 0;
 
