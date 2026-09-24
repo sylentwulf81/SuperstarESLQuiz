@@ -7,9 +7,11 @@ import {
   GraduationCap, Users, Gamepad2, Sliders, Settings2, Monitor, Languages, Crown, BoxSelect
 } from 'lucide-react';
 import { REWARD_CARDS } from '@/games/mario-party-quiz/data/rewards';
+import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { RewardCard } from '@/shared/types';
 import { GUIDE_TRANSLATIONS, GuideLanguage } from '@/games/mario-party-quiz/data/guideContent';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { MarioCoin } from '@/shared/components/MarioCoin';
 
 interface RulebookModalProps {
   onClose: () => void;
@@ -465,12 +467,13 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
               )}
             </AnimatePresence>
 
-            {/* Grid of 8 Card Fronts in 2:3 Aspect Ratio */}
+            {/* Grid of card fronts in 2:3 aspect — artwork when available */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 pt-1">
               {REWARD_CARDS.map((card) => {
                 const isSelected = activeTestedCard?.id === card.id;
                 const translatedTitle = t.mysteryCards.cardDescriptions[card.id]?.title || card.title;
                 const translatedSubtitle = t.mysteryCards.cardDescriptions[card.id]?.desc || card.subtitle;
+                const art = getRevealArt(card.type);
 
                 return (
                   <motion.div
@@ -478,43 +481,76 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                     whileHover={{ scale: 1.04, y: -4 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleCardClick(card)}
-                    className={`relative aspect-[2/3] rounded-2xl p-2.5 sm:p-3 border-2 flex flex-col justify-between text-center cursor-pointer transition-all bg-gradient-to-b ${getCardStyle(card.id)} ${
+                    className={`relative aspect-[2/3] rounded-2xl border-2 flex flex-col justify-between text-center cursor-pointer transition-all overflow-hidden ${
+                      art ? 'p-0 bg-slate-950' : `p-2.5 sm:p-3 bg-gradient-to-b ${getCardStyle(card.id)}`
+                    } ${
                       isSelected
                         ? 'ring-4 ring-yellow-400 border-yellow-300 shadow-[0_0_25px_rgba(250,204,21,0.6)]'
-                        : 'hover:border-yellow-400/80 hover:shadow-xl'
+                        : 'hover:border-yellow-400/80 hover:shadow-xl border-white/20'
                     }`}
                   >
-                    {/* Inset Hairline Border */}
-                    <div className="absolute inset-1.5 rounded-xl border border-white/15 pointer-events-none" />
+                    {art ? (
+                      <>
+                        <img
+                          src={art}
+                          alt=""
+                          draggable={false}
+                          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/40 pointer-events-none" />
+                        <div className="absolute inset-1.5 rounded-xl border border-white/15 pointer-events-none" />
 
-                    {/* Top Pill / Badge */}
-                    <div className="relative z-10 flex items-center justify-between gap-1 mb-1">
-                      <span className="text-[9px] font-bold tracking-wider text-amber-300 uppercase bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30">
-                        {card.coins > 0 ? `+${card.coins} COINS` : 'SPECIAL'}
-                      </span>
-                      <span className="text-[10px] text-yellow-300 opacity-60">★</span>
-                    </div>
+                        <div className="relative z-10 mt-auto p-2.5 sm:p-3 flex flex-col items-center gap-1">
+                          <h4 className="font-mario text-xs sm:text-sm text-yellow-300 leading-tight drop-shadow text-shadow-mario">
+                            {translatedTitle}
+                          </h4>
+                          {card.coins > 0 ? (
+                            <div className="bg-black/70 border border-yellow-300/70 rounded-full py-0.5 px-2 flex items-center gap-1">
+                              <span className="font-mario text-amber-200 text-[11px]">+{card.coins}</span>
+                              <MarioCoin size="xs" />
+                            </div>
+                          ) : (
+                            <p className="text-[10px] text-indigo-100 font-medium leading-snug line-clamp-2 px-0.5">
+                              {translatedSubtitle}
+                            </p>
+                          )}
+                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/50 border border-white/20 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-yellow-300">
+                            <Volume2 className="w-3 h-3 text-yellow-400 shrink-0" />
+                            <span className="truncate">{t.mysteryCards.testSoundLabel}</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="absolute inset-1.5 rounded-xl border border-white/15 pointer-events-none" />
 
-                    {/* Center Icon & Title */}
-                    <div className="relative z-10 my-auto flex flex-col items-center">
-                      <div className="p-2 sm:p-2.5 rounded-2xl bg-black/50 border border-white/20 mb-1.5 shadow-inner group-hover:scale-110 transition-transform">
-                        {getCardIcon(card.type)}
-                      </div>
-                      <h4 className="font-mario text-xs sm:text-sm text-yellow-300 leading-tight drop-shadow">
-                        {translatedTitle}
-                      </h4>
-                      <p className="text-[10px] sm:text-[11px] text-indigo-100 font-medium mt-1 leading-snug px-0.5">
-                        {translatedSubtitle}
-                      </p>
-                    </div>
+                        <div className="relative z-10 flex items-center justify-between gap-1 mb-1">
+                          <span className="text-[9px] font-bold tracking-wider text-amber-300 uppercase bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30">
+                            {card.coins > 0 ? `+${card.coins} COINS` : 'SPECIAL'}
+                          </span>
+                          <span className="text-[10px] text-yellow-300 opacity-60">★</span>
+                        </div>
 
-                    {/* Bottom Action Badge */}
-                    <div className="relative z-10 mt-1">
-                      <div className="w-full py-1 px-1.5 rounded-xl bg-black/40 border border-white/20 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-yellow-300">
-                        <Volume2 className="w-3 h-3 text-yellow-400 shrink-0" />
-                        <span className="truncate">{t.mysteryCards.testSoundLabel}</span>
-                      </div>
-                    </div>
+                        <div className="relative z-10 my-auto flex flex-col items-center">
+                          <div className="p-2 sm:p-2.5 rounded-2xl bg-black/50 border border-white/20 mb-1.5 shadow-inner">
+                            {getCardIcon(card.type)}
+                          </div>
+                          <h4 className="font-mario text-xs sm:text-sm text-yellow-300 leading-tight drop-shadow">
+                            {translatedTitle}
+                          </h4>
+                          <p className="text-[10px] sm:text-[11px] text-indigo-100 font-medium mt-1 leading-snug px-0.5">
+                            {translatedSubtitle}
+                          </p>
+                        </div>
+
+                        <div className="relative z-10 mt-1">
+                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/40 border border-white/20 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-yellow-300">
+                            <Volume2 className="w-3 h-3 text-yellow-400 shrink-0" />
+                            <span className="truncate">{t.mysteryCards.testSoundLabel}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </motion.div>
                 );
               })}

@@ -184,7 +184,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                           aria-hidden
                         >
                           <img
-                            src={getRevealArt('mushroom_x2') || '/assets/effects/reveal_mariopblock.jpg'}
+                            src={getRevealArt('mushroom_x2') || '/assets/effects/reveal_mariosupermushroom.jpeg'}
                             alt=""
                             className="w-5 h-5 rounded-full object-cover"
                           />
