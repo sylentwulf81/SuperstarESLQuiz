@@ -18,6 +18,8 @@ export interface CharacterInfo {
   borderColor: string;
   avatarIcon: string;
   imageUrl?: string;
+  /** Full-bleed celebration art for the Superstar victory screen. */
+  victoryImageUrl?: string;
   imagePromptDescription: string;
   catchphrase: string;
   superstarTitle: string;

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
-import { Trophy, Crown, Sparkles, RotateCcw, X, Medal, Flame, Library } from 'lucide-react';
+import { Trophy, Crown, RotateCcw, X, Medal, Library } from 'lucide-react';
 import { Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
@@ -27,6 +27,7 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const winner = sortedTeams[0] || teams[0];
   const charInfo = CHARACTERS[winner.characterId];
+  const victoryArt = charInfo.victoryImageUrl;
 
   useEffect(() => {
     sounds.playSuperstar();
@@ -67,56 +68,90 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
         className="relative w-full max-w-4xl max-h-[94vh] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-y-auto my-auto text-center"
       >
         {/* Ambient Top Glow Line */}
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 opacity-90 shadow-[0_0_20px_rgba(250,204,21,0.6)]" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 opacity-90 shadow-[0_0_20px_rgba(250,204,21,0.6)] z-20" />
 
-        {/* Superstar Banner matching slides 68-73 */}
-        <div className={`p-6 sm:p-8 ${charInfo.bgColor} bg-opacity-70 relative overflow-hidden border-b border-white/20 shadow-2xl`}>
+        {/* Victory hero + Superstar banner */}
+        <div className={`relative overflow-hidden border-b border-white/20 shadow-2xl ${charInfo.bgColor}`}>
           <button
             onClick={() => { sounds.playClick(); onClose(); }}
-            className="absolute top-4 right-4 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-white/20 cursor-pointer"
+            className="absolute top-4 right-4 z-30 p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white transition-colors border border-white/20 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
 
-          {/* Floating Stars */}
-          <div className="absolute top-2 left-6 text-3xl animate-bounce">⭐</div>
-          <div className="absolute top-4 right-16 text-3xl animate-bounce delay-150">⭐</div>
-          <div className="absolute bottom-2 left-1/4 text-2xl animate-spin">✨</div>
+          {victoryArt ? (
+            <div className="relative w-full aspect-[4/3] sm:aspect-[1024/764] max-h-[42vh] sm:max-h-[48vh] bg-black/30">
+              <img
+                src={victoryArt}
+                alt={`${charInfo.name} Superstar celebration`}
+                className="absolute inset-0 w-full h-full object-cover object-center select-none pointer-events-none"
+                decoding="async"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6 space-y-2">
+                <h1 className="font-mario text-3xl sm:text-5xl text-white text-shadow-mario tracking-wider uppercase drop-shadow-2xl">
+                  {charInfo.name}
+                </h1>
+                <h2 className="font-mario text-xl sm:text-3xl text-yellow-300 text-shadow-gold tracking-wide">
+                  YOU ARE THE SUPERSTAR!
+                </h2>
+                <p className="text-indigo-100 text-sm sm:text-base font-bold italic">
+                  &ldquo;{charInfo.catchphrase}&rdquo;
+                </p>
+                <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border mt-1 shadow-inner ${
+                  winner.coins < 0
+                    ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                    : 'bg-slate-800/90 border-yellow-300/60 glass-glow-gold'
+                }`}>
+                  <MarioCoin size="xl" animated />
+                  <span className={`font-mario text-3xl sm:text-4xl ${
+                    winner.coins < 0 ? 'text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-yellow-300 text-shadow-gold'
+                  }`}>
+                    {winner.coins} COINS
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 sm:p-8 bg-opacity-70 relative overflow-hidden">
+              <div className="absolute top-2 left-6 text-3xl animate-bounce">⭐</div>
+              <div className="absolute top-4 right-16 text-3xl animate-bounce delay-150">⭐</div>
+              <div className="absolute bottom-2 left-1/4 text-2xl animate-spin">✨</div>
 
-          {/* Giant Character Trophy Avatar */}
-          <div className="w-28 h-28 sm:w-36 sm:h-36 mx-auto mb-4 flex items-center justify-center">
-            <TeamAvatar
-              characterId={winner.characterId}
-              size="2xl"
-              customUrl={winner.customImageUrl}
-              className="w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-4 ring-yellow-400 rounded-3xl"
-            />
-          </div>
+              <div className="w-28 h-28 sm:w-36 sm:h-36 mx-auto mb-4 flex items-center justify-center">
+                <TeamAvatar
+                  characterId={winner.characterId}
+                  size="2xl"
+                  customUrl={winner.customImageUrl}
+                  className="w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-4 ring-yellow-400 rounded-3xl"
+                />
+              </div>
 
-          {/* Superstar Name */}
-          <h1 className="font-mario text-4xl sm:text-6xl text-white text-shadow-mario tracking-wider uppercase drop-shadow-2xl">
-            {charInfo.name}
-          </h1>
-          <h2 className="font-mario text-2xl sm:text-4xl text-yellow-300 text-shadow-gold mt-1 tracking-wide">
-            YOU ARE THE SUPERSTAR!
-          </h2>
+              <h1 className="font-mario text-4xl sm:text-6xl text-white text-shadow-mario tracking-wider uppercase drop-shadow-2xl">
+                {charInfo.name}
+              </h1>
+              <h2 className="font-mario text-2xl sm:text-4xl text-yellow-300 text-shadow-gold mt-1 tracking-wide">
+                YOU ARE THE SUPERSTAR!
+              </h2>
 
-          <p className="text-indigo-100 text-sm sm:text-base font-bold italic mt-2">
-            "{charInfo.catchphrase}"
-          </p>
+              <p className="text-indigo-100 text-sm sm:text-base font-bold italic mt-2">
+                &ldquo;{charInfo.catchphrase}&rdquo;
+              </p>
 
-          <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border mt-4 shadow-inner ${
-            winner.coins < 0
-              ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
-              : 'bg-slate-800/90 border-yellow-300/60 glass-glow-gold'
-          }`}>
-            <MarioCoin size="xl" animated />
-            <span className={`font-mario text-3xl sm:text-4xl ${
-              winner.coins < 0 ? 'text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-yellow-300 text-shadow-gold'
-            }`}>
-              {winner.coins} COINS
-            </span>
-          </div>
+              <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border mt-4 shadow-inner ${
+                winner.coins < 0
+                  ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_20px_rgba(239,68,68,0.4)]'
+                  : 'bg-slate-800/90 border-yellow-300/60 glass-glow-gold'
+              }`}>
+                <MarioCoin size="xl" animated />
+                <span className={`font-mario text-3xl sm:text-4xl ${
+                  winner.coins < 0 ? 'text-red-500 font-bold drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'text-yellow-300 text-shadow-gold'
+                }`}>
+                  {winner.coins} COINS
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Final Standings Table */}
@@ -132,7 +167,6 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sortedTeams.map((team, index) => {
-              const char = CHARACTERS[team.characterId];
               const isWinner = index === 0;
 
               return (
