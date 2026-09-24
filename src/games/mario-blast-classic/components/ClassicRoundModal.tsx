@@ -212,25 +212,24 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               })}
             </div>
 
-            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-hidden">
-              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2.5 content-center max-h-full">
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-x-auto overflow-y-hidden px-1">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
-                const cardHeight =
-                  slots.length <= 4
-                    ? 'h-[min(100%,42dvh,22rem)]'
-                    : slots.length <= 6
-                      ? 'h-[min(100%,36dvh,18rem)]'
-                      : 'h-[min(100%,30dvh,15rem)]';
+                const cardCount = Math.max(slots.length, 1);
                 return (
                   <button
                     key={idx}
                     type="button"
                     disabled={!canPick}
                     onClick={() => canPick && onPickSlot(idx)}
-                    className={`@container/card relative shrink-0 ${cardHeight} aspect-[2/3] w-auto rounded-2xl border-2 overflow-hidden ${
+                    style={{
+                      // Width only — never % height (Safari collapses min(100%, …) in this flex).
+                      width: `min(10.5rem, 22vw, calc((min(96vw, 86rem) - 5rem) / ${cardCount} - 0.55rem), calc(34dvh * 2 / 3))`,
+                    }}
+                    className={`@container/card relative shrink-0 aspect-[2/3] h-auto rounded-2xl border-2 overflow-hidden ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
