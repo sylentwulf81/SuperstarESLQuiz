@@ -26,6 +26,7 @@ function rankLabel(rank: number) {
   return `${rank}th`;
 }
 
+/** Live board score row: avatar + coins only. Names live on setup, pickers, and ceremonies. */
 export const TeamLeaderboard = React.memo(function TeamLeaderboard({
   teams,
   currentTeamIndex,
@@ -34,22 +35,11 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
 }: TeamLeaderboardProps) {
   const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
   const highestScore = sortedTeams[0]?.coins ?? 0;
-  const n = teams.length;
-
-  // Prefer one row whenever width allows — protect board vertical budget.
-  const gridLayoutClasses =
-    n <= 3
-      ? 'grid-cols-3'
-      : n === 4
-        ? 'grid-cols-2 min-[640px]:grid-cols-4'
-        : n <= 6
-          ? 'grid-cols-3 min-[720px]:grid-cols-6'
-          : 'grid-cols-4 min-[900px]:grid-cols-8';
 
   return (
     <div className="w-full max-w-[1750px] mx-auto px-1.5 sm:px-3 pt-1 pb-0.5 shrink-0">
       <div className="bg-slate-900/95 rounded-xl sm:rounded-2xl border border-white/15 p-1.5 sm:p-2 shadow-xl overflow-visible">
-        <div className={`grid gap-1.5 sm:gap-2 ${gridLayoutClasses}`}>
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {teams.map((team, idx) => {
             const char = CHARACTERS[team.characterId];
             const isActive = idx === currentTeamIndex;
@@ -61,17 +51,30 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
             return (
               <div
                 key={team.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`${team.name}, ${team.coins} coins${isActive ? ', picking' : ''}`}
+                title={team.name}
                 onClick={() => {
                   if (!isActive) {
                     sounds.playPop();
                     onSelectTeamTurn(idx);
                   }
                 }}
-                className={`relative flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl cursor-pointer select-none border shadow-md overflow-visible min-w-0 ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (!isActive) {
+                      sounds.playPop();
+                      onSelectTeamTurn(idx);
+                    }
+                  }
+                }}
+                className={`relative flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2 py-1.5 sm:py-2 rounded-xl cursor-pointer select-none border shadow-md overflow-visible ${
                   isStunned
                     ? 'bg-sky-950/80 border-sky-400 ring-2 ring-sky-400/80 text-white'
                     : isActive
-                    ? `${char.bgColor} bg-opacity-35 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.35)] z-10 text-white`
+                    ? `${char.bgColor} bg-opacity-35 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.35)] z-10 text-white scale-[1.03]`
                     : isLeader
                     ? 'bg-amber-950/60 border-amber-400/50 hover:border-amber-400/80 text-slate-100'
                     : 'bg-slate-800/80 hover:bg-slate-800 border-white/15 text-slate-200 hover:border-white/25'
@@ -79,7 +82,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
               >
                 {showPodiumBadge && (
                   <span
-                    className={`absolute top-0.5 left-0.5 z-20 h-4 min-w-[1.5rem] px-1 rounded-md text-[9px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
+                    className={`absolute -top-1.5 -left-1.5 z-20 h-4 min-w-[1.5rem] px-1 rounded-md text-[9px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
                     title={`Rank ${rankLabel(rank)}`}
                   >
                     {rankLabel(rank)}
@@ -91,53 +94,40 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                     characterId={team.characterId}
                     size="sm"
                     customUrl={team.customImageUrl}
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl shadow-md border ${
+                    className={`w-9 h-9 sm:w-11 sm:h-11 rounded-lg sm:rounded-xl shadow-md border ${
                       isActive ? 'ring-2 ring-yellow-300 border-yellow-200 shadow-[0_0_10px_rgba(250,204,21,0.4)]' : 'border-white/25'
                     }`}
                   />
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <h4
-                    title={team.name}
-                    className="font-bold text-[11px] sm:text-sm leading-none text-white drop-shadow-sm truncate"
-                  >
-                    {team.name}
-                  </h4>
-                  <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                  <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5">
                     {team.hasDoubleTurn && (
-                      <span className="shrink-0 bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
                         <Zap className="w-2.5 h-2.5 fill-yellow-300" />
-                        2x
                       </span>
                     )}
                     {team.doubleNextCoinReward && (
-                      <span className="shrink-0 bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
-                        <Zap className="w-2.5 h-2.5 fill-yellow-300" />
-                        2x$
+                      <span className="bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
+                        2x
                       </span>
                     )}
                     {team.skipNextCoinReward && (
-                      <span className="shrink-0 bg-sky-600 text-white px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
-                        Skip$
                       </span>
                     )}
                     {team.blooperNextCoin && (
-                      <span className="shrink-0 bg-indigo-800 text-indigo-100 px-1.5 py-px rounded-full text-[9px] font-black shadow-sm">
-                        🦑1
+                      <span className="bg-indigo-800 text-indigo-100 px-1 py-px rounded-full text-[9px] font-black shadow-sm">
+                        🦑
                       </span>
                     )}
                     {isStunned && (
-                      <span className="shrink-0 bg-sky-600 text-white px-1.5 py-px rounded-full text-[9px] font-black flex items-center gap-0.5 shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
-                        Skip
                       </span>
                     )}
                     {team.streak > 1 && (
-                      <span className="flex items-center text-amber-300 font-bold text-[10px]">
-                        <Flame className="w-3 h-3 fill-amber-400 mr-0.5" />
-                        {team.streak}x
+                      <span className="flex items-center bg-black/70 text-amber-300 font-bold text-[9px] px-1 py-px rounded-full border border-amber-400/40">
+                        <Flame className="w-2.5 h-2.5 fill-amber-400" />
+                        {team.streak}
                       </span>
                     )}
                   </div>
@@ -152,7 +142,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                 >
                   <MarioCoin size="sm" />
                   <span
-                    className={`font-mario text-base sm:text-xl leading-none min-w-[1.25rem] text-center ${
+                    className={`font-mario text-lg sm:text-2xl leading-none min-w-[1.35rem] text-center ${
                       team.coins < 0
                         ? 'text-red-500 font-black drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]'
                         : 'text-yellow-300 text-shadow-gold'
@@ -166,7 +156,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                         sounds.playPop();
                         onAdjustCoins(team.id, 1);
                       }}
-                      title="Add 1 coin"
+                      title={`Add 1 coin to ${team.name}`}
                       className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-white/10 hover:bg-emerald-500/50 text-white flex items-center justify-center border border-white/20 hover:border-emerald-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Plus className="w-3 h-3" />
@@ -176,7 +166,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                         sounds.playPop();
                         onAdjustCoins(team.id, -1);
                       }}
-                      title="Deduct 1 coin"
+                      title={`Deduct 1 coin from ${team.name}`}
                       className="w-4 h-4 sm:w-5 sm:h-5 rounded-md bg-white/10 hover:bg-red-500/50 text-white flex items-center justify-center border border-white/20 hover:border-red-300 cursor-pointer transition-colors active:scale-95"
                     >
                       <Minus className="w-3 h-3" />

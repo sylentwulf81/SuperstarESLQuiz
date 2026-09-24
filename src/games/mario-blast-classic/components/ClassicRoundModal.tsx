@@ -212,31 +212,32 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               })}
             </div>
 
-            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-stretch">
-              <div
-                className="grid gap-1.5 sm:gap-2.5 w-full h-full min-h-0"
-                style={{
-                  gridTemplateColumns: `repeat(${Math.max(slots.length, 1)}, minmax(0, 1fr))`,
-                }}
-              >
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-hidden">
+              <div className="flex flex-wrap justify-center items-center gap-1.5 sm:gap-2.5 content-center max-h-full">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teams.find(t => t.id === slot.claimedByTeamId) : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
+                const cardHeight =
+                  slots.length <= 4
+                    ? 'h-[min(100%,42dvh,22rem)]'
+                    : slots.length <= 6
+                      ? 'h-[min(100%,36dvh,18rem)]'
+                      : 'h-[min(100%,30dvh,15rem)]';
                 return (
-                  <div key={idx} className="min-h-0 min-w-0 h-full flex items-center justify-center">
-                    <button
-                      type="button"
-                      disabled={!canPick}
-                      onClick={() => canPick && onPickSlot(idx)}
-                      className={`@container/card relative h-full max-h-full aspect-[2/3] w-auto max-w-full rounded-2xl border-2 overflow-hidden ${
-                        slot.claimedByTeamId
-                          ? 'border-white/30 cursor-default'
-                          : canPick
-                            ? 'border-amber-300 cursor-pointer hover:brightness-110'
-                            : 'border-white/15 opacity-70 cursor-not-allowed'
-                      }`}
-                    >
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={!canPick}
+                    onClick={() => canPick && onPickSlot(idx)}
+                    className={`@container/card relative shrink-0 ${cardHeight} aspect-[2/3] w-auto rounded-2xl border-2 overflow-hidden ${
+                      slot.claimedByTeamId
+                        ? 'border-white/30 cursor-default'
+                        : canPick
+                          ? 'border-amber-300 cursor-pointer hover:brightness-110'
+                          : 'border-white/15 opacity-70 cursor-not-allowed'
+                    }`}
+                  >
                     {slot.claimedByTeamId && slot.card ? (
                       <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-center gap-1 p-2">
                         <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-200 text-center leading-tight">
@@ -274,8 +275,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         <span className="text-[9px] sm:text-[11px] font-black text-amber-200">{idx + 1}</span>
                       </div>
                     )}
-                    </button>
-                  </div>
+                  </button>
                 );
               })}
             </div>

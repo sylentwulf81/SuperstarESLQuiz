@@ -434,6 +434,7 @@ export function MarioBlastClassic({
         {roundOverReason && (
           <RoundOverOverlay
             reason={roundOverReason}
+            cardCount={slots.length}
             onContinue={handleContinueRoundOver}
           />
         )}
