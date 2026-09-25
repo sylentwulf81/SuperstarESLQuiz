@@ -95,8 +95,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
   };
 
   return (
-    <div className="min-h-[85vh] lg:min-h-0 flex-1 flex items-center justify-center p-3 sm:p-4 lg:p-3">
-      <div className="w-full max-w-4xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative">
+    <div className="w-full flex-1 overflow-y-auto p-3 sm:p-4 lg:p-3 flex flex-col items-center justify-start sm:justify-center">
+      <div className="w-full max-w-4xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0">
         <div
           className={`absolute top-0 inset-x-0 h-1.5 transition-colors duration-500 ${THEME_UI[theme].barClass} opacity-90`}
         />

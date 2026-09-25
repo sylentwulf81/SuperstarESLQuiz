@@ -318,7 +318,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                       </div>
                     </div>
 
-                    <div className="md:hidden p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
+                    <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                         <Music className="w-3.5 h-3.5 text-yellow-400" />
                         <span>Background Music (BGM)</span>
