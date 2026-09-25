@@ -53,8 +53,8 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = ({
   };
 
   return (
-    <div className="min-h-[85vh] lg:min-h-0 flex-1 flex items-center justify-center p-3 sm:p-4">
-      <div className="w-full max-w-5xl bg-slate-900 rounded-3xl border border-fuchsia-400/30 shadow-2xl overflow-hidden relative">
+    <div className="w-full flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col items-center justify-start sm:justify-center">
+      <div className="w-full max-w-5xl bg-slate-900 rounded-3xl border border-fuchsia-400/30 shadow-2xl overflow-hidden relative my-auto shrink-0">
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-fuchsia-500 via-violet-400 to-cyan-400" />
 
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col">
