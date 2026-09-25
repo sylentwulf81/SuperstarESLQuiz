@@ -14,7 +14,16 @@ export function legacySlashesToMarks(raw: string): string {
   return raw.replace(/ \/ ([^/\n]+?) \/ /g, ' *$1* ');
 }
 
+// Bolt Performance Optimization:
+// Cache parseMarkedPrompt results to eliminate redundant regex execution and array allocations
+// on every re-render of questions, cards, and library panels.
+const parseCache = new Map<string, MarkedPart[]>();
+const MAX_PARSE_CACHE_SIZE = 250;
+
 export function parseMarkedPrompt(raw: string): MarkedPart[] {
+  const cached = parseCache.get(raw);
+  if (cached) return cached;
+
   const text = legacySlashesToMarks(raw);
   const parts: MarkedPart[] = [];
   const re = /\*([^*]+)\*/g;
@@ -29,6 +38,13 @@ export function parseMarkedPrompt(raw: string): MarkedPart[] {
   }
   if (last < text.length) parts.push({ text: text.slice(last), marked: false });
   if (parts.length === 0) parts.push({ text, marked: false });
+
+  if (parseCache.size >= MAX_PARSE_CACHE_SIZE) {
+    const firstKey = parseCache.keys().next().value;
+    if (firstKey !== undefined) parseCache.delete(firstKey);
+  }
+  parseCache.set(raw, parts);
+
   return parts;
 }
 

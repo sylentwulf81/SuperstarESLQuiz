@@ -9,3 +9,7 @@
 ## 2025-05-20 - Constant Time Hash Map Lookups in Board & Leaderboard Renders
 **Learning:** High-density game boards (60 blocks) and team leaderboards were executing linear `teams.find()` and quadratic `sortedTeams.findIndex()` array scans inside map iteration callbacks on every game state tick / coin adjustment.
 **Action:** Memoize `teamsMap` and `teamRanksMap` in `useMemo` hooks in `GameBoard.tsx` and `TeamLeaderboard.tsx` to convert O(N) array scans into O(1) constant-time hash map lookups.
+
+## 2025-05-21 - Caching & Memoization for MarkedPrompt Regex Parsing
+**Learning:** `MarkedPrompt` text components rendered across prompt cards, modals, and editors were re-running regex matching (`exec` loop in `parseMarkedPrompt`) on every render pass, causing redundant string parsing and CPU overhead for identical prompt texts.
+**Action:** Wrap `MarkedPrompt` in `React.memo`, memoize parts parsing via `useMemo`, and introduce a bounded Map cache (`parseCache`, max 250 entries) in `parseMarkedPrompt` to convert repetitive regex parsing into O(1) string cache lookups.
