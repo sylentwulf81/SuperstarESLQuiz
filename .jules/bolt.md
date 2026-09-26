@@ -13,3 +13,7 @@
 ## 2025-05-21 - Caching & Memoization for MarkedPrompt Regex Parsing
 **Learning:** `MarkedPrompt` text components rendered across prompt cards, modals, and editors were re-running regex matching (`exec` loop in `parseMarkedPrompt`) on every render pass, causing redundant string parsing and CPU overhead for identical prompt texts.
 **Action:** Wrap `MarkedPrompt` in `React.memo`, memoize parts parsing via `useMemo`, and introduce a bounded Map cache (`parseCache`, max 250 entries) in `parseMarkedPrompt` to convert repetitive regex parsing into O(1) string cache lookups.
+
+## 2025-05-22 - High-Density SVG Leaf Component Memoization & Safe Unique Defs
+**Learning:** `MarioCoin` leaf components rendered in high frequency across game boards, leaderboards, and modals were re-allocating lookup objects and triggering VDOM re-renders on every parent state tick. Replacing `useId()` with static IDs in reusable SVG components breaks SVG gradient rendering due to DOM ID collisions.
+**Action:** Wrap `MarioCoin` in `React.memo`, hoist static size lookup maps (`DIM_MAP`) outside render scope, remove dead object allocations (`sizeMap`), and retain `React.useId()` for safe unique SVG gradient `<defs>` IDs.
