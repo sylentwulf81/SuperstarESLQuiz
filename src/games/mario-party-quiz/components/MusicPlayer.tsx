@@ -17,7 +17,11 @@ import {
 import { sounds } from '@/shared/utils/sound';
 import { bgm, BgmState, BgmTrack } from '@/shared/utils/bgm';
 
-export const MusicPlayer: React.FC = () => {
+interface MusicPlayerProps {
+  className?: string;
+}
+
+export const MusicPlayer: React.FC<MusicPlayerProps> = ({ className = '' }) => {
   const [bgmState, setBgmState] = useState<BgmState>(() => ({
     isPlaying: false,
     isMuted: false,
@@ -133,9 +137,9 @@ export const MusicPlayer: React.FC = () => {
   };
 
   return (
-    <div className="relative" ref={tracklistRef}>
-      {/* Mini Player Bar — keep intrinsic width; never let the header squash controls */}
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none w-max max-w-none shrink-0">
+    <div className={`relative max-w-full ${className}`} ref={tracklistRef}>
+      {/* Mini Player Bar — responsive width fitting container */}
+      <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none w-full max-w-full shrink-0">
         {/* Track Title (Clickable to open Tracklist) */}
         <button
           id="music-track-title-btn"
@@ -144,12 +148,12 @@ export const MusicPlayer: React.FC = () => {
             sounds.playClick();
             setShowTracklist((prev) => !prev);
           }}
-          className="flex items-center gap-1.5 w-[9.5rem] shrink-0 text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 max-w-[130px] sm:max-w-[160px] text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
           title="Click to view tracklist & choose songs"
         >
           <Music className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:scale-110 transition-transform" />
           <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 min-w-0">
               <span className="truncate text-[11px] font-bold text-indigo-100 group-hover:text-amber-200">
                 {currentTrack?.name || 'No Track'}
               </span>
@@ -163,7 +167,7 @@ export const MusicPlayer: React.FC = () => {
 
           {/* Equalizer animation when playing */}
           {bgmState.isPlaying && !bgmState.isMuted && (
-            <div className="flex items-end gap-0.5 h-2.5 shrink-0 ml-1">
+            <div className="hidden xs:flex items-end gap-0.5 h-2.5 shrink-0 ml-0.5">
               <span className="w-0.5 bg-amber-400 rounded-full animate-pulse h-2" />
               <span className="w-0.5 bg-yellow-300 rounded-full animate-bounce h-2.5" />
               <span className="w-0.5 bg-amber-500 rounded-full animate-pulse h-1.5" />
@@ -172,11 +176,11 @@ export const MusicPlayer: React.FC = () => {
         </button>
 
         {/* Control Buttons */}
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
           <button
             id="music-prev-btn"
             onClick={handlePrev}
-            className="p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer text-slate-300 hover:text-white"
+            className="p-1 sm:p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer text-slate-300 hover:text-white"
             title="Previous Track"
           >
             <SkipBack className="w-3.5 h-3.5" />
@@ -185,7 +189,7 @@ export const MusicPlayer: React.FC = () => {
           <button
             id="music-play-pause-btn"
             onClick={handleTogglePlay}
-            className={`p-1.5 rounded-xl transition-all cursor-pointer shadow-md ${
+            className={`p-1 sm:p-1.5 rounded-xl transition-all cursor-pointer shadow-md ${
               bgmState.isPlaying
                 ? 'bg-amber-500 text-slate-950 font-bold hover:bg-amber-400'
                 : 'bg-indigo-600 hover:bg-indigo-500 text-white'
@@ -202,18 +206,18 @@ export const MusicPlayer: React.FC = () => {
           <button
             id="music-next-btn"
             onClick={handleNext}
-            className="p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer text-slate-300 hover:text-white"
+            className="p-1 sm:p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer text-slate-300 hover:text-white"
             title="Next Track"
           >
             <SkipForward className="w-3.5 h-3.5" />
           </button>
 
           {/* Volume / Mute with mini slider */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
             <button
               id="music-mute-btn"
               onClick={handleToggleMute}
-              className={`p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1 sm:p-1.5 hover:bg-white/20 active:scale-95 rounded-lg transition-colors cursor-pointer ${
                 bgmState.isMuted ? 'text-red-400' : 'text-indigo-300 hover:text-white'
               }`}
               title={bgmState.isMuted ? 'Unmute BGM' : 'Mute BGM'}
@@ -234,7 +238,7 @@ export const MusicPlayer: React.FC = () => {
               value={bgmState.isMuted ? 0 : bgmState.volume}
               onChange={handleVolumeChange}
               title={`Volume ${bgmState.isMuted ? '0' : Math.round(bgmState.volume * 100)}%`}
-              className="w-16 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400 shrink-0"
+              className="w-12 sm:w-16 h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-amber-400 shrink-0"
             />
           </div>
 
@@ -245,7 +249,7 @@ export const MusicPlayer: React.FC = () => {
               sounds.playClick();
               setShowTracklist((prev) => !prev);
             }}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer border-l border-white/20 pl-1.5 shrink-0 ${
+            className={`p-1 sm:p-1.5 rounded-lg transition-colors cursor-pointer border-l border-white/20 pl-1 sm:pl-1.5 shrink-0 ${
               showTracklist
                 ? 'text-amber-300 bg-white/20'
                 : 'text-indigo-300 hover:text-white hover:bg-white/10'
@@ -271,7 +275,7 @@ export const MusicPlayer: React.FC = () => {
       {showTracklist && (
         <div
           id="music-tracklist-popover"
-          className="absolute left-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-white/25 rounded-2xl shadow-2xl z-50 overflow-hidden text-white animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 top-full mt-2 w-72 sm:w-96 max-w-[calc(100vw-2rem)] bg-slate-900 border border-white/25 rounded-2xl shadow-2xl z-50 overflow-hidden text-white animate-in fade-in zoom-in-95 duration-150"
         >
           {/* Popover Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/5">
