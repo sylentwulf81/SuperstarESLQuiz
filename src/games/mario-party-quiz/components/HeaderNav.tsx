@@ -110,8 +110,8 @@ export const HeaderNav = React.memo(function HeaderNav({
           </button>
         </div>
 
-        {/* Center: cleared always; full music player only when the row is wide enough */}
-        <div className="flex items-center justify-center gap-2">
+        {/* Center: cleared always; music player visible on laptop & desktop screens */}
+        <div className="flex items-center justify-center gap-2 min-w-0">
           <div
             className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-xl border h-[34px] shrink-0 ${
               isGameOver
@@ -126,7 +126,7 @@ export const HeaderNav = React.memo(function HeaderNav({
               {openedCount}/{totalBlocks}
             </span>
           </div>
-          <div className="hidden 2xl:block shrink-0">
+          <div className="hidden lg:block shrink-0 max-w-[280px] xl:max-w-none">
             <MusicPlayer />
           </div>
         </div>
@@ -318,12 +318,12 @@ export const HeaderNav = React.memo(function HeaderNav({
                       </div>
                     </div>
 
-                    <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2">
+                    <div className="p-3 bg-slate-800/90 rounded-2xl border border-white/15 shadow-md space-y-2 max-w-full overflow-hidden">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
                         <Music className="w-3.5 h-3.5 text-yellow-400" />
                         <span>Background Music (BGM)</span>
                       </div>
-                      <div className="pt-0.5">
+                      <div className="pt-0.5 max-w-full">
                         <MusicPlayer />
                       </div>
                     </div>
