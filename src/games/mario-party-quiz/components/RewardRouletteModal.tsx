@@ -1157,9 +1157,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 3. BOWSER'S REVOLUTION: Swap coin totals with one other team */}
                     {selectedCard.type === 'bowser_revolution' && (
-                      <div className="bg-orange-950/80 rounded-2xl border border-orange-500/50 flex flex-col gap-2 p-2.5 min-h-0">
+                      <div className="bg-orange-950/80 rounded-2xl border border-orange-500/50 flex flex-col gap-2 p-2.5 min-h-0 flex-1">
                         {gameTheme !== 'classic' && (
-                          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 shrink-0">
                             <TeamAvatar characterId={currentTeam.characterId} size="xl" customUrl={currentTeam.customImageUrl} />
                             <CoinScore coins={currentTeam.coins} size="lg" />
                           </div>
@@ -1168,37 +1168,39 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <Flame className="w-6 h-6 text-orange-400" />
                           <h4 className="font-mario text-xl sm:text-2xl text-white">SWAP WITH?</h4>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {eligibleOpponents.map(opp => {
-                            const oppChar = CHARACTERS[opp.characterId];
-                            const isSelected = swapTargetTeamId === opp.id;
-                            return (
-                              <button
-                                key={opp.id}
-                                type="button"
-                                onClick={() => {
-                                  setSwapTargetTeamId(opp.id);
-                                  sounds.playBowser();
-                                }}
-                                className={`rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold transition-all cursor-pointer flex flex-col items-center ${
-                                  gameTheme === 'classic' ? 'p-2 gap-1' : 'p-3 gap-1.5'
-                                } ${
-                                  isSelected ? 'border-yellow-300 ring-4 ring-orange-400 scale-105' : 'border-white/30 hover:scale-102'
-                                }`}
-                              >
-                                <TeamAvatar
-                                  characterId={opp.characterId}
-                                  size={gameTheme === 'classic' ? 'md' : 'lg'}
-                                  customUrl={opp.customImageUrl}
-                                />
-                                <span className="text-xs sm:text-sm font-black truncate w-full text-center">{opp.name}</span>
-                                <CoinScore coins={opp.coins} />
-                              </button>
-                            );
-                          })}
+                        <div className="flex-1 min-h-0 overflow-y-auto">
+                          <div className="flex flex-wrap items-start justify-center gap-2">
+                            {eligibleOpponents.map(opp => {
+                              const oppChar = CHARACTERS[opp.characterId];
+                              const isSelected = swapTargetTeamId === opp.id;
+                              return (
+                                <button
+                                  key={opp.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSwapTargetTeamId(opp.id);
+                                    sounds.playBowser();
+                                  }}
+                                  className={`w-24 sm:w-28 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold transition-all cursor-pointer flex flex-col items-center ${
+                                    gameTheme === 'classic' ? 'p-2 gap-1' : 'p-3 gap-1.5'
+                                  } ${
+                                    isSelected ? 'border-yellow-300 ring-4 ring-orange-400 scale-105' : 'border-white/30 hover:scale-102'
+                                  }`}
+                                >
+                                  <TeamAvatar
+                                    characterId={opp.characterId}
+                                    size={gameTheme === 'classic' ? 'md' : 'lg'}
+                                    customUrl={opp.customImageUrl}
+                                  />
+                                  <span className="text-xs sm:text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                  <CoinScore coins={opp.coins} />
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
 
-                        <div className="min-h-[7.25rem] flex flex-col items-center justify-center gap-2">
+                        <div className="shrink-0 min-h-[7.25rem] flex flex-col items-center justify-center gap-2">
                           {swapOpponent && (
                           <div className="flex flex-col items-center gap-2 w-full">
                             <div className="p-2 bg-black/60 rounded-xl border border-orange-400/60 flex items-center gap-2 sm:gap-3">
