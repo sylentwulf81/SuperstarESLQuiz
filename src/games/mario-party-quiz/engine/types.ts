@@ -21,7 +21,7 @@ export type TurnBasedEvent =
   | { type: 'SET_BLOCKS'; blocks: BlockState[]; toast?: string; playShuffle?: boolean }
   | { type: 'SELECT_BLOCK'; blockId: number }
   | { type: 'CLOSE_QUESTION' }
-  | { type: 'ANSWER_CORRECT'; coins: number }
+  | { type: 'ANSWER_CORRECT' }
   | { type: 'ANSWER_INCORRECT' }
   | { type: 'TRIGGER_ROULETTE' }
   | { type: 'RESOLVE_CARD'; card: RewardCard; options?: import('@/shared/types').RewardCardActionOptions; shouldAdvanceTurn?: boolean }

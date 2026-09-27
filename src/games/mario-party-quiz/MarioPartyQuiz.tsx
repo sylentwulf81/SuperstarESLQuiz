@@ -293,7 +293,7 @@ export function MarioPartyQuiz({
             question={selectedQuestion}
             currentTeam={activeTeam}
             onClose={() => dispatch({ type: 'CLOSE_QUESTION' })}
-            onAnswerCorrect={coins => dispatch({ type: 'ANSWER_CORRECT', coins })}
+            onAnswerCorrect={() => dispatch({ type: 'ANSWER_CORRECT' })}
             onAnswerIncorrect={() => dispatch({ type: 'ANSWER_INCORRECT' })}
             onTriggerRoulette={() => dispatch({ type: 'TRIGGER_ROULETTE' })}
             onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}

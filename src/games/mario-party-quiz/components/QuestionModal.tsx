@@ -13,7 +13,7 @@ interface QuestionModalProps {
   question: GameQuestion;
   currentTeam: Team;
   onClose: () => void;
-  onAnswerCorrect: (coins: number) => void;
+  onAnswerCorrect: () => void;
   onAnswerIncorrect: () => void;
   onTriggerRoulette: () => void;
   onUpdateQuestionImage?: (blockNumber: number, imageUrl: string | undefined) => void;
@@ -63,15 +63,10 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const [availableLetters, setAvailableLetters] = useState<{ id: string; char: string; isUsed: boolean }[]>([]);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
-  const baseRewardCoins = question.type === 'mystery_card' ? 0 : Math.max(1, Number(question.rewardCoins) || 1);
-  const [customCoinReward, setCustomCoinReward] = useState<number | null>(null);
-  const effectiveBaseReward = customCoinReward !== null ? customCoinReward : baseRewardCoins;
-  const rewardCoins = currentTeam.hasDoubleTurn ? effectiveBaseReward * 2 : effectiveBaseReward;
 
   useEffect(() => {
     setCurrentImage(question.imageUrl || question.image);
     setImageLoadFailed(false);
-    setCustomCoinReward(null);
     if (question.type === 'multiple_choice') {
       setShuffledOptions(getShuffledOptions(question));
       setSelectedOption(null);
@@ -186,7 +181,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
 
   const handleClaimReward = () => {
     sounds.playClaimReward();
-    onAnswerCorrect(rewardCoins);
+    onAnswerCorrect();
   };
 
   const renderChoiceButtons = () => (
@@ -589,47 +584,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         </div>
 
         {question.type !== 'mystery_card' && (
-          <div className="shrink-0 bg-slate-800/95 px-3 sm:px-5 py-3 border-t-2 border-white/20 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-base sm:text-lg font-semibold">
-              <span className="text-slate-300">Reward</span>
-              <span className="font-mario text-2xl sm:text-3xl text-yellow-300 text-shadow-gold flex items-center gap-1.5">
-                +{rewardCoins}
-                <MarioCoin size="md" />
-              </span>
-
-              {/* Custom Points live adjustment in modal */}
-              <div className="flex items-center gap-1 ml-1 bg-black/40 px-2 py-1 rounded-xl border border-white/15">
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playPop();
-                    setCustomCoinReward(prev => Math.max(1, (prev ?? baseRewardCoins) - 1));
-                  }}
-                  title="Decrease reward by 1 coin (min 1)"
-                  className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
-                >
-                  -
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playPop();
-                    setCustomCoinReward(prev => (prev ?? baseRewardCoins) + 1);
-                  }}
-                  title="Increase reward by 1 coin"
-                  className="w-5 h-5 rounded bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-
-              {currentTeam.hasDoubleTurn && (
-                <span className="text-[11px] bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2 py-1 rounded-lg font-bold border border-yellow-300/80">
-                  2x Double Turn
-                </span>
-              )}
-            </div>
-
+          <div className="shrink-0 bg-slate-800/95 px-3 sm:px-5 py-3 border-t-2 border-white/20 flex flex-wrap items-center justify-end gap-3">
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => {
@@ -651,7 +606,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                 }`}
               >
                 <CheckCircle className="w-5 h-5" />
-                CORRECT +{rewardCoins}
+                CORRECT
+                <Sparkles className="w-5 h-5 text-yellow-200" />
               </button>
             </div>
           </div>

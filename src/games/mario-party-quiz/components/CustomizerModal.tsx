@@ -8,7 +8,6 @@ import { sounds } from '@/shared/utils/sound';
 import { useAuth } from '@/shared/context/AuthContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/components/ui/avatar';
 import { ImageUploader } from './ImageUploader';
-import { MarioCoin } from '@/shared/components/MarioCoin';
 import { shuffleWordLetters } from '@/shared/utils/shuffle';
 import { DEFAULT_CLASSIC_LESSON_GOAL } from '@/games/mario-blast-classic/data/classicLesson';
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
@@ -60,11 +59,6 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   const [isCloudBusy, setIsCloudBusy] = useState(false);
   const [isSavedRecently, setIsSavedRecently] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [isCustomPoints, setIsCustomPoints] = useState<boolean>(() => {
-    const coins = currentBlock?.question?.rewardCoins;
-    return coins !== undefined && ![1, 3, 5, 10].includes(coins);
-  });
-
   useEffect(() => {
     const blk = blocks.find(b => b.id === selectedBlockId);
     if (blk) {
@@ -73,7 +67,6 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
         q.rewardCoins = Math.max(1, Number(q.rewardCoins) || 1);
       }
       setEditingQuestion(q);
-      setIsCustomPoints(![1, 3, 5, 10].includes(q.rewardCoins));
     }
   }, [selectedBlockId, blocks]);
 
@@ -582,104 +575,6 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     titlePrompt={`Block #${currentBlock.id}`}
                     questionType={editingQuestion.type}
                   />
-                </div>
-              )}
-
-              {editingQuestion.type !== 'mystery_card' && (
-                <div>
-                  <label className="text-xs font-bold text-indigo-200 block mb-1.5">
-                    Reward Coins: <span className="text-white/50 text-[11px] font-normal">(Default: at least 1 Coin)</span>
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[1, 3, 5, 10].map(amt => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setIsCustomPoints(false);
-                          setEditingQuestion(prev => ({ ...prev, rewardCoins: amt }));
-                        }}
-                        className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
-                          !isCustomPoints && (editingQuestion.rewardCoins || 1) === amt
-                            ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
-                            : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
-                        }`}
-                      >
-                        <span className="flex items-center gap-1">
-                          +{amt}
-                          <MarioCoin size="xs" />
-                        </span>
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setIsCustomPoints(true);
-                      }}
-                      className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
-                        isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)
-                          ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
-                          : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
-                      }`}
-                    >
-                      <span>Custom</span>
-                    </button>
-
-                    {(isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)) && (
-                      <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-xl border border-yellow-400/40 shadow-inner">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sounds.playPop();
-                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
-                            setEditingQuestion(prev => ({ ...prev, rewardCoins: Math.max(1, currentVal - 1) }));
-                          }}
-                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
-                          title="Minus 1 coin"
-                        >
-                          -
-                        </button>
-                        <span className="text-yellow-300 font-mario text-sm font-bold">+</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={99}
-                          value={editingQuestion.rewardCoins || 1}
-                          onChange={(e) => {
-                            const parsed = parseInt(e.target.value, 10);
-                            setEditingQuestion(prev => ({
-                              ...prev,
-                              rewardCoins: isNaN(parsed) ? 1 : Math.max(1, parsed)
-                            }));
-                          }}
-                          onBlur={() => {
-                            if (!editingQuestion.rewardCoins || editingQuestion.rewardCoins < 1) {
-                              setEditingQuestion(prev => ({ ...prev, rewardCoins: 1 }));
-                            }
-                          }}
-                          className="w-14 bg-black/80 border border-white/30 rounded-lg px-1.5 py-0.5 text-center font-mario text-sm text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sounds.playPop();
-                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
-                            setEditingQuestion(prev => ({ ...prev, rewardCoins: currentVal + 1 }));
-                          }}
-                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
-                          title="Plus 1 coin"
-                        >
-                          +
-                        </button>
-                        <span className="text-xs text-amber-200 font-bold ml-1 flex items-center gap-1">
-                          Coins <MarioCoin size="xs" />
-                        </span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
             </div>

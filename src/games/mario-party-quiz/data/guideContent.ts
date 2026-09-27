@@ -85,9 +85,9 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'The active team is clearly displayed at the top of the screen.',
             'The team on turn chooses ANY of the 60 numbered brick blocks.',
-            'Clicking the block reveals either a Trivia Question or a 6-Card Mystery Roulette.',
-            'Once solved, the block is cleared and coins are automatically awarded to the active team.',
-            'Turns automatically advance to the next team clockwise.',
+            'Clicking the block reveals a question.',
+            'Correct answer: the team picks 1 of 6 face-down mystery cards right away. The card decides the coins or surprise.',
+            'After the card (or a wrong answer), the turn passes to the next team clockwise.',
           ],
           tip: 'Tip: If you need to skip a turn or change who is playing, click "Pass Turn" or directly click any team card on the leaderboard!',
         },
@@ -109,8 +109,8 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'Visual & Multiple Choice: Read the prompt and examine the image. Students choose from 4 options (A, B, C, D).',
             'Letter Unscramble: Students click scrambled letter tiles to spell the vocabulary word. Use Reveal Answer or Backspace if students get stuck.',
-            'Open Trivia: Knowledge and conversation questions. Click "Reveal Answer" to check, then tap "Correct (+Coins)" or "Incorrect".',
-            'Mystery Roulette: When a question mark mystery block is hit, 6 face-down cards appear. 1st place cannot draw Blue Shell, Bowser\'s Revolution, or Bowser\'s Fury (Mario Kart catch-up).',
+            'Open Trivia: Knowledge and conversation questions. Click "Reveal Answer" to check, then tap "Correct" or "Wrong".',
+            'Mystery Cards: after every correct answer, 6 face-down cards appear. 1st place cannot draw Blue Shell, Bowser\'s Revolution, or Bowser\'s Fury (Mario Kart catch-up).',
           ],
         },
         {
@@ -120,7 +120,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'Open Question Studio from the team setup screen, or tap Studio in the top header / hamburger menu during an activity.',
             'In Question Studio, you can show a 1st-place catch-up note on mystery draws. It stays hidden by default so those draws remain a surprise. Blue Shell and Bowser cards are still banned for the leader.',
-            'You can modify question prompts, answers, images, and coin values for all 60 blocks.',
+            'You can modify question prompts, answers, and images for all 60 blocks.',
             'Log into Google via the top-right Account menu to save your customized questions to the Cloud, making them instantly accessible from any classroom device!',
           ],
           tip: 'Tip: Use the "Shuffle" button to randomize the locations of questions and mystery cards for a fresh experience!',
@@ -150,7 +150,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
     gameRules: {
       title: 'Official Activity Rules',
       overview:
-        'Teams take turns selecting one of the 60 Mystery Brick Blocks from the board. Answer trivia, unscramble words, or draw lucky surprise cards to collect Mario Coins. The team with the most coins at the end is crowned the SUPERSTAR!',
+        'Teams take turns selecting one of the 60 Mystery Brick Blocks from the board. Answer correctly to pick a mystery card for Mario Coins and surprises. The team with the most coins at the end is crowned the SUPERSTAR!',
       questionTypesTitle: 'Question & Challenge Categories',
       questionTypes: [
         {
@@ -167,22 +167,22 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         {
           title: 'Open Trivia & Discussion',
-          desc: 'Open-ended questions. The teacher reveals the answer and awards coins with one tap.',
+          desc: 'Open-ended questions. The teacher reveals the answer and marks it correct with one tap.',
           icon: '🎁',
           color: 'border-emerald-400/40 text-emerald-300',
         },
         {
-          title: 'Mystery Roulette',
-          desc: 'Trigger a 6-card roulette of surprise events. 1st place cannot draw Blue Shell or Bowser catch-up cards.',
+          title: 'Mystery Cards',
+          desc: 'Every correct answer: pick 1 of 6 face-down cards. 1st place cannot draw Blue Shell or Bowser catch-up cards.',
           icon: '⭐',
           color: 'border-purple-400/40 text-purple-300',
         },
       ],
       scoringTitle: 'Scoring & Coin System',
       scoringPoints: [
-        'Blocks award between 1 to 5 base coins depending on difficulty row.',
-        'Correct answers automatically credit the team.',
-        'If a team has a Super Mushroom (2x) active, their next question reward is doubled!',
+        'Correct answer = 1 mystery card pick: coins, steals, or power-ups.',
+        'Wrong answer = no card. The turn passes.',
+        'Super Mushroom: take another turn right away.',
         'Consecutive correct answers build a streak counter.',
       ],
       winningTitle: 'How to Win',
@@ -193,7 +193,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       title: 'Interactive Mystery Cards Deck',
       subtitle: 'Click any card below to test authentic sound effects and preview board effects.',
       instructions:
-        'When a team hits a Mystery Card block, 6 face-down cards are presented in a 2:3 ratio. The student chooses one card (1 to 6). Below is the complete deck of possible outcomes:',
+        'After every correct answer, 6 face-down cards are presented in a 2:3 ratio. The student chooses one card (1 to 6). Below is the complete deck of possible outcomes:',
       deckInfo: 'Complete Deck: 10 Special Cards',
       cardDescriptions: {
         bowser_revolution: {
@@ -234,7 +234,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         mushroom_x2: {
           title: 'Double Mushroom',
-          desc: 'Grants an immediate extra consecutive turn with doubled question rewards!',
+          desc: 'Grants an immediate extra consecutive turn!',
         },
         pow_block: {
           title: 'POW Block',
@@ -285,8 +285,9 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             '現在の手番チームは画面上部のヘッダーおよびリーダーボードに大きく表示されます。',
             '手番のチームが、ボード上の1〜60番のハテナ・レンガブロックから好きな番号を1つ選びます。',
-            'ブロックを押すと、英語クイズまたは6枚のサプライズカードルーレットが始まります。',
-            '正解するとコインが加算され、ブロックが開いた状態になります。ターンは自動的に次のチームへ進みます。',
+            'ブロックを押すと、英語クイズが出ます。',
+            '正解すると、すぐに6枚の裏向きサプライズカードから1枚を選べます。コインや効果はカードで決まります。',
+            'カードの後（または不正解の時）、ターンは自動的に次のチームへ進みます。',
           ],
           tip: 'ヒント：手番をスキップしたい場合は「Pass（パス）」を押すか、リーダーボード上の別チームを直接タップすればいつでも手番を切り替えられます！',
         },
@@ -308,8 +309,8 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             '4択・画像クイズ：写真や問題文を見て、4つの選択肢（A, B, C, D）からチームで相談して正解を選びます。',
             'スペル並べ替え：バラバラになったアルファベットタイルを正しい順に押して英単語を完成させます。「答えを表示」や「1文字戻す」も使えます。',
-            'オープン問題：知識やフリートークの問題です。「答えを表示」で正解を確認し、先生が「正解（＋コイン）」または「不正解」を押します。',
-            'サプライズルーレット：ハテナブロックを引くと6枚のカードが出現。マリオカート同様、1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
+            'オープン問題：知識やフリートークの問題です。「答えを表示」で正解を確認し、先生が「正解」または「不正解」を押します。',
+            'サプライズカード：正解するたびに6枚のカードが出現。マリオカート同様、1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
           ],
         },
         {
@@ -348,7 +349,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
     gameRules: {
       title: 'アクティビティの基本ルール',
       overview:
-        'チームが交代でボード上の60個のブロックから1つを選びます。クイズに答えたり、サプライズカードを引き当ててマリオコインを集めよう！終了時に最もコインが多かったチームが栄光の「スーパースター（優勝）」に輝きます！',
+        'チームが交代でボード上の60個のブロックから1つを選びます。正解するとサプライズカードを1枚引けます。マリオコインを集めよう！終了時に最もコインが多かったチームが栄光の「スーパースター（優勝）」に輝きます！',
       questionTypesTitle: '問題とチャレンジのカテゴリー',
       questionTypes: [
         {
@@ -370,17 +371,17 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           color: 'border-emerald-400/40 text-emerald-300',
         },
         {
-          title: 'サプライズカードルーレット',
-          desc: '6枚の裏向きカードから1枚を選択。1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
+          title: 'サプライズカード',
+          desc: '正解するたびに、6枚の裏向きカードから1枚を選択。1位のチームはブルーシェル・クッパ革命・クッパの怒りを引けません。',
           icon: '⭐',
           color: 'border-purple-400/40 text-purple-300',
         },
       ],
       scoringTitle: '得点・コインシステム',
       scoringPoints: [
-        'ブロックの難易度や行によって1〜5枚の基本コインが設定されています。',
-        '正解すると自動的にコインが加算されます。',
-        '「スーパーキノコ（2倍）」を持っているチームは、次の問題で得られるコインが2倍になります！',
+        '正解 = サプライズカード1枚：コイン、横取り、パワーアップ。',
+        '不正解 = カードなし。ターンは次のチームへ。',
+        'スーパーキノコ：すぐにもう1ターン！',
         '連続正解するとストリーク（連続記録）がカウントされます。',
       ],
       winningTitle: '勝利条件',
@@ -391,7 +392,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       title: 'サプライズカード・テスターデッキ',
       subtitle: '下のカードをクリックすると、実際の効果音とボード上の効果を試聴・テストできます。',
       instructions:
-        'ハテナブロックを開くと、2:3のトランプ比率の6枚のカードが提示されます。手番のチームが1〜6番の中から1枚を選択します。デッキに含まれるカードの効果は以下の通りです：',
+        '正解するたびに、2:3のトランプ比率の6枚のカードが提示されます。手番のチームが1〜6番の中から1枚を選択します。デッキに含まれるカードの効果は以下の通りです：',
       deckInfo: '全10種類の特別カード',
       cardDescriptions: {
         bowser_revolution: {
@@ -432,7 +433,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
         },
         mushroom_x2: {
           title: 'スーパーキノコ（2倍連続ターン）',
-          desc: '連続でもう一度ターンを実行でき、さらに問題の配点コインが2倍になります！',
+          desc: '連続でもう一度ターンを実行できます！',
         },
         pow_block: {
           title: 'POWブロック',

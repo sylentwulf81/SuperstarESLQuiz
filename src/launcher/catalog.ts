@@ -83,7 +83,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     title: 'Super Mario Party Quiz: Summer Edition',
     shortTitle: 'Mario Party Summer',
     tagline: '60-Block Mystery Roulette & Interactive ESL Board Activity',
-    description: 'The flagship classroom board activity! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges, then spinning for surprise items like Stars, Boo Steals, and Bowser Revolutions.',
+    description: 'The flagship classroom board activity! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges. Every correct answer earns a pick from six mystery cards — Boo Steals, Super Mushrooms, Bowser Revolutions — then the turn passes.',
     category: 'board',
     activityStyle: 'board_turn_based',
     badge: 'CLASS READY',
@@ -110,7 +110,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     },
     features: [
       '60 Curated Summer ESL & General Trivia Questions',
-      '6-Card Mystery Roulette Draw System',
+      'Correct answer → pick 1 of 6 mystery cards',
       'Double Turns, Boo Stealing & Bowser Revolutions',
       'Star captures, coin races, and classroom-safe item cards',
     ],
@@ -238,7 +238,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Halloween Blast',
     tagline: 'Spooky Mystery Blocks, Ghost Hunts & Haunted Cards',
     description:
-      'A coming-soon seasonal Board Turn-Based activity. Teams take turns picking haunted mystery blocks, answering spooky ESL prompts, and drawing classroom-safe surprise cards — the October pack.',
+      'A coming-soon seasonal Board Turn-Based activity. Teams take turns picking haunted mystery blocks, answering spooky ESL prompts, and picking a classroom-safe surprise card after every correct answer — the October pack.',
     category: 'seasonal',
     activityStyle: 'board_turn_based',
     badge: 'IN DEVELOPMENT',
