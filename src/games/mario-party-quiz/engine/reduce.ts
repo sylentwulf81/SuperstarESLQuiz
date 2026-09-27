@@ -65,26 +65,26 @@ export function reduceTurnBased(state: TurnBasedState, event: TurnBasedEvent): T
       const active = activeTeamOf(state);
       const nextBlocks = state.blocks.map(b =>
         b.id === state.selectedBlockId
-          ? { ...b, isOpened: true, openedByTeamId: active.id, rewardCoins: event.coins }
+          ? { ...b, isOpened: true, openedByTeamId: active.id }
           : b
       );
       const nextTeams = state.teams.map(t =>
         t.id === active.id
-          ? {
-              ...t,
-              coins: t.coins + event.coins,
-              streak: t.streak + 1,
-              blocksOpened: t.blocksOpened + 1,
-              hasDoubleTurn: false,
-            }
+          ? { ...t, streak: t.streak + 1, blocksOpened: t.blocksOpened + 1 }
           : t
       );
-      effects.push({ kind: 'toast', message: `🎉 ${active.name} answered correctly! +${event.coins} Coins!` });
-      const afterAnswer = { ...state, blocks: nextBlocks, teams: nextTeams, selectedBlockId: null };
-      const finished = maybeFinishBoard(state, afterAnswer, effects);
-      if (finished.finished) return finished;
-      const turned = advanceTurn(finished.state, { currentTeams: nextTeams });
-      return { state: turned.state, effects: [...finished.effects, ...turned.effects] };
+      effects.push({ kind: 'sound', sound: 'specialCard' });
+      effects.push({ kind: 'toast', message: `🎉 ${active.name} answered correctly! Flip a mystery card!` });
+      return {
+        state: {
+          ...state,
+          blocks: nextBlocks,
+          teams: nextTeams,
+          selectedBlockId: null,
+          rouletteCards: generateRouletteCards(nextTeams, active.id),
+        },
+        effects,
+      };
     }
     case 'ANSWER_INCORRECT': {
       if (state.selectedBlockId === null) return { state, effects };
@@ -141,8 +141,13 @@ export function reduceTurnBased(state: TurnBasedState, event: TurnBasedEvent): T
       });
       return { state: turned.state, effects: [...finished.effects, ...turned.effects] };
     }
-    case 'CLOSE_ROULETTE':
-      return { state: { ...state, rouletteCards: null }, effects };
+    case 'CLOSE_ROULETTE': {
+      const afterClose = { ...state, rouletteCards: null };
+      const finished = maybeFinishBoard(state, afterClose, effects);
+      if (finished.finished) return finished;
+      const turned = advanceTurn(finished.state);
+      return { state: turned.state, effects: [...finished.effects, ...turned.effects] };
+    }
     case 'PASS_TURN':
       return advanceTurn(state);
     case 'SELECT_TEAM_TURN': {

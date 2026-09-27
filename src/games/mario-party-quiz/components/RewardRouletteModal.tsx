@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert, 
-  Trophy, BoxSelect, ArrowRightLeft, ArrowDown, ArrowRight, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle
+import {
+  Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert,
+  Trophy, BoxSelect, ArrowRightLeft, ArrowDown, ArrowRight, Dices, TrendingUp, TrendingDown, Check, Star, SkipForward, Droplets, Shuffle, X
 } from 'lucide-react';
 import { RewardCard, Team, RewardCardActionOptions } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -378,6 +378,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   teams,
   theme: gameTheme,
   onCardSelected,
+  onClose,
   showCatchUpNote = false,
   startInReveal = false,
   onSkipAction,
@@ -838,6 +839,19 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
               <SkipForward className="w-3.5 h-3.5" />
               Skip action
             </button>
+          ) : phase === 'pick' ? (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                onClose();
+              }}
+              title="Cancel this draw and pass the turn"
+              className="shrink-0 p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
+              aria-label="Cancel draw"
+            >
+              <X className="w-5 h-5" />
+            </button>
           ) : (
             <div className="w-[108px] hidden sm:block" />
           )}
@@ -960,7 +974,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                     </div>
                   </motion.div>
 
-                  <div className="@container/reveal min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-2.5 sm:p-3 flex flex-col gap-2 overflow-x-hidden overflow-y-hidden">
+                  <div className="@container/reveal min-h-0 h-full rounded-3xl border-2 border-white/15 bg-slate-950/50 p-2.5 sm:p-3 flex flex-col gap-2 overflow-x-hidden overflow-y-auto">
                     {gameTheme === 'classic' &&
                       isClassicInteractive &&
                       selectedCard.type !== 'king_boo' &&
