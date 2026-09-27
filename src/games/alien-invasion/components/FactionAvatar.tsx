@@ -18,7 +18,7 @@ const SIZE_MAP = {
   '2xl': 'w-28 h-28 rounded-3xl text-5xl',
 };
 
-function FactionMark({ factionId }: { factionId: InvasionFactionId }) {
+const FactionMark = React.memo(function FactionMark({ factionId }: { factionId: InvasionFactionId }) {
   if (factionId === 'anime') {
     return (
       <svg viewBox="0 0 64 64" className="w-full h-full" aria-hidden>
@@ -87,15 +87,20 @@ function FactionMark({ factionId }: { factionId: InvasionFactionId }) {
       <path d="M24 46 Q32 50 42 44" stroke="#7c2d12" strokeWidth="2.5" fill="none" />
     </svg>
   );
-}
+});
 
-export const FactionAvatar: React.FC<FactionAvatarProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrap FactionAvatar in React.memo to prevent unnecessary VDOM re-renders of faction badge leaf components
+ * rendered across setup, header, question modals, and victory screens during parent state/timer changes.
+ */
+export const FactionAvatar: React.FC<FactionAvatarProps> = React.memo(function FactionAvatar({
   factionId,
   size = 'md',
   className = '',
   customUrl,
   showBorder = true,
-}) => {
+}) {
   const faction = INVASION_FACTIONS[factionId];
   const [imgError, setImgError] = useState(false);
   const sizeClass = SIZE_MAP[size] || SIZE_MAP.md;
@@ -125,4 +130,4 @@ export const FactionAvatar: React.FC<FactionAvatarProps> = ({
       )}
     </div>
   );
-};
+});
