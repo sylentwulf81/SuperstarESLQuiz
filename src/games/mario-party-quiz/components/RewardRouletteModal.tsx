@@ -999,58 +999,58 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           <Ghost className="w-6 h-6 text-purple-300" />
                           <h4 className="font-mario text-lg sm:text-xl text-white leading-tight">Which team will you steal from?</h4>
                         </div>
-                        <div className="flex flex-wrap justify-center gap-2 shrink-0">
-                          {eligibleOpponents.map(opp => {
-                            const oppChar = CHARACTERS[opp.characterId];
-                            const isSelected = booTargetTeamId === opp.id;
-                            return (
-                              <button
-                                key={opp.id}
-                                type="button"
-                                onClick={() => {
-                                  setBooTargetTeamId(opp.id);
-                                  setBooDieRoll(null);
-                                  sounds.playBoo();
-                                }}
-                                className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center gap-1 ${
-                                  isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:brightness-110'
-                                }`}
-                              >
-                                <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
-                                <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
-                                <CoinScore coins={opp.coins} />
-                              </button>
-                            );
-                          })}
+                        <div className="shrink-0 max-h-[7.5rem] sm:max-h-[9rem] overflow-y-auto">
+                          <div className="flex flex-wrap justify-center gap-2">
+                            {eligibleOpponents.map(opp => {
+                              const oppChar = CHARACTERS[opp.characterId];
+                              const isSelected = booTargetTeamId === opp.id;
+                              return (
+                                <button
+                                  key={opp.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBooTargetTeamId(opp.id);
+                                    setBooDieRoll(null);
+                                    sounds.playBoo();
+                                  }}
+                                  className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center gap-1 ${
+                                    isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:brightness-110'
+                                  }`}
+                                >
+                                  <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
+                                  <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
+                                  <CoinScore coins={opp.coins} />
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className="flex-1 min-h-[13rem] flex flex-col items-center justify-center gap-2">
+                        <div className="flex-1 min-h-[9rem] overflow-y-auto flex flex-col items-center justify-center gap-2">
                           {booTargetTeamId ? (
-                            <>
-                              <DiceRoller
-                                key={booTargetTeamId}
-                                compact={gameTheme === 'classic'}
-                                title="Roll the steal die!"
-                                subtitle={`How many coins from ${targetOpponent?.name}?`}
-                                themeColor="purple"
-                                onRollComplete={val => setBooDieRoll(val)}
-                              />
-                              <div className="h-[3.25rem] flex items-center justify-center w-full">
-                                {booDieRoll !== null && (
-                                  <button
-                                    type="button"
-                                    onClick={handleFinishBooSteal}
-                                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
-                                  >
-                                    <Ghost className="w-5 h-5" />
-                                    STEAL {booDieRoll}
-                                  </button>
-                                )}
-                              </div>
-                            </>
+                            <DiceRoller
+                              key={booTargetTeamId}
+                              compact={gameTheme === 'classic'}
+                              title="Roll the steal die!"
+                              subtitle={`How many coins from ${targetOpponent?.name}?`}
+                              themeColor="purple"
+                              onRollComplete={val => setBooDieRoll(val)}
+                            />
                           ) : (
-                            <div className="w-full h-full min-h-[13rem] rounded-2xl border border-dashed border-purple-400/40 bg-purple-950/40 flex items-center justify-center px-4">
+                            <div className="w-full h-full min-h-[9rem] rounded-2xl border border-dashed border-purple-400/40 bg-purple-950/40 flex items-center justify-center px-4">
                               <p className="font-mario text-base sm:text-lg text-purple-100/80 text-center">Pick a team</p>
                             </div>
+                          )}
+                        </div>
+                        <div className="shrink-0 h-[3.25rem] flex items-center justify-center w-full">
+                          {booTargetTeamId && booDieRoll !== null && (
+                            <button
+                              type="button"
+                              onClick={handleFinishBooSteal}
+                              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-mario text-lg sm:text-xl rounded-2xl shadow-xl border-2 border-purple-300 flex items-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                            >
+                              <Ghost className="w-5 h-5" />
+                              STEAL {booDieRoll}
+                            </button>
                           )}
                         </div>
                       </div>
@@ -1128,19 +1128,22 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                           )}
                         </div>
                       ) : (
-                        <div className="space-y-4">
-                          <DiceRoller
-                            title="Roll King Boo's Die!"
-                            subtitle={`Roll a 6-sided die to steal that exact number of coins from EACH of the ${eligibleOpponents.length} other teams!`}
-                            themeColor="purple"
-                            onRollComplete={val => setKingBooDieRoll(val)}
-                          />
-
-                          {kingBooDieRoll !== null && (
-                            <div className="flex flex-col items-center lg:items-start gap-3">
+                        <div className="flex-1 min-h-0 flex flex-col gap-2">
+                          <div className="flex-1 min-h-[9rem] overflow-y-auto flex flex-col items-center lg:items-start justify-center gap-3">
+                            <DiceRoller
+                              title="Roll King Boo's Die!"
+                              subtitle={`Roll a 6-sided die to steal that exact number of coins from EACH of the ${eligibleOpponents.length} other teams!`}
+                              themeColor="purple"
+                              onRollComplete={val => setKingBooDieRoll(val)}
+                            />
+                            {kingBooDieRoll !== null && (
                               <p className="text-sm font-bold text-fuchsia-300">
                                 👑 King Boo will steal {kingBooDieRoll} coins from each rival team (+{kingBooDieRoll * eligibleOpponents.length} total)!
                               </p>
+                            )}
+                          </div>
+                          <div className="shrink-0 h-[4.5rem] flex items-center justify-center lg:justify-start">
+                            {kingBooDieRoll !== null && (
                               <button
                                 type="button"
                                 onClick={handleFinishKingBooSteal}
@@ -1149,8 +1152,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                                 <Crown className="w-6 h-6" />
                                 CLAIM KING BOO HEIST (+{kingBooDieRoll * eligibleOpponents.length} COINS)
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       )
                     )}
@@ -1230,8 +1233,8 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 4. BOWSER'S FURY: -5 Coins to Each Other Team */}
                     {selectedCard.type === 'bowser_fury' && (
-                      <div className="bg-red-950/90 rounded-2xl border border-red-500/60 flex flex-col gap-2 p-2.5 min-h-0">
-                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                      <div className="bg-red-950/90 rounded-2xl border border-red-500/60 flex flex-col gap-2 p-2.5 min-h-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 shrink-0">
                           <Flame className="w-7 h-7 text-red-500 animate-pulse" />
                           <h4 className="font-mario text-3xl sm:text-4xl text-white">RIVALS −5</h4>
                           {gameTheme === 'classic' && (
@@ -1240,24 +1243,26 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                          {eligibleOpponents.map(opp => {
-                            const oppChar = CHARACTERS[opp.characterId];
-                            return (
-                              <div
-                                key={opp.id}
-                                className={`p-3 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-red-400/50 text-white flex flex-col items-center gap-1.5`}
-                              >
-                                <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
-                                <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
-                                <span className="font-mario text-2xl text-red-400 bg-black/60 px-3 py-1 rounded-full border border-red-500/60">
-                                  −5
-                                </span>
-                              </div>
-                            );
-                          })}
+                        <div className="flex-1 min-h-0 overflow-y-auto">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                            {eligibleOpponents.map(opp => {
+                              const oppChar = CHARACTERS[opp.characterId];
+                              return (
+                                <div
+                                  key={opp.id}
+                                  className={`p-3 rounded-xl border ${oppChar.bgColor} bg-opacity-70 border-red-400/50 text-white flex flex-col items-center gap-1.5`}
+                                >
+                                  <TeamAvatar characterId={opp.characterId} size="lg" customUrl={opp.customImageUrl} />
+                                  <span className="text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                  <span className="font-mario text-2xl text-red-400 bg-black/60 px-3 py-1 rounded-full border border-red-500/60">
+                                    −5
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div className={`flex justify-center ${gameTheme === 'classic' ? 'mt-auto shrink-0' : 'pt-2 lg:justify-start'}`}>
+                        <div className="shrink-0 flex justify-center lg:justify-start pt-2">
                           <button
                             type="button"
                             onClick={handleFinishBowserFury}
@@ -1272,7 +1277,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
 
                     {/* 5b. BLOOPER: Ink a rival so their next coin card pays 1 */}
                     {selectedCard.type === 'blooper' && (
-                      <div className="bg-indigo-950/85 rounded-2xl border border-indigo-400/50 flex flex-col gap-2 p-2.5 min-h-0">
+                      <div className="bg-indigo-950/85 rounded-2xl border border-indigo-400/50 flex flex-col gap-2 p-2.5 min-h-0 flex-1">
                         <div className="flex items-center justify-center gap-2 text-indigo-100 shrink-0">
                           <Droplets className="w-6 h-6 text-indigo-300" />
                           <h4 className="font-mario text-lg sm:text-2xl text-white leading-tight">Which team gets inked?</h4>
@@ -1280,46 +1285,48 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
                         <p className="text-xs sm:text-sm font-bold text-indigo-100/90 shrink-0">
                           Next coin card = <span className="font-mario text-yellow-300">+1</span>
                         </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 items-stretch">
-                          {eligibleOpponents.map(opp => {
-                            const oppChar = CHARACTERS[opp.characterId];
-                            const isSelected = blooperTargetTeamId === opp.id;
-                            return (
-                              <button
-                                key={opp.id}
-                                type="button"
-                                onClick={() => {
-                                  setBlooperTargetTeamId(opp.id);
-                                  sounds.playBlooper();
-                                }}
-                                className={`relative h-full w-full rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center ${
-                                  gameTheme === 'classic' ? 'p-2 gap-1' : 'p-3 gap-1.5'
-                                } ${
-                                  isSelected ? 'border-yellow-300 ring-4 ring-indigo-400' : 'border-white/30 hover:brightness-110'
-                                }`}
-                              >
-                                {isSelected && (
-                                  <span
-                                    className="absolute top-1 right-1 z-10 w-7 h-7 rounded-full overflow-hidden border-2 border-indigo-100 shadow-[0_0_10px_rgba(99,102,241,0.8)] pointer-events-none"
-                                    aria-hidden
-                                  >
-                                    <img
-                                      src={getRevealArt('blooper')}
-                                      alt=""
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </span>
-                                )}
-                                <TeamAvatar
-                                  characterId={opp.characterId}
-                                  size={gameTheme === 'classic' ? 'md' : 'lg'}
-                                  customUrl={opp.customImageUrl}
-                                />
-                                <span className="text-xs sm:text-sm font-black truncate w-full text-center">{opp.name}</span>
-                                <CoinScore coins={opp.coins} />
-                              </button>
-                            );
-                          })}
+                        <div className="flex-1 min-h-0 overflow-y-auto">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 items-stretch">
+                            {eligibleOpponents.map(opp => {
+                              const oppChar = CHARACTERS[opp.characterId];
+                              const isSelected = blooperTargetTeamId === opp.id;
+                              return (
+                                <button
+                                  key={opp.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setBlooperTargetTeamId(opp.id);
+                                    sounds.playBlooper();
+                                  }}
+                                  className={`relative h-full w-full rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center ${
+                                    gameTheme === 'classic' ? 'p-2 gap-1' : 'p-3 gap-1.5'
+                                  } ${
+                                    isSelected ? 'border-yellow-300 ring-4 ring-indigo-400' : 'border-white/30 hover:brightness-110'
+                                  }`}
+                                >
+                                  {isSelected && (
+                                    <span
+                                      className="absolute top-1 right-1 z-10 w-7 h-7 rounded-full overflow-hidden border-2 border-indigo-100 shadow-[0_0_10px_rgba(99,102,241,0.8)] pointer-events-none"
+                                      aria-hidden
+                                    >
+                                      <img
+                                        src={getRevealArt('blooper')}
+                                        alt=""
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </span>
+                                  )}
+                                  <TeamAvatar
+                                    characterId={opp.characterId}
+                                    size={gameTheme === 'classic' ? 'md' : 'lg'}
+                                    customUrl={opp.customImageUrl}
+                                  />
+                                  <span className="text-xs sm:text-sm font-black truncate w-full text-center">{opp.name}</span>
+                                  <CoinScore coins={opp.coins} />
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                         <div className="h-[3.75rem] shrink-0 flex items-center justify-center">
                           {blooperTarget && (
