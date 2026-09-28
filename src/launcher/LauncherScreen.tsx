@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   GraduationCap,
@@ -30,7 +30,8 @@ import {
   Info,
   ChevronRight,
   Filter,
-  X
+  X,
+  ChevronLeft
 } from 'lucide-react';
 import { LAUNCHER_GAMES, LauncherGame, LibraryFilter, LIBRARY_FILTERS, LIBRARY_FILTER_LABELS, ACTIVITY_STYLE_LABELS } from '@/launcher/catalog';
 import { sounds } from '@/shared/utils/sound';
@@ -38,6 +39,16 @@ import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { SnesBoxArt } from '@/launcher/SnesBoxArt';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+
+const SPOTLIGHT_ROTATE_MS = 7000;
+
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 interface LauncherScreenProps {
   onLaunchGame: (game: LauncherGame) => void;
@@ -54,13 +65,30 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<LibraryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [spotlightGameId, setSpotlightGameId] = useState<string>('mario_party_summer');
   const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
   useBodyScrollLock(Boolean(previewGame));
 
-  const spotlightGame = useMemo(() => {
-    return LAUNCHER_GAMES.find(g => g.id === spotlightGameId) || LAUNCHER_GAMES[0];
-  }, [spotlightGameId]);
+  const spotlightGames = useMemo(() => LAUNCHER_GAMES.filter(g => g.isPlayable), []);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
+
+  useEffect(() => {
+    if (!isAutoRotating || spotlightGames.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setSpotlightIndex(prev => (prev + 1) % spotlightGames.length);
+    }, SPOTLIGHT_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [isAutoRotating, spotlightGames.length]);
+
+  const goToSpotlight = useCallback((index: number) => {
+    sounds.playPop();
+    setIsAutoRotating(false);
+    setSpotlightIndex(((index % spotlightGames.length) + spotlightGames.length) % spotlightGames.length);
+  }, [spotlightGames.length]);
+
+  const goToPrevSpotlight = useCallback(() => goToSpotlight(spotlightIndex - 1), [goToSpotlight, spotlightIndex]);
+  const goToNextSpotlight = useCallback(() => goToSpotlight(spotlightIndex + 1), [goToSpotlight, spotlightIndex]);
 
   const filteredGames = useMemo(() => {
     return LAUNCHER_GAMES.filter(game => {
@@ -169,14 +197,33 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
         {/* Spotlight Hero Banner (Epic Games / Steam Featured Carousel) */}
         <section className="relative rounded-3xl overflow-hidden border-2 border-white/15 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black">
           {/* Ambient Spotlight Background Graphic */}
-          <div 
-            className="absolute inset-0 opacity-40 mix-blend-screen bg-cover bg-center pointer-events-none"
+          <div
+            key={spotlightGame.id}
+            className="absolute inset-0 opacity-40 mix-blend-screen bg-cover bg-center pointer-events-none transition-[background-image] duration-500"
             style={{
-              backgroundImage: spotlightGame.cover.patternType === 'palm'
-                ? 'radial-gradient(circle at 70% 30%, rgba(245, 158, 11, 0.45) 0%, transparent 60%)'
-                : 'radial-gradient(circle at 70% 30%, rgba(56, 189, 248, 0.45) 0%, transparent 60%)'
+              backgroundImage: `radial-gradient(circle at 70% 30%, ${hexToRgba(spotlightGame.cover.accentColor, 0.45)} 0%, transparent 60%)`
             }}
           />
+
+          {/* Carousel Prev/Next Arrows */}
+          {spotlightGames.length > 1 && (
+            <>
+              <button
+                onClick={goToPrevSpotlight}
+                aria-label="Previous featured activity"
+                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={goToNextSpotlight}
+                aria-label="Next featured activity"
+                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center cursor-pointer transition-all hover:scale-110"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
 
           <div className="relative z-10 p-6 sm:p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[380px]">
             {/* Left Info Column */}
@@ -268,36 +315,24 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             <div className="w-full sm:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
               <SnesBoxArt game={spotlightGame} size="hero" />
 
-              <div className="w-full flex items-center justify-between gap-1.5 p-2.5 rounded-2xl bg-black/60 border border-white/10 px-3">
-                <span className="text-[11px] font-bold text-white/70">Featured Edition:</span>
-                <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => {
-                        sounds.playPop();
-                        setSpotlightGameId('mario_party_summer');
-                      }}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                        spotlightGameId === 'mario_party_summer'
-                          ? 'bg-amber-500 text-slate-950 shadow-md font-black'
-                          : 'bg-slate-800 text-slate-300 hover:text-white'
+              <div className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-black/60 border border-white/10 px-3">
+                {spotlightGames.map((game, idx) => (
+                  <button
+                    key={game.id}
+                    onClick={() => goToSpotlight(idx)}
+                    title={game.shortTitle}
+                    aria-label={`Show ${game.shortTitle}`}
+                    aria-current={idx === spotlightIndex}
+                    className="p-1.5 cursor-pointer group"
+                  >
+                    <span
+                      className={`block rounded-full transition-all ${
+                        idx === spotlightIndex ? 'w-6 h-2.5' : 'w-2.5 h-2.5 opacity-50 group-hover:opacity-80'
                       }`}
-                    >
-                      Summer
-                    </button>
-                    <button
-                      onClick={() => {
-                        sounds.playPop();
-                        setSpotlightGameId('mario_party_winter');
-                      }}
-                      className={`px-3 py-1 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                        spotlightGameId === 'mario_party_winter'
-                          ? 'bg-cyan-500 text-slate-950 shadow-md font-black'
-                          : 'bg-slate-800 text-slate-300 hover:text-white'
-                      }`}
-                    >
-                      Holiday
-                    </button>
-                  </div>
+                      style={{ backgroundColor: game.cover.accentColor }}
+                    />
+                  </button>
+                ))}
               </div>
             </div>
           </div>
