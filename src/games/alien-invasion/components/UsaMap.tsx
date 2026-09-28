@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { InvasionTeam, factionOf } from '../data/factions';
-import { US_STATE_PATHS } from '../data/usStatePaths';
+import { US_STATE_PATHS, UsStatePath } from '../data/usStatePaths';
 import { BOARD_VIEWBOX, CHIP_STATE_IDS, STATE_HIT_CHIPS, STATE_LABEL_NUDGE } from '../data/stateHitChips';
 
 interface UsaMapProps {
@@ -13,10 +13,16 @@ interface UsaMapProps {
 
 const UNCLAIMED = '#e2e8f0';
 
+/** Module-level O(1) Map lookup for static state path objects. */
+const STATE_PATHS_MAP = new Map<string, UsStatePath>(
+  US_STATE_PATHS.map(state => [state.id, state])
+);
+
 /**
  * Bolt Performance Optimization:
  * 1) Wrapped UsaMap in React.memo to prevent full SVG re-renders when parent timer/state ticks.
  * 2) Pre-compute team color map in useMemo to convert ~150 array lookups per frame to O(1) hash map lookups.
+ * 3) Pre-computed module-level STATE_PATHS_MAP for O(1) state resolution on map hover/selection instead of O(N) .find().
  */
 export const UsaMap: React.FC<UsaMapProps> = React.memo(function UsaMap({
   teams,
@@ -61,7 +67,7 @@ export const UsaMap: React.FC<UsaMapProps> = React.memo(function UsaMap({
   }, []);
 
   const focusId = hoveredId || selectedId;
-  const focusState = focusId ? US_STATE_PATHS.find(state => state.id === focusId) : undefined;
+  const focusState = focusId ? STATE_PATHS_MAP.get(focusId) : undefined;
 
   return (
     <div
