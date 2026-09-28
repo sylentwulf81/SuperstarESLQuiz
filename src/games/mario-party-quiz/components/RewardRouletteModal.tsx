@@ -823,7 +823,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
             </p>
             {phase === 'pick' && showCatchUpNote && isCatchUpRestrictedTeam(teams, currentTeam.id) && (
               <p className="text-[10px] sm:text-xs font-bold text-sky-300 mt-0.5">
-                1st place catch-up: no Blue Shell or Bowser cards this draw
+                1st place catch-up: no steal, swap, or equalize cards this draw
               </p>
             )}
           </div>

@@ -1,11 +1,18 @@
 import { RewardCard, RewardCardType, Team } from '@/shared/types';
 import { shuffleArray } from '@/shared/utils/shuffle';
 
-/** Catch-up items that 1st place cannot draw, Mario Kart-style. */
+/**
+ * Catch-up / self-serving items that 1st place cannot draw, Mario Kart-style.
+ * Blue Shell and the Bowser cards only ever help the drawer at rivals' expense;
+ * King Boo and POW Block are included too since the leader could otherwise use
+ * them to steal from or equalize down onto everyone else and pull further ahead.
+ */
 export const CATCH_UP_RESTRICTED_TYPES: RewardCardType[] = [
   'blue_shell',
   'bowser_revolution',
   'bowser_fury',
+  'king_boo',
+  'pow_block',
 ];
 
 export function isCatchUpRestrictedTeam(teams: Team[], teamId: string): boolean {
@@ -138,8 +145,57 @@ export const REWARD_CARDS: RewardCard[] = [
 ];
 
 /**
- * Generate 6 randomized mystery cards for the reward roulette from the full 10-card pool.
- * The current 1st-place team (tied or unique) cannot draw Blue Shell, Bowser's Revolution, or Bowser's Fury.
+ * Rarity weights for the roulette pool — higher weight means more likely to land
+ * among the 6 revealed cards, but nothing is guaranteed. Plain coin payouts are
+ * weighted as the common/primary draw; steal, swap, and equalize cards are
+ * progressively rarer so a full round of them is possible but uncommon.
+ */
+const REWARD_WEIGHTS: Partial<Record<RewardCardType, number>> = {
+  great_coins_3: 10,
+  wonderful_coins_5: 10,
+  super_coins_10: 6,
+  super_star_x2: 6,
+  pow_block: 3,
+  ghost_steal_5: 3,
+  king_boo: 1,
+  blue_shell: 1,
+  bowser_revolution: 1,
+  bowser_fury: 1,
+};
+
+function weightOf(card: RewardCard): number {
+  return REWARD_WEIGHTS[card.type] ?? 1;
+}
+
+/** Weighted sampling without replacement: each pick favors higher-weight cards,
+ * but every remaining card always has some (never-zero) chance. */
+function weightedSample(pool: RewardCard[], count: number): RewardCard[] {
+  const remaining = [...pool];
+  const picked: RewardCard[] = [];
+  const n = Math.min(count, remaining.length);
+  for (let i = 0; i < n; i++) {
+    const total = remaining.reduce((sum, card) => sum + weightOf(card), 0);
+    let roll = Math.random() * total;
+    let idx = remaining.length - 1;
+    for (let j = 0; j < remaining.length; j++) {
+      roll -= weightOf(remaining[j]);
+      if (roll <= 0) {
+        idx = j;
+        break;
+      }
+    }
+    picked.push(remaining[idx]);
+    remaining.splice(idx, 1);
+  }
+  return picked;
+}
+
+/**
+ * Generate 6 weighted mystery cards for the reward roulette from the 10-card pool.
+ * Plain coin cards are heavily favored as the common draw. The current 1st-place
+ * team (tied or unique) cannot draw Blue Shell, Bowser's Revolution, Bowser's Fury,
+ * King Boo, or POW Block — all catch-up/self-serving cards that would either hurt
+ * rivals for free or let the leader pull further ahead.
  */
 export function generateRouletteCards(teams?: Team[], drawingTeamId?: string): RewardCard[] {
   const restrictCatchUp = Boolean(
@@ -148,5 +204,5 @@ export function generateRouletteCards(teams?: Team[], drawingTeamId?: string): R
   const pool = restrictCatchUp
     ? REWARD_CARDS.filter(card => !CATCH_UP_RESTRICTED_TYPES.includes(card.type))
     : REWARD_CARDS;
-  return shuffleArray(pool).slice(0, Math.min(6, pool.length));
+  return shuffleArray(weightedSample(pool, 6));
 }
