@@ -14,6 +14,8 @@ interface QuestionLibraryPanelProps {
   lessonGoal: string;
   onApply: (bank: QuestionBank) => void;
   onClose: () => void;
+  /** Classic-only "Have you ever...?" grammar-drill starters; hidden for other themes. */
+  showStarterExamples?: boolean;
 }
 
 type Armed = { id: string; mode: 'load' | 'delete' } | null;
@@ -23,6 +25,7 @@ export function QuestionLibraryPanel({
   lessonGoal,
   onApply,
   onClose,
+  showStarterExamples = true,
 }: QuestionLibraryPanelProps) {
   const { isLoggedIn, loginWithGoogle, listQuestionBanks, saveQuestionBank, deleteQuestionBank } = useAuth();
   const [name, setName] = useState('');
@@ -154,21 +157,23 @@ export function QuestionLibraryPanel({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5">
-        <section>
-          <h4 className="text-[11px] font-black uppercase tracking-wider text-orange-200 mb-2">Examples</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {STARTER_QUESTION_BANKS.map(bank => (
-              <BankCard
-                key={bank.id}
-                bank={bank}
-                armed={armed}
-                busy={busy}
-                onArm={setArmed}
-                onApply={onApply}
-              />
-            ))}
-          </div>
-        </section>
+        {showStarterExamples && (
+          <section>
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-orange-200 mb-2">Examples</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {STARTER_QUESTION_BANKS.map(bank => (
+                <BankCard
+                  key={bank.id}
+                  bank={bank}
+                  armed={armed}
+                  busy={busy}
+                  onArm={setArmed}
+                  onApply={onApply}
+                />
+              ))}
+            </div>
+          </section>
+        )}
 
         <section>
           <h4 className="text-[11px] font-black uppercase tracking-wider text-sky-200 mb-2">Yours</h4>

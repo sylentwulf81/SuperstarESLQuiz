@@ -344,7 +344,9 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               <span className="text-xs font-bold text-rose-200 uppercase tracking-wider">
                 Lesson Goal
               </span>
-              <span className="text-[11px] text-slate-400">Shown on every block</span>
+              <span className="text-[11px] text-slate-400">
+                {theme === 'classic' ? 'Shown on every block' : 'Optional note for your saved sets'}
+              </span>
               {onApplyQuestionBank && (
                 <button
                   id="studio-open-library"
@@ -364,14 +366,14 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               type="text"
               value={lessonGoal ?? ''}
               onChange={(e) => onLessonGoalChange(e.target.value)}
-              onBlur={() => onLessonGoalCommit?.(lessonGoal ?? DEFAULT_CLASSIC_LESSON_GOAL)}
+              onBlur={() => onLessonGoalCommit?.(lessonGoal ?? '')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                  onLessonGoalCommit?.(lessonGoal ?? DEFAULT_CLASSIC_LESSON_GOAL);
+                  onLessonGoalCommit?.(lessonGoal ?? '');
                 }
               }}
-              placeholder={DEFAULT_CLASSIC_LESSON_GOAL}
+              placeholder={theme === 'classic' ? DEFAULT_CLASSIC_LESSON_GOAL : 'e.g. Summer vocabulary & trivia mix'}
               className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-400/50"
             />
           </div>
@@ -439,6 +441,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 : block.question
             )}
             lessonGoal={lessonGoal ?? ''}
+            showStarterExamples={theme === 'classic'}
             onApply={(bank) => {
               onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name);
               setLibraryOpen(false);

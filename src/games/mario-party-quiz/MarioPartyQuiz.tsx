@@ -16,6 +16,7 @@ import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
 import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
+import { loadPartyLessonGoal, persistPartyLessonGoal } from './data/lessonGoal';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
 import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
@@ -47,6 +48,7 @@ export function MarioPartyQuiz({
   const theme = initialTheme;
   const [state, setState] = useState(() => createTurnBasedState(createGameBlocks(initialTheme)));
   const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
+  const [lessonGoal, setLessonGoal] = useState(() => loadPartyLessonGoal(theme));
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -106,6 +108,10 @@ export function MarioPartyQuiz({
             blocks: createGameBlocks(theme, cloud.questions),
             toast: `☁️ Synced ${cloud.questions.length} custom questions from Firestore (${user.displayName || 'User'})!`,
           });
+          if (cloud.lessonGoal !== undefined) {
+            setLessonGoal(cloud.lessonGoal);
+            persistPartyLessonGoal(theme, cloud.lessonGoal);
+          }
         }
       }).catch((e) => {
         console.warn('Initial cloud questions fetch:', e);
@@ -167,6 +173,37 @@ export function MarioPartyQuiz({
       blocks: defaultBlocks,
       toast: `🔄 Restored all ${defaultBlocks.length} block questions to default curriculum!`,
     });
+    setLessonGoal('');
+    persistPartyLessonGoal(theme, '');
+  };
+
+  const handleLessonGoalChange = (goal: string) => {
+    setLessonGoal(goal);
+    persistPartyLessonGoal(theme, goal);
+  };
+
+  const commitLessonGoal = (goal: string) => {
+    setLessonGoal(goal);
+    persistPartyLessonGoal(theme, goal);
+    if (isLoggedIn && user) {
+      saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal: goal }).catch(() => {});
+    }
+  };
+
+  const handleApplyQuestionBank = (questions: GameQuestion[], goal: string, name: string) => {
+    const nextGoal = goal.trim();
+    const next = createGameBlocks(theme, questions);
+    setLessonGoal(nextGoal);
+    persistPartyLessonGoal(theme, nextGoal);
+    dispatch({ type: 'SET_BLOCKS', blocks: next, toast: `📚 ${name}` });
+    try {
+      localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(next.map(block => block.question)));
+    } catch (e) {
+      console.warn('Could not save to localStorage', e);
+    }
+    if (isLoggedIn && user) {
+      saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
+    }
   };
 
   const handleManualSync = async () => {
@@ -175,7 +212,7 @@ export function MarioPartyQuiz({
       return;
     }
     const rawQuestions = blocks.map(b => b.question);
-    const success = await saveQuestionsCloud(theme, rawQuestions);
+    const success = await saveQuestionsCloud(theme, rawQuestions, { lessonGoal });
     showToast(success
       ? `☁️ All ${rawQuestions.length} questions successfully backed up to Firestore!`
       : '⚠️ Could not sync to Firestore. Check connection.');
@@ -191,6 +228,10 @@ export function MarioPartyQuiz({
       const next = createGameBlocks(theme, cloud.questions);
       dispatch({ type: 'SET_BLOCKS', blocks: next, toast: `☁️ Loaded ${cloud.questions.length} custom questions from Firestore!` });
       persistQuestions(next);
+      if (cloud.lessonGoal !== undefined) {
+        setLessonGoal(cloud.lessonGoal);
+        persistPartyLessonGoal(theme, cloud.lessonGoal);
+      }
     } else {
       showToast(`ℹ️ No custom questions found in Firestore for ${theme} theme.`);
     }
@@ -337,6 +378,10 @@ export function MarioPartyQuiz({
             onClose={() => setIsCustomizerOpen(false)}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
+            lessonGoal={lessonGoal}
+            onLessonGoalChange={handleLessonGoalChange}
+            onLessonGoalCommit={commitLessonGoal}
+            onApplyQuestionBank={handleApplyQuestionBank}
           />
         )}
       </AnimatePresence>
