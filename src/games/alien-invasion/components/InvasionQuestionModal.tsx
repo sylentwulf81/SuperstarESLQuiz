@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Eye, EyeOff, X } from 'lucide-react';
 import { InvasionTeam } from '../data/factions';
@@ -17,19 +17,38 @@ interface InvasionQuestionModalProps {
   onClose: () => void;
 }
 
-export const InvasionQuestionModal: React.FC<InvasionQuestionModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to avoid wasteful re-renders when parent timer/state updates.
+ * 2) Memoized stateName and owner lookups via useMemo to avoid O(N) array scans per render.
+ * 3) Memoized letters via useMemo to prevent re-running scrambleWord array shuffle operations
+ *    on every render (e.g., toggling showAnswer), stabilizing scrambled UI display.
+ */
+export const InvasionQuestionModal = React.memo(function InvasionQuestionModal({
   stateId,
   question,
   teams,
   ownerTeamId,
   onCapture,
   onClose,
-}) => {
+}: InvasionQuestionModalProps) {
   useBodyScrollLock();
   const [showAnswer, setShowAnswer] = useState(false);
-  const stateName = US_STATE_PATHS.find(s => s.id === stateId)?.name ?? stateId;
-  const owner = teams.find(t => t.id === ownerTeamId);
-  const letters = question.type === 'unscramble' ? scrambleWord(question.answer) : [];
+
+  const stateName = useMemo(
+    () => US_STATE_PATHS.find(s => s.id === stateId)?.name ?? stateId,
+    [stateId]
+  );
+
+  const owner = useMemo(
+    () => teams.find(t => t.id === ownerTeamId) ?? null,
+    [teams, ownerTeamId]
+  );
+
+  const letters = useMemo(
+    () => (question.type === 'unscramble' ? scrambleWord(question.answer) : []),
+    [question.type, question.answer]
+  );
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -144,4 +163,4 @@ export const InvasionQuestionModal: React.FC<InvasionQuestionModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
