@@ -17,3 +17,7 @@
 ## 2025-05-22 - High-Density SVG Leaf Component Memoization & Safe Unique Defs
 **Learning:** `MarioCoin` leaf components rendered in high frequency across game boards, leaderboards, and modals were re-allocating lookup objects and triggering VDOM re-renders on every parent state tick. Replacing `useId()` with static IDs in reusable SVG components breaks SVG gradient rendering due to DOM ID collisions.
 **Action:** Wrap `MarioCoin` in `React.memo`, hoist static size lookup maps (`DIM_MAP`) outside render scope, remove dead object allocations (`sizeMap`), and retain `React.useId()` for safe unique SVG gradient `<defs>` IDs.
+
+## 2025-05-23 - Memoization of Unscramble Word Shuffles and Modal Lookups
+**Learning:** Re-executing word scrambling algorithms (`scrambleWord()`) inside component render bodies causes CPU overhead and array allocations on every render pass (e.g. toggling UI states like `showAnswer`), and triggers visual instability by reshuffling scrambled letters live on screen.
+**Action:** Wrap modal components in `React.memo` and memoize word unscramble computations and team/state lookups using `useMemo` hooks with strict dependencies (`[question.type, question.answer]`).
