@@ -20,6 +20,12 @@ const SIZE_MAP = {
   '2xl': 'w-28 h-28 rounded-3xl text-5xl',
 };
 
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped TeamAvatar in React.memo to prevent unnecessary VDOM re-renders when parent state updates.
+ * 2) Lazy state initialization in useState() reads localStorage synchronously on mount to eliminate
+ *    post-mount cascading re-renders across all high-density TeamAvatar instances (e.g. 60+ board cells).
+ */
 export const TeamAvatar = React.memo(function TeamAvatar({
   characterId,
   size = 'md',
@@ -29,16 +35,19 @@ export const TeamAvatar = React.memo(function TeamAvatar({
 }: TeamAvatarProps) {
   const char = CHARACTERS[characterId];
   const [imgError, setImgError] = useState(false);
-  const [storedUrl, setStoredUrl] = useState<string | null>(null);
+  const [storedUrl, setStoredUrl] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(`avatar_${characterId}`) || null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(`avatar_${characterId}`);
-      if (saved) {
-        setStoredUrl(saved);
-      }
+      setStoredUrl(localStorage.getItem(`avatar_${characterId}`) || null);
     } catch {
-      // Ignore storage errors
+      setStoredUrl(null);
     }
   }, [characterId]);
 
