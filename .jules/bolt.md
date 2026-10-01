@@ -21,3 +21,7 @@
 ## 2025-05-23 - Memoization of Unscramble Word Shuffles and Modal Lookups
 **Learning:** Re-executing word scrambling algorithms (`scrambleWord()`) inside component render bodies causes CPU overhead and array allocations on every render pass (e.g. toggling UI states like `showAnswer`), and triggers visual instability by reshuffling scrambled letters live on screen.
 **Action:** Wrap modal components in `React.memo` and memoize word unscramble computations and team/state lookups using `useMemo` hooks with strict dependencies (`[question.type, question.answer]`).
+
+## 2025-05-24 - Memoization & Hash Map Lookups in Reward Roulette Modal
+**Learning:** During mystery card roulette spinning and target selection in `RewardRouletteModal`, repeated re-renders were executing linear `teams.find()` scans (`targetOpponent`, `swapOpponent`, `blooperTarget`) on every render frame tick without component-level VDOM memoization.
+**Action:** Wrap `RewardRouletteModal` in `React.memo` and pre-compute a `teamsMap` in `useMemo` to convert linear `teams.find()` scans into O(1) Map lookups, preventing wasteful re-renders during high-frequency roulette animations.
