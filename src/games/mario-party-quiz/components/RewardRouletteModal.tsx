@@ -372,7 +372,12 @@ function EffectHero({
   return null;
 }
 
-export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Pre-compute teamsMap in useMemo to convert linear teams.find() scans (boo/swap/blooper targets) into O(1) lookups.
+ * 2) Wrapped in React.memo to avoid wasteful re-renders during high-frequency parent state changes or roulette spinning.
+ */
+export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = React.memo(function RewardRouletteModal({
   cards,
   currentTeam,
   teams,
@@ -382,7 +387,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   showCatchUpNote = false,
   startInReveal = false,
   onSkipAction,
-}) => {
+}) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
   const [phase, setPhase] = useState<'pick' | 'reveal'>(startInReveal ? 'reveal' : 'pick');
@@ -770,9 +775,17 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     return { maxCoins: max, minCoins: min };
   }, [teams]);
 
-  const targetOpponent = booTargetTeamId ? teams.find(t => t.id === booTargetTeamId) : null;
-  const swapOpponent = swapTargetTeamId ? teams.find(t => t.id === swapTargetTeamId) : null;
-  const blooperTarget = blooperTargetTeamId ? teams.find(t => t.id === blooperTargetTeamId) : null;
+  const teamsMap = useMemo(() => {
+    const map = new Map<string, Team>();
+    for (const team of teams) {
+      map.set(team.id, team);
+    }
+    return map;
+  }, [teams]);
+
+  const targetOpponent = booTargetTeamId ? teamsMap.get(booTargetTeamId) ?? null : null;
+  const swapOpponent = swapTargetTeamId ? teamsMap.get(swapTargetTeamId) ?? null : null;
+  const blooperTarget = blooperTargetTeamId ? teamsMap.get(blooperTargetTeamId) ?? null : null;
   const revealArt = selectedCard ? getRevealArt(selectedCard.type) : undefined;
   const blooperedPayout =
     gameTheme === 'classic' &&
@@ -1525,4 +1538,4 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
         </div>
     </GameModalShell>
   );
-};
+});
