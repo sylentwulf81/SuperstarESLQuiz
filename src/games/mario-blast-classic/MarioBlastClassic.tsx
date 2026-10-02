@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { toast } from 'sonner';
 import { AmbientParticles } from '@/games/mario-party-quiz/components/AmbientParticles';
@@ -136,9 +136,21 @@ export function MarioBlastClassic({
   const activeTeam = classicActiveTeam(state);
   const openedBlocksCount = classicOpenedCount(state);
   const boardCleared = classicBoardCleared(state);
-  const answeringTeam = teams.find(t => t.id === selectedAnsweringTeamId) || activeTeam;
-  const cardsRemaining = slots.filter(s => !s.claimedByTeamId).length;
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  // Bolt Performance Optimization: Memoize answering team, remaining cards, and selected block
+  // lookups to eliminate linear array scans (.find and .filter) on every render tick or UI state update.
+  const answeringTeam = useMemo(() => {
+    return teams.find(t => t.id === selectedAnsweringTeamId) || activeTeam;
+  }, [teams, selectedAnsweringTeamId, activeTeam]);
+
+  const cardsRemaining = useMemo(() => {
+    return slots.filter(s => !s.claimedByTeamId).length;
+  }, [slots]);
+
+  const selectedBlock = useMemo(() => {
+    if (selectedBlockId === null) return undefined;
+    return blocks.find(b => b.id === selectedBlockId);
+  }, [blocks, selectedBlockId]);
+
   const selectedQuestion = selectedBlock?.question;
 
   const persistQuestions = (updatedBlocks: typeof blocks) => {

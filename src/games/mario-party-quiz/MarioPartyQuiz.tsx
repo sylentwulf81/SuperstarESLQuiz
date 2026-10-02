@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { AmbientParticles } from './components/AmbientParticles';
@@ -248,7 +248,12 @@ export function MarioPartyQuiz({
     dispatch({ type: 'RESOLVE_CARD', card, options, shouldAdvanceTurn });
   };
 
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+  // Bolt Performance Optimization: Memoize selected block lookup to avoid executing
+  // linear Array.find() scans over blocks (60 items) on every unrelated render pass or tick.
+  const selectedBlock = useMemo(() => {
+    if (selectedBlockId === null) return undefined;
+    return blocks.find(b => b.id === selectedBlockId);
+  }, [blocks, selectedBlockId]);
   const selectedQuestion = selectedBlock?.question;
 
   return (

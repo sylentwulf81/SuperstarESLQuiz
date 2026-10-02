@@ -21,3 +21,7 @@
 ## 2025-05-23 - Memoization of Unscramble Word Shuffles and Modal Lookups
 **Learning:** Re-executing word scrambling algorithms (`scrambleWord()`) inside component render bodies causes CPU overhead and array allocations on every render pass (e.g. toggling UI states like `showAnswer`), and triggers visual instability by reshuffling scrambled letters live on screen.
 **Action:** Wrap modal components in `React.memo` and memoize word unscramble computations and team/state lookups using `useMemo` hooks with strict dependencies (`[question.type, question.answer]`).
+
+## 2025-05-24 - Memoization of Top-Level State Derivations and Lookups
+**Learning:** Top-level game containers (`MarioPartyQuiz`, `MarioBlastClassic`) and modals (`CustomizerModal`) were running linear array scans (`blocks.find()`, `teams.find()`, `slots.filter()`) directly in component render bodies on every state update (e.g. toast notifications, BGM playback, input keystrokes, and timer ticks).
+**Action:** Wrap top-level derived values (`selectedBlock`, `answeringTeam`, `cardsRemaining`, `currentBlock`) in `useMemo` hooks with tight dependency arrays to eliminate redundant O(N) array traversals during unrelated UI state changes.
