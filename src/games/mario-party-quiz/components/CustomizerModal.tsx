@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target, FlaskConical, Library } from 'lucide-react';
 import { toast } from 'sonner';
@@ -54,7 +54,11 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
-  const currentBlock = blocks.find(b => b.id === selectedBlockId) || blocks[0];
+  // Bolt Performance Optimization: Memoize currentBlock calculation to prevent running
+  // Array.find() on blocks array (60 items) on every modal input keystroke / render pass.
+  const currentBlock = useMemo(() => {
+    return blocks.find(b => b.id === selectedBlockId) || blocks[0];
+  }, [blocks, selectedBlockId]);
 
   const [editingQuestion, setEditingQuestion] = useState<GameQuestion>(currentBlock.question);
   const [isCloudBusy, setIsCloudBusy] = useState(false);
