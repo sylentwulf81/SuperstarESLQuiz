@@ -372,7 +372,12 @@ function EffectHero({
   return null;
 }
 
-export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to prevent unnecessary re-renders during turn ticks or background animation state updates.
+ * 2) Memoized teamsMap and eligibleOpponents via useMemo to replace linear .find() and .filter() array scans with O(1) Map lookups.
+ */
+export const RewardRouletteModal = React.memo(function RewardRouletteModal({
   cards,
   currentTeam,
   teams,
@@ -382,7 +387,7 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   showCatchUpNote = false,
   startInReveal = false,
   onSkipAction,
-}) => {
+}: RewardRouletteModalProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
   const [phase, setPhase] = useState<'pick' | 'reveal'>(startInReveal ? 'reveal' : 'pick');
@@ -406,7 +411,20 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
   const [inkClaimReady, setInkClaimReady] = useState(true);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
-  const eligibleOpponents = teams.filter(t => t.id !== currentTeam.id);
+
+  const teamsMap = useMemo(() => {
+    const map = new Map<string, Team>();
+    for (const team of teams) {
+      map.set(team.id, team);
+    }
+    return map;
+  }, [teams]);
+
+  const eligibleOpponents = useMemo(
+    () => teams.filter(t => t.id !== currentTeam.id),
+    [teams, currentTeam.id]
+  );
+
   const isClassicInteractive =
     gameTheme === 'classic' &&
     phase === 'reveal' &&
@@ -770,9 +788,9 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
     return { maxCoins: max, minCoins: min };
   }, [teams]);
 
-  const targetOpponent = booTargetTeamId ? teams.find(t => t.id === booTargetTeamId) : null;
-  const swapOpponent = swapTargetTeamId ? teams.find(t => t.id === swapTargetTeamId) : null;
-  const blooperTarget = blooperTargetTeamId ? teams.find(t => t.id === blooperTargetTeamId) : null;
+  const targetOpponent = booTargetTeamId ? teamsMap.get(booTargetTeamId) ?? null : null;
+  const swapOpponent = swapTargetTeamId ? teamsMap.get(swapTargetTeamId) ?? null : null;
+  const blooperTarget = blooperTargetTeamId ? teamsMap.get(blooperTargetTeamId) ?? null : null;
   const revealArt = selectedCard ? getRevealArt(selectedCard.type) : undefined;
   const blooperedPayout =
     gameTheme === 'classic' &&
@@ -1525,4 +1543,4 @@ export const RewardRouletteModal: React.FC<RewardRouletteModalProps> = ({
         </div>
     </GameModalShell>
   );
-};
+});
