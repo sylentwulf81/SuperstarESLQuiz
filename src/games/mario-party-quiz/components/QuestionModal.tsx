@@ -38,7 +38,11 @@ const getShuffledOptions = (q: GameQuestion): ShuffledOption[] => {
   return opts;
 };
 
-export const QuestionModal: React.FC<QuestionModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped in React.memo to prevent unnecessary re-renders when parent state/timer updates while modal is open.
+ */
+export const QuestionModal = React.memo(function QuestionModal({
   question,
   currentTeam,
   onClose,
@@ -47,7 +51,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   onTriggerRoulette,
   onUpdateQuestionImage,
   onAdjustCoins,
-}) => {
+}: QuestionModalProps) {
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>(() => getShuffledOptions(question));
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
@@ -626,4 +630,4 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         )}
     </GameModalShell>
   );
-};
+});
