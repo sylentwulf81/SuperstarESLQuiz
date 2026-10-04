@@ -33,12 +33,17 @@ function outcomeLabel(outcome: MysteryBlockOutcome, mushroomBoost: boolean, bloo
   return 'Piranha Plant! Round Over!';
 }
 
-export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped MysteryBlocksMiniGame in React.memo to prevent modal re-renders when parent timer ticks
+ * or unrelated background state changes occur during active mini-game selection.
+ */
+export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React.memo(function MysteryBlocksMiniGame({
   currentTeam,
   outcomes,
   onResolved,
   testMode = false,
-}) => {
+}) {
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const [claimReady, setClaimReady] = useState(false);
   const char = CHARACTERS[currentTeam.characterId];
@@ -279,4 +284,4 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = ({
         </div>
     </GameModalShell>
   );
-};
+});
