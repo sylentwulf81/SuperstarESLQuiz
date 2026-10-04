@@ -16,15 +16,23 @@ interface SuperstarModalProps {
   onExitToLauncher?: () => void;
 }
 
-export const SuperstarModal: React.FC<SuperstarModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to prevent unnecessary re-renders.
+ * 2) Memoized sortedTeams calculation via useMemo to avoid re-sorting teams on every render pass.
+ */
+export const SuperstarModal = React.memo(function SuperstarModal({
   teams,
   onRestart,
   onClose,
   onExitToLauncher,
-}) => {
+}: SuperstarModalProps) {
   useBodyScrollLock();
   // Determine winner (highest coins)
-  const sortedTeams = [...teams].sort((a, b) => b.coins - a.coins);
+  const sortedTeams = React.useMemo(
+    () => [...teams].sort((a, b) => b.coins - a.coins),
+    [teams]
+  );
   const winner = sortedTeams[0] || teams[0];
   const charInfo = CHARACTERS[winner.characterId];
   const victoryArt = charInfo.victoryImageUrl;
@@ -240,4 +248,4 @@ export const SuperstarModal: React.FC<SuperstarModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
