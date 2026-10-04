@@ -20,12 +20,17 @@ interface SuperMushroomMiniGameProps {
 
 const MUSHROOM_ART = getRevealArt('mushroom_x2') || '/assets/effects/reveal_mariosupermushroom.jpeg';
 
-export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped SuperMushroomMiniGame in React.memo to prevent modal re-renders when parent timer ticks
+ * or unrelated background state changes occur during active mini-game selection.
+ */
+export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = React.memo(function SuperMushroomMiniGame({
   currentTeam,
   offers,
   onResolved,
   testMode = false,
-}) => {
+}) {
   const [pickedIndex, setPickedIndex] = useState<number | null>(null);
   const [claimReady, setClaimReady] = useState(false);
   const char = CHARACTERS[currentTeam.characterId];
@@ -190,4 +195,4 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = ({
       </div>
     </GameModalShell>
   );
-};
+});
