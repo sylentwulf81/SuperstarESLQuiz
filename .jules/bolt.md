@@ -25,3 +25,7 @@
 ## 2025-05-24 - Memoization of Top-Level State Derivations and Lookups
 **Learning:** Top-level game containers (`MarioPartyQuiz`, `MarioBlastClassic`) and modals (`CustomizerModal`) were running linear array scans (`blocks.find()`, `teams.find()`, `slots.filter()`) directly in component render bodies on every state update (e.g. toast notifications, BGM playback, input keystrokes, and timer ticks).
 **Action:** Wrap top-level derived values (`selectedBlock`, `answeringTeam`, `cardsRemaining`, `currentBlock`) in `useMemo` hooks with tight dependency arrays to eliminate redundant O(N) array traversals during unrelated UI state changes.
+
+## 2025-05-25 - Selective State Memoization & Header Component Isolation in Map Takeovers
+**Learning:** Top-level map takeover state (`AlienInvasion`) was re-running 50-state array filtering (`capturedCount(state)`) on every render pass, and re-triggering `stateCounts(state)` on state hover selections, question modal toggles, and pulse timer ticks because `useMemo` depended on the whole `state` object. `InvasionHeader` was also re-rendering unnecessarily due to inline callback allocations.
+**Action:** Memoize `counts` on `[state.teams, state.owners]` and `captured` on `[state.owners]`, wrap action handlers in `useCallback`, and wrap `InvasionHeader` in `React.memo` to eliminate redundant O(N) state counting and prevent header VDOM re-renders during state highlights and pulse animations.
