@@ -14,7 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   saveQuestionsCloud: (theme: GameTheme, questions: Question[], extras?: { lessonGoal?: string }) => Promise<boolean>;
   loadQuestionsCloud: (theme: GameTheme) => Promise<SavedQuestionSet | null>;
-  saveQuestionBank: (bank: { name: string; lessonGoal: string; questions: Question[] }) => Promise<CloudQuestionBank | null>;
+  saveQuestionBank: (bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }) => Promise<{ success: boolean; bank?: CloudQuestionBank; error?: string }>;
   listQuestionBanks: () => Promise<CloudQuestionBank[]>;
   deleteQuestionBank: (bankId: string) => Promise<boolean>;
 }
@@ -88,18 +88,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const handleSaveBank = async (
-    bank: { name: string; lessonGoal: string; questions: Question[] }
-  ): Promise<CloudQuestionBank | null> => {
-    if (!user) return null;
+    bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }
+  ): Promise<{ success: boolean; bank?: CloudQuestionBank; error?: string }> => {
+    if (!user) return { success: false, error: 'Sign in to save sets to your Cloud Library' };
     setSyncStatus('syncing');
-    const saved = await saveQuestionBankToFirestore(user.uid, bank);
+    const { saved, error } = await saveQuestionBankToFirestore(user.uid, bank);
     if (saved) {
       setSyncStatus('synced');
       setLastSyncedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      return saved;
+      return { success: true, bank: saved };
     }
     setSyncStatus('error');
-    return null;
+    return { success: false, error: error || 'Could not save question bank' };
   };
 
   const handleListBanks = async (): Promise<CloudQuestionBank[]> => {

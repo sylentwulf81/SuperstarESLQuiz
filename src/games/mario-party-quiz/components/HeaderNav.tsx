@@ -211,8 +211,8 @@ export const HeaderNav = React.memo(function HeaderNav({
                 ? 'bg-amber-400 text-slate-950 border-yellow-300 shadow-md scale-105'
                 : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-white/20'
             }`}
-            title={isMobileMenuOpen ? 'Close Menu' : 'Open menu'}
-            aria-label="Toggle activity options menu"
+            title={isMobileMenuOpen ? 'Close Host Menu' : 'Open Host Menu'}
+            aria-label={isMobileMenuOpen ? 'Close Host Menu' : 'Open Host Menu'}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -267,7 +267,8 @@ export const HeaderNav = React.memo(function HeaderNav({
                           setIsMobileMenuOpen(false);
                         }}
                         className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all cursor-pointer"
-                        aria-label="Close menu"
+                        aria-label="Close Host Menu"
+                        title="Close Host Menu"
                       >
                         <X className="w-5 h-5" />
                       </button>
