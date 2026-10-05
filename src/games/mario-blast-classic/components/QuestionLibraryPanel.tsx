@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Library, LogIn, Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Library, LogIn, Trash2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -29,10 +29,20 @@ export function QuestionLibraryPanel({
 }: QuestionLibraryPanelProps) {
   const { isLoggedIn, loginWithGoogle, listQuestionBanks, saveQuestionBank, deleteQuestionBank } = useAuth();
   const [name, setName] = useState('');
+  const [targetGoal, setTargetGoal] = useState(lessonGoal || '');
+  const [saveCount, setSaveCount] = useState<number>(questions.length || 60);
   const [mine, setMine] = useState<CloudQuestionBank[]>([]);
   const [loadingMine, setLoadingMine] = useState(false);
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState<Armed>(null);
+
+  const populatedCount = useMemo(() => {
+    return questions.filter(q => q.title && q.title.trim().length > 0 && q.title !== 'Blank Question').length;
+  }, [questions]);
+
+  useEffect(() => {
+    setTargetGoal(lessonGoal || '');
+  }, [lessonGoal]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -62,18 +72,21 @@ export function QuestionLibraryPanel({
       return;
     }
     if (!isLoggedIn) {
-      toast.error('Sign in to save a set');
+      toast.error('Sign in to save a set to your Cloud Library');
       return;
     }
+    const finalCount = Math.max(1, Math.min(saveCount, questions.length));
+    const selectedQuestions = questions.slice(0, finalCount).map(question => ({
+      ...question,
+      title: legacySlashesToMarks(question.title),
+    }));
+
     setBusy(true);
     sounds.playSaveCloud();
     const saved = await saveQuestionBank({
       name: trimmed,
-      lessonGoal,
-      questions: questions.map(question => ({
-        ...question,
-        title: legacySlashesToMarks(question.title),
-      })),
+      lessonGoal: targetGoal.trim(),
+      questions: selectedQuestions,
     });
     setBusy(false);
     if (!saved) {
@@ -82,7 +95,7 @@ export function QuestionLibraryPanel({
     }
     setMine(prev => [saved, ...prev.filter(bank => bank.id !== saved.id)]);
     setName('');
-    toast.success(`Saved “${saved.name}”`);
+    toast.success(`Saved “${saved.name}” (${selectedQuestions.length} questions attached)`);
   };
 
   const handleDelete = async (bankId: string) => {
@@ -97,63 +110,168 @@ export function QuestionLibraryPanel({
     setMine(prev => prev.filter(bank => bank.id !== bankId));
   };
 
+  const countOptions = [10, 15, 20, 25, 30, questions.length];
+  const uniqueCountOptions = Array.from(new Set(countOptions.filter(c => c <= questions.length)));
+
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-slate-950/40">
       <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3 shrink-0">
-        <h3 className="font-mario text-lg text-yellow-300 flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Library className="w-5 h-5 text-orange-300" />
-          Question Library
-        </h3>
+          <h3 className="font-mario text-lg text-yellow-300">
+            Question Library
+          </h3>
+          <span className="text-[11px] text-slate-400">
+            Save custom sets or load premade curriculum
+          </span>
+        </div>
         <button
           type="button"
           onClick={() => {
             sounds.playClick();
             onClose();
           }}
-          className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold border border-white/15 cursor-pointer"
+          className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs font-bold border border-white/15 cursor-pointer transition-colors"
         >
           Back to blocks
         </button>
       </div>
 
-      <div className="px-4 py-3 border-b border-white/10 flex flex-wrap items-center gap-2 shrink-0">
-        <input
-          id="library-set-name"
-          type="text"
-          value={name}
-          maxLength={40}
-          placeholder="Set name"
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              void handleSave();
-            }
-          }}
-          className="flex-1 min-w-[12rem] bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-orange-400/50"
-        />
-        <button
-          id="library-save-set"
-          type="button"
-          disabled={busy}
-          onClick={() => void handleSave()}
-          className="px-3.5 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer disabled:opacity-60"
-        >
-          Save this set
-        </button>
-        {!isLoggedIn && (
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              void loginWithGoogle();
+      {/* Save Set Form with Question Count Selection */}
+      <div className="p-4 border-b border-white/10 bg-slate-900/60 shrink-0 space-y-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <input
+            id="library-set-name"
+            type="text"
+            value={name}
+            maxLength={40}
+            placeholder="Set name (e.g. Unit 4 Animals Review)"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void handleSave();
+              }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer"
+            className="flex-1 min-w-[14rem] bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+          />
+          <input
+            id="library-set-goal"
+            type="text"
+            value={targetGoal}
+            maxLength={80}
+            placeholder="Lesson goal (optional note)"
+            onChange={(e) => setTargetGoal(e.target.value)}
+            className="flex-1 min-w-[14rem] bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
+          />
+          <button
+            id="library-save-set"
+            type="button"
+            disabled={busy}
+            onClick={() => void handleSave()}
+            className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer disabled:opacity-60 transition-all shadow-sm"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            Sign in
+            Save to Library ({Math.min(saveCount, questions.length)} Qs)
           </button>
-        )}
+          {!isLoggedIn && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                void loginWithGoogle();
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow"
+            >
+              <LogIn className="w-3.5 h-3.5 text-indigo-600" />
+              Sign in to Save
+            </button>
+          )}
+        </div>
+
+        {/* Number of Questions Selector */}
+        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+          <span className="text-orange-200/90 font-semibold text-[11px] uppercase tracking-wider">
+            Questions to include:
+          </span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {uniqueCountOptions.map((cnt) => (
+              <button
+                key={cnt}
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setSaveCount(cnt);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  saveCount === cnt
+                    ? 'bg-orange-500 text-slate-950 border-orange-200 shadow-sm'
+                    : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
+                }`}
+              >
+                {cnt === questions.length ? `All (${cnt})` : `${cnt} Qs`}
+              </button>
+            ))}
+
+            {populatedCount > 0 && populatedCount < questions.length && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setSaveCount(populatedCount);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  saveCount === populatedCount
+                    ? 'bg-amber-400 text-slate-950 border-amber-200 shadow-sm'
+                    : 'bg-amber-950/40 text-amber-200 border-amber-500/30 hover:bg-amber-900/40'
+                }`}
+              >
+                Only Filled ({populatedCount} Qs)
+              </button>
+            )}
+
+            {/* Stepper for custom count */}
+            <div className="flex items-center gap-1 bg-black/60 px-2 py-0.5 rounded-lg border border-white/20 ml-1">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playPop();
+                  setSaveCount(prev => Math.max(1, prev - 1));
+                }}
+                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                title="Decrease question count"
+              >
+                -
+              </button>
+              <input
+                type="number"
+                min={1}
+                max={questions.length}
+                value={saveCount}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value, 10);
+                  if (!isNaN(val)) {
+                    setSaveCount(Math.max(1, Math.min(val, questions.length)));
+                  }
+                }}
+                className="w-10 bg-transparent text-center font-mario text-xs text-amber-300 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playPop();
+                  setSaveCount(prev => Math.min(questions.length, prev + 1));
+                }}
+                className="w-5 h-5 rounded bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-xs cursor-pointer"
+                title="Increase question count"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <span className="text-[11px] text-slate-400 ml-auto">
+            Will save questions 1 through {Math.min(saveCount, questions.length)}.
+          </span>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5">
@@ -247,9 +365,20 @@ function BankCard({
       >
         <div className="flex items-start justify-between gap-2">
           <span className="font-bold text-white text-sm leading-tight">{bank.name}</span>
-          <span className="font-mario text-amber-300 text-sm shrink-0">{bank.questions.length}</span>
+          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mario shrink-0">
+            {bank.questions.length} Qs
+          </span>
         </div>
-        <p className="text-[11px] text-rose-200 mt-1 leading-snug">{bank.lessonGoal}</p>
+        <div className="flex items-center gap-1.5 mt-0.5">
+          {bank.lessonGoal && (
+            <p className="text-[11px] text-rose-200 leading-snug line-clamp-1">{bank.lessonGoal}</p>
+          )}
+          {bank.questions.length < 60 && (
+            <span className="text-[10px] text-slate-400 ml-auto shrink-0 font-medium">
+              Blocks 1–{bank.questions.length}
+            </span>
+          )}
+        </div>
         <p className="mt-2 text-xs leading-snug">
           <MarkedPrompt text={sample} className="text-yellow-200" />
         </p>

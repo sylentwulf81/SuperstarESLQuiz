@@ -64,7 +64,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       cards: 'MYSTERY CARDS DECK',
     },
     hostGuide: {
-      title: 'How to Run Mario Party in Your Classroom',
+      title: 'How to Run Super Blast in Your Classroom',
       subtitle: 'Everything a teacher, substitute, or host needs to know to lead an exciting, seamless session.',
       sections: [
         {
@@ -248,7 +248,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       testSoundLabel: 'TEST SOUND & EFFECT',
     },
     footer: {
-      tagline: 'Super Mario Party • Classroom & Interactive Edition',
+      tagline: 'Super Blast • Classroom & Interactive Edition',
       playButton: 'START ACTIVITY',
     },
   },
@@ -264,7 +264,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       cards: 'サプライズカード一覧',
     },
     hostGuide: {
-      title: 'マリオパーティの授業・進行ガイド',
+      title: 'スーパーブラストの授業・進行ガイド',
       subtitle: '初めて担当する先生や代理の先生でも、これさえ読めば迷わず盛り上げられるステップバイステップの解説です。',
       sections: [
         {

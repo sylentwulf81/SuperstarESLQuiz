@@ -9,7 +9,7 @@ interface ClassicRulebookModalProps {
 }
 
 const EN = {
-  title: 'Mario Blast Classic — Host Guide',
+  title: 'Super Blast Classic — Host Guide',
   steps: [
     'The team whose turn it is only chooses the numbered question block. Anyone in the class can answer.',
     'When a team answers correctly, click that team, then click one of the mystery cards (at least 6; one per team when you have 7–8 teams).',

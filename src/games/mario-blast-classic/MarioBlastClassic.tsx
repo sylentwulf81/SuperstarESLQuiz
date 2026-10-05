@@ -196,7 +196,6 @@ export function MarioBlastClassic({
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(0, Number(updatedQuestion.rewardCoins) || 0),
     };
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
-    toast.success(`Block #${blockId} Question Saved!`);
   };
 
   const handleResetAllQuestions = () => {

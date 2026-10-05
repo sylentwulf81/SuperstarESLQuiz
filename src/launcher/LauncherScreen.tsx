@@ -294,7 +294,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                     className="px-5 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-indigo-200 hover:text-white border border-indigo-400/40 text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all hover:scale-105 shadow-md"
                   >
                     <BookOpen className="w-4 h-4 text-indigo-300" />
-                    Mario Party Rules & Guide
+                    Super Blast Rules & Guide
                   </button>
                 )}
 
@@ -467,7 +467,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                                 onOpenRulebook();
                               }}
                               className="text-indigo-300 hover:text-indigo-100 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="Open Mario Party Host Guide & Rules"
+                              title="Open Super Blast Host Guide & Rules"
                             >
                               <BookOpen className="w-3 h-3 text-indigo-400" />
                               Host Guide & Rules
