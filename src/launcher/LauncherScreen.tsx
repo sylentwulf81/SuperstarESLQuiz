@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { LAUNCHER_GAMES, LauncherGame, LibraryFilter, LIBRARY_FILTERS, LIBRARY_FILTER_LABELS, ACTIVITY_STYLE_LABELS } from '@/launcher/catalog';
 import { sounds } from '@/shared/utils/sound';
+import { bgm } from '@/shared/utils/bgm';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { SnesBoxArt } from '@/launcher/SnesBoxArt';
@@ -72,6 +73,10 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
+
+  useEffect(() => {
+    bgm.pause();
+  }, []);
 
   useEffect(() => {
     if (!isAutoRotating || spotlightGames.length <= 1) return;
@@ -174,6 +179,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             <button
               onClick={() => {
                 sounds.playClick();
+                bgm.pause();
                 onToggleSound();
               }}
               className="p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-300 border border-white/15 cursor-pointer transition-all"

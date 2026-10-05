@@ -562,6 +562,10 @@ class BgmEngine {
     const buffer = await this.getTrackBuffer(track.id);
     if (!buffer || !this.isPlayingState) return;
 
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.isMutedState ? 0 : this.volumeState;
+    }
+
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
@@ -576,8 +580,8 @@ class BgmEngine {
       try { this.currentSource.stop(); } catch (_) {}
       this.currentSource = null;
     }
-    if (this.customAudioElement && !this.customAudioElement.paused) {
-      this.customAudioElement.pause();
+    if (this.customAudioElement) {
+      try { this.customAudioElement.pause(); } catch (_) {}
     }
     this.notify();
   }
@@ -619,11 +623,18 @@ class BgmEngine {
 
   public setMuted(muted: boolean) {
     this.isMutedState = muted;
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(muted ? 0 : this.volumeState, this.ctx.currentTime);
+    if (this.masterGain) {
+      try {
+        if (this.ctx) {
+          this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+          this.masterGain.gain.setValueAtTime(muted ? 0 : this.volumeState, this.ctx.currentTime);
+        }
+      } catch (_) {}
+      this.masterGain.gain.value = muted ? 0 : this.volumeState;
     }
     if (this.customAudioElement) {
       this.customAudioElement.muted = muted;
+      this.customAudioElement.volume = muted ? 0 : this.volumeState;
     }
     this.notify();
   }
@@ -631,8 +642,14 @@ class BgmEngine {
   public setVolume(vol: number) {
     const clamped = Math.max(0, Math.min(1, vol));
     this.volumeState = clamped;
-    if (this.masterGain && this.ctx) {
-      this.masterGain.gain.setValueAtTime(this.isMutedState ? 0 : clamped, this.ctx.currentTime);
+    if (this.masterGain) {
+      try {
+        if (this.ctx) {
+          this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+          this.masterGain.gain.setValueAtTime(this.isMutedState ? 0 : clamped, this.ctx.currentTime);
+        }
+      } catch (_) {}
+      this.masterGain.gain.value = this.isMutedState ? 0 : clamped;
     }
     if (this.customAudioElement) {
       this.customAudioElement.volume = clamped;

@@ -27,6 +27,7 @@ import {
 } from './data/classicLesson';
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { bgm } from '@/shared/utils/bgm';
 import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
   createClassicState,
@@ -107,6 +108,9 @@ export function MarioBlastClassic({
 
   useEffect(() => {
     preloadRevealArt();
+    return () => {
+      bgm.pause();
+    };
   }, []);
 
   useEffect(() => {
@@ -198,7 +202,36 @@ export function MarioBlastClassic({
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
   };
 
+  const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_id_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const [activeBankName, setActiveBankName] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_name_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+
+  const handleActiveBankChange = useCallback((bankId?: string, bankName?: string) => {
+    setActiveBankId(bankId);
+    setActiveBankName(bankName);
+    try {
+      if (bankId) localStorage.setItem(`mp_active_bank_id_${theme}`, bankId);
+      else localStorage.removeItem(`mp_active_bank_id_${theme}`);
+      if (bankName) localStorage.setItem(`mp_active_bank_name_${theme}`, bankName);
+      else localStorage.removeItem(`mp_active_bank_name_${theme}`);
+    } catch {
+      // storage unavailable
+    }
+  }, [theme]);
+
   const handleResetAllQuestions = () => {
+    handleActiveBankChange(undefined, undefined);
     try {
       localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
     } catch {
@@ -213,7 +246,8 @@ export function MarioBlastClassic({
     setLessonGoal(resetClassicLessonGoal());
   };
 
-  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string) => {
+  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
+    handleActiveBankChange(bankId, name);
     const nextGoal = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
     const normalized = questions.map(question => ({
       ...question,
@@ -235,7 +269,7 @@ export function MarioBlastClassic({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
     }
-  }, [dispatch, isLoggedIn, saveQuestionsCloud, theme, user]);
+  }, [dispatch, handleActiveBankChange, isLoggedIn, saveQuestionsCloud, theme, user]);
 
   const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
@@ -473,6 +507,9 @@ export function MarioBlastClassic({
             testGame={testMode}
             onToggleTestGame={handleToggleTestGame}
             onApplyQuestionBank={handleApplyQuestionBank}
+            activeBankId={activeBankId}
+            activeBankName={activeBankName}
+            onActiveBankChange={handleActiveBankChange}
           />
         )}
       </AnimatePresence>

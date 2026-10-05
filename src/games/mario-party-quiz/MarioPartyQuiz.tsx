@@ -18,6 +18,7 @@ import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team } fr
 import { loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
 import { loadPartyLessonGoal, persistPartyLessonGoal } from './data/lessonGoal';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { bgm } from '@/shared/utils/bgm';
 import { preloadRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import {
   createTurnBasedState,
@@ -97,6 +98,9 @@ export function MarioPartyQuiz({
 
   useEffect(() => {
     preloadRevealArt();
+    return () => {
+      bgm.pause();
+    };
   }, []);
 
   useEffect(() => {
@@ -154,6 +158,7 @@ export function MarioPartyQuiz({
   };
 
   const handleResetAllQuestions = () => {
+    handleActiveBankChange(undefined, undefined);
     try {
       localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
       localStorage.removeItem(`mp_custom_blocks_v4_${theme}`);
@@ -170,6 +175,34 @@ export function MarioPartyQuiz({
     persistPartyLessonGoal(theme, '');
   };
 
+  const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_id_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const [activeBankName, setActiveBankName] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_name_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+
+  const handleActiveBankChange = useCallback((bankId?: string, bankName?: string) => {
+    setActiveBankId(bankId);
+    setActiveBankName(bankName);
+    try {
+      if (bankId) localStorage.setItem(`mp_active_bank_id_${theme}`, bankId);
+      else localStorage.removeItem(`mp_active_bank_id_${theme}`);
+      if (bankName) localStorage.setItem(`mp_active_bank_name_${theme}`, bankName);
+      else localStorage.removeItem(`mp_active_bank_name_${theme}`);
+    } catch {
+      // storage unavailable
+    }
+  }, [theme]);
+
   const handleLessonGoalChange = (goal: string) => {
     setLessonGoal(goal);
     persistPartyLessonGoal(theme, goal);
@@ -183,7 +216,8 @@ export function MarioPartyQuiz({
     }
   };
 
-  const handleApplyQuestionBank = (questions: GameQuestion[], goal: string, name: string) => {
+  const handleApplyQuestionBank = (questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
+    handleActiveBankChange(bankId, name);
     const nextGoal = goal.trim();
     const next = createGameBlocks(theme, questions);
     setLessonGoal(nextGoal);
@@ -380,6 +414,9 @@ export function MarioPartyQuiz({
             onLessonGoalChange={handleLessonGoalChange}
             onLessonGoalCommit={commitLessonGoal}
             onApplyQuestionBank={handleApplyQuestionBank}
+            activeBankId={activeBankId}
+            activeBankName={activeBankName}
+            onActiveBankChange={handleActiveBankChange}
           />
         )}
       </AnimatePresence>

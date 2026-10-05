@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { InvasionTeam, factionOf } from './data/factions';
 import { US_STATE_PATHS } from './data/usStatePaths';
@@ -12,6 +12,7 @@ import { InvasionVictoryModal } from './components/InvasionVictoryModal';
 import { InvasionCinematic } from './components/InvasionCinematic';
 import { ENDING_SCENES, INTRO_SCENES } from './data/cinematicScenes';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { bgm } from '@/shared/utils/bgm';
 import {
   createMapTakeoverState,
   reduceMapTakeover,
@@ -46,6 +47,13 @@ export function AlienInvasion({
         }, effect.ms);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    bgm.pause();
+    return () => {
+      bgm.pause();
+    };
   }, []);
 
   const dispatch = useCallback((event: MapTakeoverEvent) => {
