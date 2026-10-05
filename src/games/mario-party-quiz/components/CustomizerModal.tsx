@@ -27,6 +27,7 @@ import {
   GameQuestion,
   QuestionType,
   MultipleChoiceQuestion,
+  TrueFalseQuestion,
   OpenTriviaQuestion,
   UnscrambleQuestion,
   GameTheme,
@@ -259,6 +260,16 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
         imageUrl: undefined,
         image: undefined,
       };
+    } else if (prevQ.type === 'true_false') {
+      clearedQ = {
+        ...prevQ,
+        title: '',
+        isTrue: true,
+        explanation: '',
+        rewardCoins: 1,
+        imageUrl: undefined,
+        image: undefined,
+      };
     } else if (prevQ.type === 'unscramble') {
       clearedQ = {
         ...prevQ,
@@ -344,6 +355,10 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
       if (type === 'multiple_choice') {
         newQ.options = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
         newQ.correctIndex = 0;
+        newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
+      } else if (type === 'true_false') {
+        newQ.isTrue = true;
+        newQ.explanation = '';
         newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
       } else if (type === 'open_trivia') {
         newQ.answer = 'Answer here';
@@ -474,6 +489,59 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               )}
             </div>
           ))}
+        </div>
+      );
+    }
+
+    if (editingQuestion.type === 'true_false') {
+      const q = editingQuestion as TrueFalseQuestion;
+      const isTrue = q.isTrue ?? true;
+      return (
+        <div className="space-y-3 bg-black/20 p-3.5 rounded-2xl border border-white/10">
+          <label className="text-xs font-bold text-indigo-200 block">
+            Correct Answer:
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: true }))}
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-all cursor-pointer ${
+                isTrue
+                  ? 'bg-emerald-600 text-white border-emerald-300 ring-4 ring-emerald-400/50 shadow-lg font-black'
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
+              }`}
+            >
+              <Check className="w-5 h-5 text-emerald-300" />
+              <span>TRUE</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: false }))}
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-all cursor-pointer ${
+                !isTrue
+                  ? 'bg-rose-600 text-white border-rose-300 ring-4 ring-rose-400/50 shadow-lg font-black'
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
+              }`}
+            >
+              <X className="w-5 h-5 text-rose-300" />
+              <span>FALSE</span>
+            </button>
+          </div>
+          <div>
+            <label className="text-xs font-bold text-indigo-200 block mb-1">
+              Explanation (optional fact shown after answer):
+            </label>
+            <input
+              type="text"
+              value={q.explanation || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateDraftQuestion(prev => ({ ...prev, explanation: val }));
+              }}
+              placeholder="e.g. Kyoto was the capital of Japan for over a thousand years."
+              className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+            />
+          </div>
         </div>
       );
     }
@@ -987,7 +1055,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
                 {/* Segmented Type Switcher */}
                 <div className="flex flex-wrap gap-2">
-                  {(['multiple_choice', 'unscramble', 'open_trivia', 'mystery_card'] as QuestionType[]).map((t) => (
+                  {(['multiple_choice', 'true_false', 'unscramble', 'open_trivia', 'mystery_card'] as QuestionType[]).map((t) => (
                     <button
                       key={t}
                       type="button"
@@ -999,6 +1067,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       }`}
                     >
                       {t === 'multiple_choice' && '🖼️ Multiple Choice'}
+                      {t === 'true_false' && '⚖️ True or False'}
                       {t === 'unscramble' && '🔤 Unscramble'}
                       {t === 'open_trivia' && '🎁 Open Trivia'}
                       {t === 'mystery_card' && '⭐ Mystery Card'}
