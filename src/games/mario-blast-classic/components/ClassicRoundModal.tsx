@@ -234,13 +234,14 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               })}
             </div>
 
-            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-x-auto overflow-y-hidden px-1">
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
+            <div className="mt-2 hshort:mt-1.5 min-h-0 flex-1 flex items-center justify-center overflow-x-auto overflow-y-hidden px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 max-w-full">
               {slots.map((slot, idx) => {
                 const claimedTeam = slot.claimedByTeamId ? teamsMap.get(slot.claimedByTeamId) ?? null : null;
                 const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId;
                 const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
                 const cardCount = Math.max(slots.length, 1);
+                const gapBudgetRem = (Math.max(cardCount - 1, 0) * 0.625).toFixed(3);
                 return (
                   <button
                     key={idx}
@@ -249,9 +250,10 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     onClick={() => canPick && onPickSlot(idx)}
                     style={{
                       // Width only — never % height (Safari collapses min(100%, …) in this flex).
-                      width: `min(10.5rem, 22vw, calc((min(96vw, 86rem) - 5rem) / ${cardCount} - 0.55rem), calc(34dvh * 2 / 3))`,
+                      // Budget 6rem for modal paddings/borders and exact card gaps so items never overflow.
+                      width: `min(10.5rem, 22vw, calc((min(96vw, 86rem) - 6rem - ${gapBudgetRem}rem) / ${cardCount}), calc(34dvh * 2 / 3))`,
                     }}
-                    className={`@container/card relative shrink-0 aspect-[2/3] h-auto rounded-2xl border-2 overflow-hidden ${
+                    className={`@container/card relative shrink min-w-0 aspect-[2/3] h-auto rounded-2xl border-2 overflow-hidden ${
                       slot.claimedByTeamId
                         ? 'border-white/30 cursor-default'
                         : canPick
