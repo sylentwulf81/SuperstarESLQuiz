@@ -63,7 +63,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
   const answerText =
-    question.type === 'open_trivia' ? question.answer : question.type === 'unscramble' ? question.targetWord : undefined;
+    question.type === 'open_trivia'
+      ? question.answer
+      : question.type === 'unscramble'
+      ? question.targetWord
+      : question.type === 'true_false'
+      ? `${question.isTrue ? 'TRUE' : 'FALSE'}${question.explanation ? ` — ${question.explanation}` : ''}`
+      : undefined;
 
   return (
     <GameModalShell barColor={pickChar.accentColor} instant>

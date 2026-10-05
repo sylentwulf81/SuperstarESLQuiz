@@ -45,14 +45,14 @@ export interface Team {
   customImageUrl?: string;
 }
 
-export type QuestionType = 'multiple_choice' | 'open_trivia' | 'unscramble' | 'mystery_card';
+export type QuestionType = 'multiple_choice' | 'true_false' | 'open_trivia' | 'unscramble' | 'mystery_card';
 
 export interface BaseQuestion {
   id: number;
   blockNumber: number;
   type: QuestionType;
   title: string;
-  category: 'holiday_trivia' | 'vocabulary' | 'spelling' | 'mystery' | 'carol' | 'grammar';
+  category: 'holiday_trivia' | 'vocabulary' | 'spelling' | 'mystery' | 'carol' | 'grammar' | 'true_false' | string;
   image?: string;
   imageUrl?: string;
   imageAlt?: string;
@@ -63,6 +63,12 @@ export interface MultipleChoiceQuestion extends BaseQuestion {
   type: 'multiple_choice';
   options: string[];
   correctIndex: number;
+  explanation?: string;
+}
+
+export interface TrueFalseQuestion extends BaseQuestion {
+  type: 'true_false';
+  isTrue: boolean;
   explanation?: string;
 }
 
@@ -86,6 +92,7 @@ export interface MysteryCardQuestion extends BaseQuestion {
 
 export type GameQuestion = 
   | MultipleChoiceQuestion 
+  | TrueFalseQuestion
   | OpenTriviaQuestion 
   | UnscrambleQuestion 
   | MysteryCardQuestion;

@@ -160,6 +160,12 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           color: 'border-amber-400/40 text-amber-300',
         },
         {
+          title: 'True or False',
+          desc: 'Evaluate an ESL statement or trivia fact with big TRUE/FALSE buttons and explanations.',
+          icon: '⚖️',
+          color: 'border-cyan-400/40 text-cyan-300',
+        },
+        {
           title: 'Letter Unscramble',
           desc: 'Tap scrambled letter tiles in the correct sequence to spell target vocabulary.',
           icon: '🔤',
@@ -356,6 +362,12 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           desc: 'イラストや問題文を見て、4つの選択肢の中から正解を見つけよう。',
           icon: '🖼️',
           color: 'border-amber-400/40 text-amber-300',
+        },
+        {
+          title: '○×（True or False）クイズ',
+          desc: '英文や知識が正しいかどうかを○×で判定。解説も表示できます。',
+          icon: '⚖️',
+          color: 'border-cyan-400/40 text-cyan-300',
         },
         {
           title: 'スペル並べ替え',

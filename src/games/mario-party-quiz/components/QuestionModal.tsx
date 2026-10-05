@@ -54,6 +54,7 @@ export const QuestionModal = React.memo(function QuestionModal({
 }: QuestionModalProps) {
   const [shuffledOptions, setShuffledOptions] = useState<ShuffledOption[]>(() => getShuffledOptions(question));
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
+  const [selectedTrueFalse, setSelectedTrueFalse] = useState<boolean | null>(null);
   const [eliminatedOptions, setEliminatedOptions] = useState<number[]>([]);
   const [isAnswerRevealed, setIsAnswerRevealed] = useState(false);
   const [status, setStatus] = useState<'idle' | 'correct' | 'incorrect'>('idle');
@@ -74,6 +75,13 @@ export const QuestionModal = React.memo(function QuestionModal({
     if (question.type === 'multiple_choice') {
       setShuffledOptions(getShuffledOptions(question));
       setSelectedOption(null);
+      setSelectedTrueFalse(null);
+      setEliminatedOptions([]);
+      setIsAnswerRevealed(false);
+      setStatus('idle');
+    } else if (question.type === 'true_false') {
+      setSelectedOption(null);
+      setSelectedTrueFalse(null);
       setEliminatedOptions([]);
       setIsAnswerRevealed(false);
       setStatus('idle');
@@ -139,6 +147,20 @@ export const QuestionModal = React.memo(function QuestionModal({
       sounds.playCorrect();
     } else {
       setEliminatedOptions(prev => [...prev, idx]);
+      setStatus('incorrect');
+      sounds.playWrong();
+    }
+  };
+
+  const handleSelectTrueFalse = (pickedTrue: boolean) => {
+    if (status === 'correct' || isAnswerRevealed || question.type !== 'true_false') return;
+    setSelectedTrueFalse(pickedTrue);
+    const isCorrect = pickedTrue === Boolean(question.isTrue);
+    setIsAnswerRevealed(true);
+    if (isCorrect) {
+      setStatus('correct');
+      sounds.playCorrect();
+    } else {
       setStatus('incorrect');
       sounds.playWrong();
     }
@@ -402,6 +424,64 @@ export const QuestionModal = React.memo(function QuestionModal({
             <div className={`flex-1 min-h-0 overflow-y-auto lg:overflow-hidden ${currentImage ? 'flex flex-col lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3 lg:gap-5' : 'flex flex-col'}`}>
               {currentImage && renderImagePanel(true)}
               {renderChoiceButtons()}
+            </div>
+          )}
+
+          {question.type === 'true_false' && (
+            <div className={`flex-1 min-h-0 overflow-y-auto lg:overflow-hidden ${currentImage ? 'flex flex-col lg:grid lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.2fr)] gap-3 lg:gap-5' : 'flex flex-col justify-center max-w-3xl mx-auto w-full gap-4'}`}>
+              {currentImage && renderImagePanel(true)}
+              <div className="flex-1 flex flex-col justify-center gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 auto-rows-fr">
+                  {/* TRUE Button */}
+                  <button
+                    type="button"
+                    disabled={isAnswerRevealed}
+                    onClick={() => handleSelectTrueFalse(true)}
+                    className={`min-h-[5.5rem] sm:min-h-[7rem] rounded-3xl border-2 text-2xl sm:text-3xl lg:text-4xl font-mario transition-all flex items-center justify-center gap-3 px-5 py-4 shadow-xl cursor-pointer ${
+                      isAnswerRevealed
+                        ? question.isTrue
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.45)]'
+                          : selectedTrueFalse === true
+                          ? 'bg-red-700 border-red-500 text-white/90 line-through opacity-60'
+                          : 'bg-slate-900/50 border-white/10 text-slate-400 opacity-40'
+                        : 'bg-slate-800/95 hover:bg-emerald-950/60 hover:border-emerald-400/70 border-white/25 text-white active:scale-98'
+                    }`}
+                  >
+                    <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400 shrink-0 drop-shadow" />
+                    <span>TRUE</span>
+                  </button>
+
+                  {/* FALSE Button */}
+                  <button
+                    type="button"
+                    disabled={isAnswerRevealed}
+                    onClick={() => handleSelectTrueFalse(false)}
+                    className={`min-h-[5.5rem] sm:min-h-[7rem] rounded-3xl border-2 text-2xl sm:text-3xl lg:text-4xl font-mario transition-all flex items-center justify-center gap-3 px-5 py-4 shadow-xl cursor-pointer ${
+                      isAnswerRevealed
+                        ? !question.isTrue
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.45)]'
+                          : selectedTrueFalse === false
+                          ? 'bg-red-700 border-red-500 text-white/90 line-through opacity-60'
+                          : 'bg-slate-900/50 border-white/10 text-slate-400 opacity-40'
+                        : 'bg-slate-800/95 hover:bg-rose-950/60 hover:border-rose-400/70 border-white/25 text-white active:scale-98'
+                    }`}
+                  >
+                    <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rose-400 shrink-0 drop-shadow" />
+                    <span>FALSE</span>
+                  </button>
+                </div>
+
+                {isAnswerRevealed && question.explanation && (
+                  <div className="p-4 sm:p-5 bg-black/60 rounded-2xl border border-white/20 text-center space-y-1 shadow-inner animate-in fade-in duration-300">
+                    <span className="text-[11px] uppercase font-black text-amber-300 tracking-widest block">
+                      EXPLANATION
+                    </span>
+                    <p className="text-base sm:text-lg text-slate-100 font-medium">
+                      {question.explanation}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
