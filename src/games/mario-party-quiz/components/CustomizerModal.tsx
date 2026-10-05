@@ -1,8 +1,36 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'motion/react';
-import { Settings2, X, Check, RefreshCw, Star, Cloud, UploadCloud, DownloadCloud, LogIn, Image as ImageIcon, Eye, EyeOff, Target, FlaskConical, Library } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Settings2,
+  X,
+  Check,
+  RefreshCw,
+  RotateCcw,
+  Star,
+  Cloud,
+  UploadCloud,
+  DownloadCloud,
+  LogIn,
+  Target,
+  FlaskConical,
+  Library,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Layers,
+  Sparkles,
+  Sliders,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { BlockState, GameQuestion, QuestionType, MultipleChoiceQuestion, OpenTriviaQuestion, UnscrambleQuestion, GameTheme } from '@/shared/types';
+import {
+  BlockState,
+  GameQuestion,
+  QuestionType,
+  MultipleChoiceQuestion,
+  OpenTriviaQuestion,
+  UnscrambleQuestion,
+  GameTheme,
+} from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
 import { sounds } from '@/shared/utils/sound';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -15,6 +43,9 @@ import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { PromptMarkField } from './PromptMarkField';
 import { QuestionLibraryPanel } from '@/games/mario-blast-classic/components/QuestionLibraryPanel';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { DEFAULT_QUESTIONS } from '../data/questions';
+import { SUMMER_QUESTIONS } from '../data/summerQuestions';
+import { CLASSIC_QUESTIONS } from '@/games/mario-blast-classic/data/classicQuestions';
 
 interface CustomizerModalProps {
   theme: GameTheme;
@@ -33,6 +64,9 @@ interface CustomizerModalProps {
   onToggleTestGame?: () => void;
   onApplyQuestionBank?: (questions: GameQuestion[], lessonGoal: string, name: string) => void;
 }
+
+type TabMode = 'deck' | 'library';
+type BlockFilter = 'all' | 'filled' | 'empty';
 
 export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   theme,
@@ -53,62 +87,290 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 }) => {
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
+
+  // Navigation & View tabs
+  const [activeTab, setActiveTab] = useState<TabMode>('deck');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
-  // Bolt Performance Optimization: Memoize currentBlock calculation to prevent running
-  // Array.find() on blocks array (60 items) on every modal input keystroke / render pass.
+  const [blockFilter, setBlockFilter] = useState<BlockFilter>('all');
+
   const currentBlock = useMemo(() => {
     return blocks.find(b => b.id === selectedBlockId) || blocks[0];
   }, [blocks, selectedBlockId]);
 
-  const [editingQuestion, setEditingQuestion] = useState<GameQuestion>(currentBlock.question);
-  const [isCloudBusy, setIsCloudBusy] = useState(false);
-  const [isSavedRecently, setIsSavedRecently] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
+  // Working copy of currently active block question
+  const [editingQuestion, setEditingQuestion] = useState<GameQuestion>(() => {
+    const q = { ...currentBlock.question };
+    if (q.type !== 'mystery_card') {
+      q.rewardCoins = Math.max(1, Number(q.rewardCoins) || 1);
+    }
+    return q;
+  });
+
   const [isCustomPoints, setIsCustomPoints] = useState<boolean>(() => {
     const coins = currentBlock?.question?.rewardCoins;
     return coins !== undefined && ![1, 3, 5, 10].includes(coins);
   });
 
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
+  const [isCloudBusy, setIsCloudBusy] = useState(false);
+
+  // References for debounced auto-save without losing keystrokes
+  const activeBlockIdRef = useRef<number>(selectedBlockId);
+  const editingQuestionRef = useRef<GameQuestion>(editingQuestion);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDirtyRef = useRef<boolean>(false);
+  const undoHistoryRef = useRef<{ blockId: number; question: GameQuestion } | null>(null);
+
+  // Synchronize ref on state changes
   useEffect(() => {
-    const blk = blocks.find(b => b.id === selectedBlockId);
-    if (blk) {
-      const q = { ...blk.question };
+    activeBlockIdRef.current = selectedBlockId;
+  }, [selectedBlockId]);
+
+  // Sanitize helper
+  const sanitizeQuestion = useCallback((q: GameQuestion): GameQuestion => {
+    const finalCoins = q.type === 'mystery_card'
+      ? 0
+      : Math.max(1, Number(q.rewardCoins) || 1);
+    return {
+      ...q,
+      title: legacySlashesToMarks(q.title || ''),
+      rewardCoins: finalCoins,
+    };
+  }, []);
+
+  // Flush pending save immediately
+  const flushSave = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (isDirtyRef.current) {
+      const sanitized = sanitizeQuestion(editingQuestionRef.current);
+      onUpdateBlockQuestion(activeBlockIdRef.current, sanitized);
+      isDirtyRef.current = false;
+      setSaveStatus('saved');
+    }
+  }, [onUpdateBlockQuestion, sanitizeQuestion]);
+
+  // Push updates with 350ms debounce
+  const updateDraftQuestion = useCallback((updater: (prev: GameQuestion) => GameQuestion) => {
+    setEditingQuestion((prev) => {
+      const updated = updater(prev);
+      editingQuestionRef.current = updated;
+      isDirtyRef.current = true;
+      setSaveStatus('saving');
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        const sanitized = sanitizeQuestion(updated);
+        onUpdateBlockQuestion(activeBlockIdRef.current, sanitized);
+        isDirtyRef.current = false;
+        setSaveStatus('saved');
+      }, 350);
+
+      return updated;
+    });
+  }, [onUpdateBlockQuestion, sanitizeQuestion]);
+
+  // Clean up debounce on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Switching blocks safely flushes current draft first
+  const handleSelectBlock = (newId: number) => {
+    if (newId === selectedBlockId) return;
+    sounds.playClick();
+    flushSave();
+
+    activeBlockIdRef.current = newId;
+    setSelectedBlockId(newId);
+
+    const targetBlock = blocks.find(b => b.id === newId);
+    if (targetBlock) {
+      const q = { ...targetBlock.question };
       if (q.type !== 'mystery_card') {
         q.rewardCoins = Math.max(1, Number(q.rewardCoins) || 1);
       }
       setEditingQuestion(q);
+      editingQuestionRef.current = q;
+      isDirtyRef.current = false;
+      setSaveStatus('saved');
       setIsCustomPoints(![1, 3, 5, 10].includes(q.rewardCoins));
     }
-  }, [selectedBlockId, blocks]);
+  };
 
-  const handleSelectBlock = (id: number) => {
+  const handlePrevBlock = () => {
+    if (selectedBlockId > 1) {
+      handleSelectBlock(selectedBlockId - 1);
+    }
+  };
+
+  const handleNextBlock = () => {
+    if (selectedBlockId < blocks.length) {
+      handleSelectBlock(selectedBlockId + 1);
+    }
+  };
+
+  // Safe modal close
+  const handleClose = () => {
+    flushSave();
     sounds.playClick();
-    setSelectedBlockId(id);
+    onClose();
   };
 
-  const handleSaveCurrent = () => {
-    sounds.playCorrect();
-    const finalCoins = editingQuestion.type === 'mystery_card'
-      ? 0
-      : Math.max(1, Number(editingQuestion.rewardCoins) || 1);
-    const sanitizedQuestion: GameQuestion = {
-      ...editingQuestion,
-      title: legacySlashesToMarks(editingQuestion.title),
-      rewardCoins: finalCoins,
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt+Left / Alt+Right for fast block switching
+      if (e.altKey && e.key === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrevBlock();
+      } else if (e.altKey && e.key === 'ArrowRight') {
+        e.preventDefault();
+        handleNextBlock();
+      }
     };
-    onUpdateBlockQuestion(currentBlock.id, sanitizedQuestion);
-    setIsSavedRecently(true);
-    setTimeout(() => setIsSavedRecently(false), 2200);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
+  // Clear current block action with Undo
+  const handleClearCurrent = () => {
+    sounds.playPop();
+    const prevQ = { ...editingQuestionRef.current };
+    undoHistoryRef.current = { blockId: currentBlock.id, question: prevQ };
+
+    let clearedQ: GameQuestion;
+    if (prevQ.type === 'multiple_choice') {
+      clearedQ = {
+        ...prevQ,
+        title: '',
+        options: ['', '', '', ''],
+        correctIndex: 0,
+        rewardCoins: 1,
+        imageUrl: undefined,
+        image: undefined,
+      };
+    } else if (prevQ.type === 'unscramble') {
+      clearedQ = {
+        ...prevQ,
+        title: '',
+        targetWord: '',
+        scrambledLetters: [],
+        rewardCoins: 1,
+        imageUrl: undefined,
+        image: undefined,
+      };
+    } else if (prevQ.type === 'open_trivia') {
+      clearedQ = {
+        ...prevQ,
+        title: '',
+        answer: '',
+        hint: '',
+        rewardCoins: 1,
+        imageUrl: undefined,
+        image: undefined,
+      };
+    } else {
+      clearedQ = {
+        ...prevQ,
+        title: '',
+        description: '',
+        rewardCoins: 0,
+      };
+    }
+
+    updateDraftQuestion(() => clearedQ);
+    flushSave();
+
+    toast(`Block #${currentBlock.id} cleared`, {
+      description: 'Prompt and answers were emptied.',
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          sounds.playClick();
+          updateDraftQuestion(() => prevQ);
+          flushSave();
+          toast.success(`Block #${currentBlock.id} restored`);
+        },
+      },
+    });
   };
 
+  // Reset block to default curriculum question with Undo
+  const handleResetCurrentToDefault = () => {
+    sounds.playClick();
+    const prevQ = { ...editingQuestionRef.current };
+    undoHistoryRef.current = { blockId: currentBlock.id, question: prevQ };
+
+    const defaultDeck =
+      theme === 'summer'
+        ? SUMMER_QUESTIONS
+        : theme === 'classic'
+        ? CLASSIC_QUESTIONS
+        : DEFAULT_QUESTIONS;
+    const defaultQ = defaultDeck[currentBlock.id - 1] || defaultDeck[0];
+    if (!defaultQ) return;
+
+    updateDraftQuestion(() => ({ ...defaultQ }));
+    flushSave();
+
+    toast.info(`Block #${currentBlock.id} reset to default`, {
+      action: {
+        label: 'Undo',
+        onClick: () => {
+          sounds.playClick();
+          updateDraftQuestion(() => prevQ);
+          flushSave();
+        },
+      },
+    });
+  };
+
+  // Question type change
+  const handleTypeChange = (type: QuestionType) => {
+    if (type === editingQuestion.type) return;
+
+    updateDraftQuestion((prev) => {
+      const newQ: any = { ...prev, type };
+      if (type === 'multiple_choice') {
+        newQ.options = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
+        newQ.correctIndex = 0;
+        newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
+      } else if (type === 'open_trivia') {
+        newQ.answer = 'Answer here';
+        newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
+      } else if (type === 'unscramble') {
+        newQ.targetWord = 'WORD';
+        newQ.scrambledLetters = ['W', 'O', 'R', 'D'];
+        newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
+      } else if (type === 'mystery_card') {
+        newQ.description =
+          'You uncovered a Special Mystery Card! Pick a lucky mystery card for bonus coins, power-ups, or chaotic Mario surprises!';
+        newQ.rewardCoins = 0;
+      }
+      return newQ as GameQuestion;
+    });
+  };
+
+  // Cloud backup handlers
   const handleSaveToCloud = async () => {
     if (!onSaveCloud) return;
+    flushSave();
     setIsCloudBusy(true);
     sounds.playSaveCloud();
     try {
       await onSaveCloud();
       toast.success('Question Deck Synced to Cloud', {
-        description: 'All 60 questions backed up to Firestore.',
+        description: `All ${blocks.length} questions backed up to Firestore.`,
         duration: 3500,
       });
     } catch {
@@ -139,32 +401,33 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     }
   };
 
-  const handleTypeChange = (type: QuestionType) => {
-    if (type === editingQuestion.type) return;
-
-    let newQ: any = { ...editingQuestion, type };
-    if (type === 'multiple_choice') {
-      newQ.options = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
-      newQ.correctIndex = 0;
-    } else if (type === 'open_trivia') {
-      newQ.answer = 'Answer here';
-    } else if (type === 'unscramble') {
-      newQ.targetWord = 'WORD';
-      newQ.scrambledLetters = ['W', 'O', 'R', 'D'];
-    } else if (type === 'mystery_card') {
-      newQ.description = 'You uncovered a Special Mystery Card! Pick a lucky mystery card for bonus coins, power-ups, or chaotic Mario surprises!';
-    }
-    setEditingQuestion(newQ as GameQuestion);
+  // Block metrics for navigator
+  const isBlockFilled = (b: BlockState) => {
+    const q = b.id === currentBlock.id ? editingQuestion : b.question;
+    return Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question');
   };
+
+  const filledBlocksCount = useMemo(() => {
+    return blocks.filter(isBlockFilled).length;
+  }, [blocks, editingQuestion, currentBlock.id]);
+
+  const filteredBlocks = useMemo(() => {
+    if (blockFilter === 'filled') return blocks.filter(isBlockFilled);
+    if (blockFilter === 'empty') return blocks.filter(b => !isBlockFilled(b));
+    return blocks;
+  }, [blocks, blockFilter, editingQuestion, currentBlock.id]);
 
   const renderTypeSpecificFields = () => {
     if (editingQuestion.type === 'mystery_card') {
       return (
-        <div className="bg-amber-900/40 p-4 rounded-xl border border-amber-500/50">
+        <div className="bg-amber-900/40 p-4 rounded-2xl border border-amber-500/50 shadow-inner">
           <p className="text-amber-300 text-sm font-bold flex items-center gap-2">
-            <Star className="w-5 h-5" /> This block is a Special Mystery Card!
+            <Star className="w-5 h-5 text-amber-300 fill-amber-300" />
+            Special Mystery Card Block
           </p>
-          <p className="text-amber-200/80 text-xs mt-1">When players select this block, it will trigger the roulette wheel instead of a question.</p>
+          <p className="text-amber-200/80 text-xs mt-1">
+            When players choose this block, the reward roulette wheel triggers instead of a question.
+          </p>
         </div>
       );
     }
@@ -172,26 +435,43 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     if (editingQuestion.type === 'multiple_choice') {
       const q = editingQuestion as MultipleChoiceQuestion;
       return (
-        <div className="space-y-3">
-          <label className="text-xs font-bold text-indigo-200 block">Options & Correct Answer:</label>
+        <div className="space-y-3 bg-black/20 p-3.5 rounded-2xl border border-white/10">
+          <label className="text-xs font-bold text-indigo-200 block">
+            Options & Correct Answer:
+          </label>
           {q.options.map((opt, idx) => (
-            <div key={idx} className="flex items-center gap-2">
+            <div key={idx} className="flex items-center gap-2.5">
               <input
                 type="radio"
+                name={`mc-answer-${currentBlock.id}`}
                 checked={q.correctIndex === idx}
-                onChange={() => setEditingQuestion({ ...q, correctIndex: idx })}
-                className="w-4 h-4 text-indigo-500 focus:ring-indigo-500 bg-black/40 border-white/20"
+                onChange={() => updateDraftQuestion(prev => ({ ...prev, correctIndex: idx }))}
+                className="w-4 h-4 text-emerald-500 focus:ring-emerald-500 bg-black/40 border-white/20 cursor-pointer"
+                title="Mark as correct answer"
               />
               <input
                 type="text"
                 value={opt}
                 onChange={(e) => {
-                  const newOptions = [...q.options];
-                  newOptions[idx] = e.target.value;
-                  setEditingQuestion({ ...q, options: newOptions });
+                  const val = e.target.value;
+                  updateDraftQuestion((prev: any) => {
+                    const newOptions = [...(prev.options || [])];
+                    newOptions[idx] = val;
+                    return { ...prev, options: newOptions };
+                  });
                 }}
-                className="flex-1 bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                placeholder={`Option ${idx + 1}`}
+                className={`flex-1 bg-black/40 border rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 ${
+                  q.correctIndex === idx
+                    ? 'border-emerald-500/60 focus:ring-emerald-400/60 bg-emerald-950/20'
+                    : 'border-white/20 focus:ring-indigo-400/60'
+                }`}
               />
+              {q.correctIndex === idx && (
+                <span className="text-[11px] font-bold text-emerald-400 shrink-0 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30">
+                  Correct
+                </span>
+              )}
             </div>
           ))}
         </div>
@@ -201,23 +481,34 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     if (editingQuestion.type === 'open_trivia') {
       const q = editingQuestion as OpenTriviaQuestion;
       return (
-        <div className="space-y-3">
+        <div className="space-y-3 bg-black/20 p-3.5 rounded-2xl border border-white/10">
           <div>
-            <label className="text-xs font-bold text-indigo-200 block mb-1">Correct Answer:</label>
+            <label className="text-xs font-bold text-indigo-200 block mb-1">
+              Correct Answer:
+            </label>
             <input
               type="text"
-              value={q.answer}
-              onChange={(e) => setEditingQuestion({ ...q, answer: e.target.value })}
+              value={q.answer || ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                updateDraftQuestion(prev => ({ ...prev, answer: val }));
+              }}
+              placeholder="e.g. Mount Fuji"
               className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
             />
           </div>
           {theme !== 'classic' && (
             <div>
-              <label className="text-xs font-bold text-indigo-200 block mb-1">Hint (optional):</label>
+              <label className="text-xs font-bold text-indigo-200 block mb-1">
+                Hint (optional):
+              </label>
               <input
                 type="text"
                 value={q.hint || ''}
-                onChange={(e) => setEditingQuestion({ ...q, hint: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateDraftQuestion(prev => ({ ...prev, hint: val }));
+                }}
                 placeholder="e.g. eat → eaten"
                 className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
               />
@@ -230,141 +521,174 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     if (editingQuestion.type === 'unscramble') {
       const q = editingQuestion as UnscrambleQuestion;
       return (
-        <div>
-          <label className="text-xs font-bold text-indigo-200 block mb-1">Target Word to Unscramble:</label>
+        <div className="bg-black/20 p-3.5 rounded-2xl border border-white/10 space-y-2">
+          <label className="text-xs font-bold text-indigo-200 block">
+            Target Word to Unscramble:
+          </label>
           <input
             type="text"
-            value={q.targetWord}
+            value={q.targetWord || ''}
             onChange={(e) => {
               const val = e.target.value.toUpperCase();
-              setEditingQuestion({
-                ...q,
+              updateDraftQuestion(prev => ({
+                ...prev,
                 targetWord: val,
-                scrambledLetters: shuffleWordLetters(val)
-              });
+                scrambledLetters: shuffleWordLetters(val),
+              }));
             }}
             placeholder="e.g. NINTENDO"
             className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
           />
-          <p className="text-[10px] text-white/50 mt-1">Letters are automatically scrambled when saved.</p>
+          <p className="text-[11px] text-white/50">
+            Letters are scrambled automatically for the students during the game.
+          </p>
         </div>
       );
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-sm overflow-hidden">
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.94, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="relative w-full max-w-5xl h-[92vh] md:h-[86vh] min-h-[580px] max-h-[860px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
+        exit={{ scale: 0.94, opacity: 0 }}
+        className="relative w-full max-w-5xl h-[94vh] md:h-[88vh] min-h-[580px] max-h-[880px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
       >
         {/* Ambient Top Glow Line */}
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 opacity-90 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-500 opacity-90 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
 
-        {/* Header */}
-        <div className="bg-slate-800/90 p-4 text-white flex items-center justify-between border-b border-white/15 shrink-0">
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-6 h-6 text-yellow-300" />
-            <h2 className="font-mario text-2xl text-yellow-300 drop-shadow">
-              Question Deck Editor
-            </h2>
-            <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-              {THEME_UI[theme].edition}
-            </span>
-          </div>
-          <button
-            onClick={() => { sounds.playClick(); onClose(); }}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20 cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Cloud Persistence Banner */}
-        <div className="bg-slate-950/80 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2.5">
-            {isLoggedIn && user ? (
-              <>
-                <Avatar className="w-6 h-6 border border-amber-400/80">
-                  {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} referrerPolicy="no-referrer" />}
-                  <AvatarFallback className="text-[10px] bg-indigo-800 text-amber-200">
-                    {(user.displayName || user.email || 'U')[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-white">{user.displayName || user.email}</span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-semibold">
-                    <Cloud className="w-3 h-3 text-emerald-400" /> Cloud Sync Active
-                  </span>
-                  {lastSyncedAt && <span className="text-white/50 text-[10px]">(Last saved {lastSyncedAt})</span>}
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 text-indigo-200">
-                <span className="text-amber-300 font-semibold">Local Storage Mode</span>
-                <span className="text-slate-400 text-[11px]">— Edits persist on this browser. Optional: sign in to sync with Firestore.</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            {isLoggedIn ? (
-              <>
-                <button
-                  onClick={handleSaveToCloud}
-                  disabled={isCloudBusy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl border border-yellow-200 shadow-sm transition-all cursor-pointer text-xs"
-                >
-                  <UploadCloud className={`w-3.5 h-3.5 ${isCloudBusy ? 'animate-bounce' : ''}`} />
-                  <span>Sync to Cloud</span>
-                </button>
-                <button
-                  onClick={handleLoadFromCloud}
-                  disabled={isCloudBusy}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/15 transition-all cursor-pointer text-xs"
-                >
-                  <DownloadCloud className="w-3.5 h-3.5 text-indigo-300" />
-                  <span>Restore from Cloud</span>
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={loginWithGoogle}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl shadow-sm transition-all cursor-pointer text-xs"
-              >
-                <LogIn className="w-3.5 h-3.5 text-indigo-600" />
-                <span>Sign in for Cloud Backup</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-        {onLessonGoalChange && (
-          <div className="bg-slate-900/90 px-4 py-3 border-b border-white/10 space-y-2">
+        {/* Unified Top Navigation & Status Bar */}
+        <div className="bg-slate-800/95 px-4 py-3 text-white flex flex-wrap items-center justify-between gap-3 border-b border-white/15 shrink-0">
+          {/* Left: Studio Title & Mode Tabs */}
+          <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <Target className="w-4 h-4 text-rose-300 shrink-0" />
-              <span className="text-xs font-bold text-rose-200 uppercase tracking-wider">
-                Lesson Goal
+              <Settings2 className="w-5 h-5 text-yellow-300" />
+              <h2 className="font-mario text-xl text-yellow-300 drop-shadow">
+                Question Studio
+              </h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 hidden sm:inline-block">
+                {THEME_UI[theme].edition}
               </span>
-              <span className="text-[11px] text-slate-400">
-                {theme === 'classic' ? 'Shown on every block' : 'Optional note for your saved sets'}
-              </span>
+            </div>
+
+            {/* Main Tabs */}
+            <div className="flex items-center bg-black/40 p-1 rounded-2xl border border-white/15 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setActiveTab('deck');
+                }}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                  activeTab === 'deck'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Deck ({blocks.length})</span>
+              </button>
               {onApplyQuestionBank && (
                 <button
                   id="studio-open-library"
                   type="button"
                   onClick={() => {
                     sounds.playClick();
-                    setLibraryOpen(true);
+                    setActiveTab('library');
                   }}
-                  className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                    activeTab === 'library'
+                      ? 'bg-orange-500 text-slate-950 shadow-sm font-black'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
                 >
                   <Library className="w-3.5 h-3.5" />
-                  Library
+                  <span>Library</span>
                 </button>
               )}
+            </div>
+          </div>
+
+          {/* Right: Auto-Save Status, Settings, Close */}
+          <div className="flex items-center gap-2.5">
+            {/* Auto-Save Indicator */}
+            {saveStatus === 'saving' ? (
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span>Saving…</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Saved</span>
+              </span>
+            )}
+
+            {/* Cloud Status Pill */}
+            {isLoggedIn && user ? (
+              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/60 border border-white/10 text-xs">
+                <Avatar className="w-4 h-4 border border-amber-400/80">
+                  {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} referrerPolicy="no-referrer" />}
+                  <AvatarFallback className="text-[8px] bg-indigo-800 text-amber-200">
+                    {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-slate-300 text-[11px] truncate max-w-[100px]">
+                  {user.displayName || user.email}
+                </span>
+                <Cloud className="w-3 h-3 text-emerald-400" />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={loginWithGoogle}
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/20 text-xs font-semibold cursor-pointer transition-all"
+                title="Sign in with Google to enable cloud backups"
+              >
+                <LogIn className="w-3 h-3 text-amber-300" />
+                <span>Sign in</span>
+              </button>
+            )}
+
+            {/* Deck Settings Popover Toggle */}
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                setIsSettingsOpen(!isSettingsOpen);
+              }}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                testGame || isSettingsOpen
+                  ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-sm'
+                  : 'bg-slate-800 text-slate-200 border-white/15 hover:bg-slate-700'
+              }`}
+              title="Game settings & deck options"
+            >
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Settings</span>
+              {testGame && (
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
+              )}
+            </button>
+
+            {/* Modal Close Button */}
+            <button
+              onClick={handleClose}
+              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20 cursor-pointer"
+              title="Close editor (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Inline Lesson Goal Bar (Slim & Always Accessible) */}
+        {activeTab === 'deck' && onLessonGoalChange && (
+          <div className="bg-slate-950/80 px-4 py-2 border-b border-white/10 flex items-center gap-2.5 shrink-0">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300 shrink-0">
+              <Target className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline uppercase tracking-wider text-[11px]">Lesson Goal:</span>
             </div>
             <input
               type="text"
@@ -378,66 +702,132 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 }
               }}
               placeholder={theme === 'classic' ? DEFAULT_CLASSIC_LESSON_GOAL : 'e.g. Summer vocabulary & trivia mix'}
-              className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-rose-400/50"
+              className="flex-1 bg-black/40 border border-white/15 rounded-xl px-3 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-400/50"
             />
           </div>
         )}
-        {theme === 'classic' && onToggleTestGame && (
-          <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-red-200 uppercase tracking-wider block">
-                Test Mode
-              </span>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                Mystery cards turn red and show their names so you can rehearse King Boo, Blooper, Bowser, Gold Star, and Mystery Blocks.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                onToggleTestGame();
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                testGame
-                  ? 'bg-red-600/30 text-red-100 border-red-400/50 hover:bg-red-600/40'
-                  : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
-              }`}
-            >
-              <FlaskConical className="w-3.5 h-3.5" />
-              <span>{testGame ? 'Test Mode: On' : 'Test Mode: Off'}</span>
-            </button>
-          </div>
-        )}
-        {onToggleCatchUpNote && (
-          <div className="bg-slate-900/90 px-4 py-2.5 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-sky-200 uppercase tracking-wider block">
-                Mystery Draw Presentation
-              </span>
-              <span className="text-[11px] text-slate-400 leading-snug">
-                1st place still cannot draw Blue Shell or Bowser cards. Turn the note on if you want the class to see why.
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                onToggleCatchUpNote();
-              }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                showCatchUpNote
-                  ? 'bg-sky-500/20 text-sky-200 border-sky-400/40 hover:bg-sky-500/30'
-                  : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
-              }`}
-            >
-              {showCatchUpNote ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span>{showCatchUpNote ? 'Catch-up note: Shown' : 'Catch-up note: Hidden'}</span>
-            </button>
-          </div>
-        )}
 
-        {libraryOpen && onApplyQuestionBank ? (
+        {/* Settings Dialog Overlay */}
+        <AnimatePresence>
+          {isSettingsOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="absolute top-14 right-4 z-40 w-full max-w-md bg-slate-900/98 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-4 space-y-4 text-xs"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-mario text-base text-yellow-300 flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-amber-300" />
+                  Deck Settings & Rules
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="p-1 rounded-lg hover:bg-white/10 text-slate-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Cloud Sync Buttons */}
+              <div className="space-y-1.5 bg-black/30 p-2.5 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between text-indigo-200 font-bold mb-1">
+                  <span className="flex items-center gap-1">
+                    <Cloud className="w-3.5 h-3.5 text-indigo-400" />
+                    Cloud Backup
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    {lastSyncedAt ? `Saved ${lastSyncedAt}` : 'Firestore'}
+                  </span>
+                </div>
+                {isLoggedIn ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleSaveToCloud}
+                      disabled={isCloudBusy}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-sm transition-all"
+                    >
+                      <UploadCloud className={`w-3.5 h-3.5 ${isCloudBusy ? 'animate-bounce' : ''}`} />
+                      <span>Sync to Cloud</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadFromCloud}
+                      disabled={isCloudBusy}
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/15 text-xs cursor-pointer transition-all"
+                    >
+                      <DownloadCloud className="w-3.5 h-3.5 text-indigo-300" />
+                      <span>Restore Cloud</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={loginWithGoogle}
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow transition-all"
+                  >
+                    <LogIn className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Sign in with Google</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Test Mode */}
+              {theme === 'classic' && onToggleTestGame && (
+                <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-black/30 border border-white/10">
+                  <div>
+                    <span className="font-bold text-red-200 block">Test Mode</span>
+                    <span className="text-[11px] text-slate-400 leading-tight block">
+                      Mystery cards turn red and display names for rehearsing.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onToggleTestGame();
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                      testGame
+                        ? 'bg-red-600 text-white border-red-400 shadow'
+                        : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
+                    }`}
+                  >
+                    <FlaskConical className="w-3.5 h-3.5" />
+                    <span>{testGame ? 'On' : 'Off'}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Restore All Defaults */}
+              <div className="pt-2 border-t border-white/10 flex justify-between items-center">
+                <span className="text-[11px] text-slate-400">Need to start over completely?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playResetDeck();
+                    onResetAllQuestions();
+                    handleSelectBlock(1);
+                    setIsSettingsOpen(false);
+                    toast.info('Deck Restored to Defaults', {
+                      description: `All ${blocks.length} questions reset to standard curriculum.`,
+                      duration: 3500,
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 cursor-pointer transition-all"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Restore All Defaults</span>
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Main Body */}
+        {activeTab === 'library' && onApplyQuestionBank ? (
           <QuestionLibraryPanel
             questions={blocks.map(block =>
               block.id === currentBlock.id
@@ -448,279 +838,395 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             showStarterExamples={theme === 'classic'}
             onApply={(bank) => {
               onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name);
-              setLibraryOpen(false);
+              setActiveTab('deck');
             }}
-            onClose={() => setLibraryOpen(false)}
+            onClose={() => setActiveTab('deck')}
           />
         ) : (
-        <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
-          {/* Left Block selector grid */}
-          <div className="md:col-span-4 bg-slate-950/70 p-3 sm:p-3.5 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
-            <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider block mb-2 px-1 shrink-0">
-              Select Block (1-{blocks.length})
-            </span>
-            <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-              <div className="grid grid-cols-6 gap-1.5">
-                {blocks.map((b) => {
-                  const hasImage = Boolean(b.question.imageUrl || b.question.image);
-                  return (
-                    <button
-                      key={b.id}
-                      onClick={() => handleSelectBlock(b.id)}
-                      className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-pointer relative ${
-                        selectedBlockId === b.id
-                          ? 'bg-amber-500 text-slate-950 border-yellow-200 font-bold scale-105 glass-glow-gold'
-                          : b.question.type === 'mystery_card' 
-                            ? 'bg-amber-900/60 text-amber-300 border-amber-500/50 hover:bg-amber-800/60'
-                            : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/10'
-                      }`}
-                    >
-                      {b.id}
-                      {b.question.type === 'mystery_card' && (
-                        <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
-                      )}
-                      {hasImage && (
-                        <span className="absolute -bottom-1 -right-1 text-[9px] drop-shadow">🖼️</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <p className="text-[11px] text-white/50 mt-2 px-1 leading-tight shrink-0 border-t border-white/10 pt-2">
-              ⭐ Mystery Card block &bull; 🖼️ Clue image attached
-            </p>
-          </div>
+          <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
+            {/* Left Block Navigator Rail */}
+            <div className="md:col-span-4 bg-slate-950/70 p-3 sm:p-3.5 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-inner">
+              {/* Header & Filter Chips */}
+              <div className="shrink-0 mb-2.5">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-indigo-300 uppercase tracking-wider">
+                    Blocks Navigator
+                  </span>
+                  <span className="text-[11px] text-emerald-300 font-semibold bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                    {filledBlocksCount} / {blocks.length} Filled
+                  </span>
+                </div>
 
-          {/* Right Editor Pane */}
-          <div className="md:col-span-8 bg-slate-950/60 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-xl">
-            {/* Pinned Header & Type Switcher */}
-            <div className="p-3.5 sm:p-4 border-b border-white/15 bg-slate-900/70 flex flex-col gap-2.5 shrink-0">
-              <div className="flex items-center justify-between">
-                <h3 className="font-mario text-xl text-yellow-300">
-                  Editing Block #{currentBlock.id}
-                </h3>
-                <span className="text-xs bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full border border-indigo-400/30 font-bold uppercase tracking-wider">
-                  {editingQuestion.type.replace('_', ' ')}
-                </span>
-              </div>
-
-              {/* Type Switcher */}
-              <div className="flex flex-wrap gap-2">
-                {(['multiple_choice', 'unscramble', 'open_trivia', 'mystery_card'] as QuestionType[]).map((t) => (
+                <div className="flex items-center gap-1 text-[11px]">
                   <button
-                    key={t}
-                    onClick={() => handleTypeChange(t)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                      editingQuestion.type === t
-                        ? 'bg-indigo-600 text-white border-indigo-300 shadow'
-                        : 'bg-slate-800/80 text-slate-300 border-white/10 hover:bg-slate-700'
+                    type="button"
+                    onClick={() => setBlockFilter('all')}
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                      blockFilter === 'all'
+                        ? 'bg-indigo-600 text-white border-indigo-400'
+                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
                     }`}
                   >
-                    {t === 'multiple_choice' && '🖼️ Multiple Choice'}
-                    {t === 'unscramble' && '🔤 Unscramble'}
-                    {t === 'open_trivia' && '🎁 Open Trivia'}
-                    {t === 'mystery_card' && '⭐ Mystery Card'}
+                    All ({blocks.length})
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={() => setBlockFilter('filled')}
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                      blockFilter === 'filled'
+                        ? 'bg-emerald-600 text-white border-emerald-400'
+                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    Filled ({filledBlocksCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBlockFilter('empty')}
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                      blockFilter === 'empty'
+                        ? 'bg-slate-700 text-white border-slate-500'
+                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                    }`}
+                  >
+                    Empty ({blocks.length - filledBlocksCount})
+                  </button>
+                </div>
+              </div>
+
+              {/* 60-Blocks Grid */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-1.5">
+                <div className="grid grid-cols-6 gap-1.5">
+                  {filteredBlocks.map((b) => {
+                    const isCurrent = selectedBlockId === b.id;
+                    const q = isCurrent ? editingQuestion : b.question;
+                    const filled = Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question');
+                    const hasImage = Boolean(q.imageUrl || q.image);
+                    const isMystery = q.type === 'mystery_card';
+
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => handleSelectBlock(b.id)}
+                        className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-pointer relative flex flex-col items-center justify-center ${
+                          isCurrent
+                            ? 'bg-amber-400 text-slate-950 border-2 border-yellow-100 font-black shadow-md ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900 z-10'
+                            : isMystery
+                            ? 'bg-amber-950/50 text-amber-300 border-amber-500/40 hover:bg-amber-900/60'
+                            : filled
+                            ? 'bg-slate-800/90 text-slate-100 border-white/20 hover:bg-slate-700'
+                            : 'bg-slate-900/60 text-slate-400 border-white/10 hover:bg-slate-800/60'
+                        }`}
+                      >
+                        {b.id}
+                        {/* Dot indicator for filled question */}
+                        {filled && !isCurrent && (
+                          <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
+                        )}
+                        {/* Mystery block star */}
+                        {isMystery && (
+                          <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
+                        )}
+                        {/* Image clue icon */}
+                        {hasImage && (
+                          <span className="absolute -bottom-1 -right-1 text-[9px] drop-shadow">🖼️</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Navigator Bottom Bar (Prev / Next Buttons) */}
+              <div className="shrink-0 mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevBlock}
+                  disabled={selectedBlockId <= 1}
+                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-all cursor-pointer"
+                  title="Previous block (Alt+Left)"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <span>Prev</span>
+                </button>
+                <span className="text-[11px] font-mario text-amber-300 px-1">
+                  #{currentBlock.id}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNextBlock}
+                  disabled={selectedBlockId >= blocks.length}
+                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-all cursor-pointer"
+                  title="Next block (Alt+Right)"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
-            {/* Scrollable Form Fields with stable scrollbar */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 [scrollbar-gutter:stable]">
-              {theme === 'classic' ? (
-                <PromptMarkField
-                  value={editingQuestion.title}
-                  onChange={(title) => setEditingQuestion({ ...editingQuestion, title })}
-                  onEnter={handleSaveCurrent}
-                />
-              ) : (
-              <div>
-                <label className="text-xs font-bold text-indigo-200 block mb-1">
-                  Question Prompt / Title:
-                </label>
-                <input
-                  type="text"
-                  value={editingQuestion.title}
-                  onChange={(e) => setEditingQuestion({ ...editingQuestion, title: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSaveCurrent();
-                    }
-                  }}
-                  className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
-                />
+            {/* Right Editor Pane */}
+            <div className="md:col-span-8 bg-slate-950/60 rounded-2xl border border-white/15 flex flex-col h-full min-h-0 overflow-hidden shadow-xl">
+              {/* Header: Block Info & Question Type Selector */}
+              <div className="p-3.5 sm:p-4 border-b border-white/15 bg-slate-900/70 flex flex-col gap-2.5 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-mario text-xl text-yellow-300">
+                      Block #{currentBlock.id}
+                    </h3>
+                    <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-400/30 font-bold uppercase tracking-wider">
+                      {editingQuestion.type.replace('_', ' ')}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <span className="text-[11px]">Autosaving changes</span>
+                  </div>
+                </div>
+
+                {/* Segmented Type Switcher */}
+                <div className="flex flex-wrap gap-2">
+                  {(['multiple_choice', 'unscramble', 'open_trivia', 'mystery_card'] as QuestionType[]).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => handleTypeChange(t)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        editingQuestion.type === t
+                          ? 'bg-indigo-600 text-white border-indigo-300 shadow glass-glow-blue'
+                          : 'bg-slate-800/80 text-slate-300 border-white/10 hover:bg-slate-700'
+                      }`}
+                    >
+                      {t === 'multiple_choice' && '🖼️ Multiple Choice'}
+                      {t === 'unscramble' && '🔤 Unscramble'}
+                      {t === 'open_trivia' && '🎁 Open Trivia'}
+                      {t === 'mystery_card' && '⭐ Mystery Card'}
+                    </button>
+                  ))}
+                </div>
               </div>
-              )}
 
-              {editingQuestion.type !== 'mystery_card' && theme !== 'classic' && (
-                <div>
-                  <label className="text-xs font-bold text-indigo-200 block mb-1">
-                    Description / Clue (Optional):
-                  </label>
-                  <textarea
-                    value={editingQuestion.description || ''}
-                    onChange={(e) => setEditingQuestion({ ...editingQuestion, description: e.target.value })}
-                    rows={2}
-                    className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+              {/* Scrollable Form Fields */}
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 [scrollbar-gutter:stable]">
+                {/* Prompt Field */}
+                {theme === 'classic' ? (
+                  <PromptMarkField
+                    value={editingQuestion.title}
+                    onChange={(title) => updateDraftQuestion(prev => ({ ...prev, title }))}
+                    onEnter={handleNextBlock}
                   />
-                </div>
-              )}
+                ) : (
+                  <div>
+                    <label className="text-xs font-bold text-indigo-200 block mb-1">
+                      Question Prompt / Title:
+                    </label>
+                    <input
+                      type="text"
+                      value={editingQuestion.title}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateDraftQuestion(prev => ({ ...prev, title: val }));
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleNextBlock();
+                        }
+                      }}
+                      placeholder="e.g. Where is the Eiffel Tower located?"
+                      className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                    />
+                  </div>
+                )}
 
-              {/* Type Specific Fields */}
-              {renderTypeSpecificFields()}
+                {/* Description / Clue (Optional for other themes) */}
+                {editingQuestion.type !== 'mystery_card' && theme !== 'classic' && (
+                  <div>
+                    <label className="text-xs font-bold text-indigo-200 block mb-1">
+                      Description / Clue (Optional):
+                    </label>
+                    <textarea
+                      value={editingQuestion.description || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateDraftQuestion(prev => ({ ...prev, description: val }));
+                      }}
+                      rows={2}
+                      placeholder="Optional extra hints for players"
+                      className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
+                    />
+                  </div>
+                )}
 
-              {/* Image Clue Upload & Link */}
-              {editingQuestion.type !== 'mystery_card' && (
-                <div className="pt-2 border-t border-white/10">
-                  <ImageUploader
-                    currentImageUrl={editingQuestion.imageUrl || editingQuestion.image}
-                    onImageChange={(newImg) => {
-                      setEditingQuestion(prev => ({
-                        ...prev,
-                        imageUrl: newImg,
-                        image: newImg,
-                      }));
-                    }}
-                    isLoggedIn={isLoggedIn}
-                    userEmail={user?.displayName || user?.email}
-                    onPromptLogin={loginWithGoogle}
-                    titlePrompt={`Block #${currentBlock.id}`}
-                    questionType={editingQuestion.type}
-                  />
-                </div>
-              )}
+                {/* Type Specific Fields */}
+                {renderTypeSpecificFields()}
 
-              {editingQuestion.type !== 'mystery_card' && (
-                <div>
-                  <label className="text-xs font-bold text-indigo-200 block mb-1.5">
-                    Reward Coins: <span className="text-white/50 text-[11px] font-normal">(Default: at least 1 Coin)</span>
-                  </label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {[1, 3, 5, 10].map(amt => (
+                {/* Image Clue Upload & Link */}
+                {editingQuestion.type !== 'mystery_card' && (
+                  <div className="pt-2 border-t border-white/10">
+                    <ImageUploader
+                      currentImageUrl={editingQuestion.imageUrl || editingQuestion.image}
+                      onImageChange={(newImg) => {
+                        updateDraftQuestion(prev => ({
+                          ...prev,
+                          imageUrl: newImg,
+                          image: newImg,
+                        }));
+                      }}
+                      isLoggedIn={isLoggedIn}
+                      userEmail={user?.displayName || user?.email}
+                      onPromptLogin={loginWithGoogle}
+                      titlePrompt={`Block #${currentBlock.id}`}
+                      questionType={editingQuestion.type}
+                    />
+                  </div>
+                )}
+
+                {/* Reward Coins */}
+                {editingQuestion.type !== 'mystery_card' && (
+                  <div className="pt-2 border-t border-white/10">
+                    <label className="text-xs font-bold text-indigo-200 block mb-1.5">
+                      Reward Coins: <span className="text-white/50 text-[11px] font-normal">(Default: at least 1 Coin)</span>
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[1, 3, 5, 10].map(amt => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => {
+                            sounds.playClick();
+                            setIsCustomPoints(false);
+                            updateDraftQuestion(prev => ({ ...prev, rewardCoins: amt }));
+                          }}
+                          className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
+                            !isCustomPoints && (editingQuestion.rewardCoins || 1) === amt
+                              ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
+                              : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
+                          }`}
+                        >
+                          <span className="flex items-center gap-1">
+                            +{amt}
+                            <MarioCoin size="xs" />
+                          </span>
+                        </button>
+                      ))}
+
                       <button
-                        key={amt}
                         type="button"
                         onClick={() => {
                           sounds.playClick();
-                          setIsCustomPoints(false);
-                          setEditingQuestion(prev => ({ ...prev, rewardCoins: amt }));
+                          setIsCustomPoints(true);
                         }}
                         className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
-                          !isCustomPoints && (editingQuestion.rewardCoins || 1) === amt
+                          isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)
                             ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
                             : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
                         }`}
                       >
-                        <span className="flex items-center gap-1">
-                          +{amt}
-                          <MarioCoin size="xs" />
-                        </span>
+                        <span>Custom</span>
                       </button>
-                    ))}
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playClick();
-                        setIsCustomPoints(true);
-                      }}
-                      className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
-                        isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)
-                          ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
-                          : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
-                      }`}
-                    >
-                      <span>Custom</span>
-                    </button>
-
-                    {(isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)) && (
-                      <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-xl border border-yellow-400/40 shadow-inner">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sounds.playPop();
-                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
-                            setEditingQuestion(prev => ({ ...prev, rewardCoins: Math.max(1, currentVal - 1) }));
-                          }}
-                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
-                          title="Minus 1 coin"
-                        >
-                          -
-                        </button>
-                        <span className="text-yellow-300 font-mario text-sm font-bold">+</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={99}
-                          value={editingQuestion.rewardCoins || 1}
-                          onChange={(e) => {
-                            const parsed = parseInt(e.target.value, 10);
-                            setEditingQuestion(prev => ({
-                              ...prev,
-                              rewardCoins: isNaN(parsed) ? 1 : Math.max(1, parsed)
-                            }));
-                          }}
-                          onBlur={() => {
-                            if (!editingQuestion.rewardCoins || editingQuestion.rewardCoins < 1) {
-                              setEditingQuestion(prev => ({ ...prev, rewardCoins: 1 }));
-                            }
-                          }}
-                          className="w-14 bg-black/80 border border-white/30 rounded-lg px-1.5 py-0.5 text-center font-mario text-sm text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            sounds.playPop();
-                            const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
-                            setEditingQuestion(prev => ({ ...prev, rewardCoins: currentVal + 1 }));
-                          }}
-                          className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
-                          title="Plus 1 coin"
-                        >
-                          +
-                        </button>
-                        <span className="text-xs text-amber-200 font-bold ml-1 flex items-center gap-1">
-                          Coins <MarioCoin size="xs" />
-                        </span>
-                      </div>
-                    )}
+                      {(isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)) && (
+                        <div className="flex items-center gap-1.5 bg-black/60 px-3 py-1 rounded-xl border border-yellow-400/40 shadow-inner">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sounds.playPop();
+                              const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
+                              updateDraftQuestion(prev => ({ ...prev, rewardCoins: Math.max(1, currentVal - 1) }));
+                            }}
+                            className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
+                            title="Minus 1 coin"
+                          >
+                            -
+                          </button>
+                          <span className="text-yellow-300 font-mario text-sm font-bold">+</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={editingQuestion.rewardCoins || 1}
+                            onChange={(e) => {
+                              const parsed = parseInt(e.target.value, 10);
+                              updateDraftQuestion(prev => ({
+                                ...prev,
+                                rewardCoins: isNaN(parsed) ? 1 : Math.max(1, parsed),
+                              }));
+                            }}
+                            className="w-14 bg-black/80 border border-white/30 rounded-lg px-1.5 py-0.5 text-center font-mario text-sm text-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              sounds.playPop();
+                              const currentVal = Math.max(1, Number(editingQuestion.rewardCoins) || 1);
+                              updateDraftQuestion(prev => ({ ...prev, rewardCoins: currentVal + 1 }));
+                            }}
+                            className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-white flex items-center justify-center font-bold text-sm cursor-pointer border border-white/20"
+                            title="Plus 1 coin"
+                          >
+                            +
+                          </button>
+                          <span className="text-xs text-amber-200 font-bold ml-1 flex items-center gap-1">
+                            Coins <MarioCoin size="xs" />
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Bottom Action Bar */}
+              <div className="p-3 sm:px-5 bg-slate-900/95 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                {/* Left: Clear Question & Reset Block */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleClearCurrent}
+                    className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Empties prompt and answers for this block (with undo)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Question</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResetCurrentToDefault}
+                    className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
+                    title="Restore standard curriculum question for this block"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Reset Block</span>
+                  </button>
                 </div>
-              )}
-            </div>
 
-            {/* Pinned Bottom Action Bar */}
-            <div className="p-3 sm:px-5 bg-slate-900/95 border-t border-white/15 flex flex-wrap items-center justify-between gap-3 shrink-0">
-              <button
-                onClick={() => {
-                  sounds.playResetDeck();
-                  onResetAllQuestions();
-                  handleSelectBlock(1);
-                  toast.info('Deck Restored to Defaults', {
-                    description: `All ${blocks.length} questions reset to standard curriculum.`,
-                    duration: 3500,
-                  });
-                }}
-                className="px-3.5 py-2 bg-slate-800/80 hover:bg-red-950/60 text-slate-300 hover:text-red-300 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Restore Defaults
-              </button>
-
-              <button
-                onClick={handleSaveCurrent}
-                className={`px-5 py-2 font-mario text-base rounded-xl shadow-md border flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isSavedRecently
-                    ? 'bg-gradient-to-r from-emerald-500 to-green-400 text-white border-yellow-200 scale-105 shadow-[0_0_20px_rgba(74,222,128,0.7)]'
-                    : 'bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white border-emerald-300/60'
-                }`}
-              >
-                <Check className="w-4 h-4" /> {isSavedRecently ? 'Saved! 🎉' : 'Save Block Changes'}
-              </button>
+                {/* Right: Quick Block Navigation */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePrevBlock}
+                    disabled={selectedBlockId <= 1}
+                    className="px-3.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1 transition-all cursor-pointer"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev Block</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextBlock}
+                    disabled={selectedBlockId >= blocks.length}
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold border border-indigo-400/50 flex items-center gap-1 transition-all cursor-pointer shadow"
+                  >
+                    <span>Next Block</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
         )}
       </motion.div>
     </div>

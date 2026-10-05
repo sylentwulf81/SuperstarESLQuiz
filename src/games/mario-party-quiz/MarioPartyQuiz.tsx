@@ -151,13 +151,6 @@ export function MarioPartyQuiz({
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(1, Number(updatedQuestion.rewardCoins) || 1),
     };
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
-    toast.success(`Block #${blockId} Question Saved!`, {
-      description: updatedQuestion.title
-        ? `"${updatedQuestion.title.length > 55 ? updatedQuestion.title.slice(0, 52) + '…' : updatedQuestion.title}"`
-        : 'Question content updated in deck.',
-      duration: 3500,
-    });
-    showToast(`✅ Saved changes for Block #${blockId}!`);
   };
 
   const handleResetAllQuestions = () => {

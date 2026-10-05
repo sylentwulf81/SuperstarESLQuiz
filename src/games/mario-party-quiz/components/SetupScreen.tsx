@@ -131,7 +131,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
               <h1 className="font-mario text-2xl sm:text-3xl text-white text-shadow-mario tracking-wider">
-                {theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'SUPER MARIO PARTY'}
+                {THEME_UI[theme].gameTitle.toUpperCase()}
               </h1>
               <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
                 {theme === 'summer' ? (
@@ -147,7 +147,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
                 ) : (
                   <>
                     <Snowflake className="w-3.5 h-3.5" />
-                    <span>Christmas Edition (60 Holiday)</span>
+                    <span>Winter Edition (60 Holiday)</span>
                   </>
                 )}
               </div>

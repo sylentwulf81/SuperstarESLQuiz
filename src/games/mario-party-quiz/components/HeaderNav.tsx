@@ -76,7 +76,7 @@ export const HeaderNav = React.memo(function HeaderNav({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   useBodyScrollLock(isMobileMenuOpen || showResetConfirm);
 
-  const gameTitle = theme === 'classic' ? 'SUPER QUIZ CLASSIC' : 'MARIO PARTY';
+  const gameTitle = THEME_UI[theme].gameTitle.toUpperCase();
 
   return (
     <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2 sm:px-3 lg:px-4 py-1.5 shadow-xl shrink-0 w-full">

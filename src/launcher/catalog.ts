@@ -80,8 +80,8 @@ export interface LauncherGame {
 export const LAUNCHER_GAMES: LauncherGame[] = [
   {
     id: 'mario_party_summer',
-    title: 'Super Mario Party Quiz: Summer Edition',
-    shortTitle: 'Mario Party Summer',
+    title: 'Super Summer Blast',
+    shortTitle: 'Super Summer Blast',
     tagline: '60-Block Mystery Roulette & Interactive ESL Board Activity',
     description: 'The flagship classroom board activity! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges, then spinning for surprise items like Stars, Boo Steals, and Bowser Revolutions.',
     category: 'board',
@@ -114,14 +114,14 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Double Turns, Boo Stealing & Bowser Revolutions',
       'Star captures, coin races, and classroom-safe item cards',
     ],
-    powerpointInspiration: 'Upgrades the 50-slide Mario PPT with real sound effects, audio, and coin physics',
+    powerpointInspiration: 'Upgrades the 50-slide summer PPT with real sound effects, audio, and coin physics',
   },
   {
     id: 'mario_party_winter',
-    title: 'Super Mario Party Quiz: Holiday Edition',
-    shortTitle: 'Mario Party Holiday',
+    title: 'Super Winter Blast',
+    shortTitle: 'Super Winter Blast',
     tagline: 'Festive Winter Mystery Board with Snowy Surprises',
-    description: 'A cozy holiday edition featuring winter-themed trivia, holiday vocabulary, Christmas carol sing-along rewards, and chilly Bowser Blizzard events.',
+    description: 'A cozy holiday edition featuring winter-themed trivia, holiday vocabulary, Christmas carol sing-along rewards, and chilly Blizzard events.',
     category: 'seasonal',
     activityStyle: 'board_turn_based',
     badge: 'CLASS READY',
@@ -157,8 +157,8 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
   },
   {
     id: 'mario_blast_classic',
-    title: 'Mario Blast Classic',
-    shortTitle: 'Mario Blast Classic',
+    title: 'Super Blast Classic',
+    shortTitle: 'Super Blast Classic',
     tagline: 'Have You Ever…? Live Classroom Race & Mystery Cards',
     description:
       'Board Classic: one team picks the block, every team can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser cards can slam the round shut.',
@@ -190,9 +190,9 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
       'Any team can answer — host clicks the winner, then a card',
       'Six mystery cards per question; one draw per team',
       'Rare round-enders: Gold Star, Bowser Revolution, Bowser’s Fury, Piranha Plant',
-      'Same Mario Party items as Summer & Holiday, remapped for live play',
+      'Same items as Summer & Winter, remapped for live play',
     ],
-    powerpointInspiration: 'Recreates the original Have You Ever Mario Party PPT with live multi-team answering',
+    powerpointInspiration: 'Recreates the original Have You Ever classroom PPT with live multi-team answering',
   },
   {
     id: 'alien_invasion',
@@ -235,7 +235,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
   {
     id: 'mario_halloween_blast',
     title: 'Super Halloween Blast',
-    shortTitle: 'Halloween Blast',
+    shortTitle: 'Super Halloween Blast',
     tagline: 'Spooky Mystery Blocks, Ghost Hunts & Haunted Cards',
     description:
       'A coming-soon seasonal Board Turn-Based activity. Teams take turns picking haunted mystery blocks, answering spooky ESL prompts, and drawing classroom-safe surprise cards — the October pack.',
