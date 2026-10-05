@@ -62,8 +62,10 @@ interface CustomizerModalProps {
   onLessonGoalChange?: (goal: string) => void;
   onLessonGoalCommit?: (goal: string) => void;
   testGame?: boolean;
-  onToggleTestGame?: () => void;
-  onApplyQuestionBank?: (questions: GameQuestion[], lessonGoal: string, name: string) => void;
+  onApplyQuestionBank?: (questions: GameQuestion[], lessonGoal: string, name: string, bankId?: string) => void;
+  activeBankId?: string;
+  activeBankName?: string;
+  onActiveBankChange?: (bankId?: string, bankName?: string) => void;
 }
 
 type TabMode = 'deck' | 'library';
@@ -85,9 +87,24 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   testGame = false,
   onToggleTestGame,
   onApplyQuestionBank,
+  activeBankId,
+  activeBankName,
+  onActiveBankChange,
 }) => {
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
+
+  const [internalBankId, setInternalBankId] = useState<string | undefined>(activeBankId);
+  const [internalBankName, setInternalBankName] = useState<string | undefined>(activeBankName);
+
+  const currentActiveBankId = activeBankId ?? internalBankId;
+  const currentActiveBankName = activeBankName ?? internalBankName;
+
+  const handleActiveBankChange = useCallback((id?: string, name?: string) => {
+    setInternalBankId(id);
+    setInternalBankName(name);
+    onActiveBankChange?.(id, name);
+  }, [onActiveBankChange]);
 
   // Navigation & View tabs
   const [activeTab, setActiveTab] = useState<TabMode>('deck');
@@ -505,7 +522,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             <button
               type="button"
               onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: true }))}
-              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-all cursor-pointer ${
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-colors cursor-pointer ${
                 isTrue
                   ? 'bg-emerald-600 text-white border-emerald-300 ring-4 ring-emerald-400/50 shadow-lg font-black'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
@@ -517,7 +534,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             <button
               type="button"
               onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: false }))}
-              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-all cursor-pointer ${
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-colors cursor-pointer ${
                 !isTrue
                   ? 'bg-rose-600 text-white border-rose-300 ring-4 ring-rose-400/50 shadow-lg font-black'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
@@ -618,9 +635,10 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-sm overflow-hidden">
       <motion.div
-        initial={{ scale: 0.94, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.94, opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
         className="relative w-full max-w-5xl h-[94vh] md:h-[88vh] min-h-[580px] max-h-[880px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
       >
         {/* Ambient Top Glow Line */}
@@ -638,6 +656,11 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 hidden sm:inline-block">
                 {THEME_UI[theme].edition}
               </span>
+              {currentActiveBankName && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 max-w-[140px] truncate hidden md:inline-block" title={currentActiveBankName}>
+                  Set: {currentActiveBankName}
+                </span>
+              )}
             </div>
 
             {/* Main Tabs */}
@@ -648,7 +671,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   sounds.playClick();
                   setActiveTab('deck');
                 }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
                   activeTab === 'deck'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-slate-300 hover:text-white'
@@ -665,7 +688,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     sounds.playClick();
                     setActiveTab('library');
                   }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
                     activeTab === 'library'
                       ? 'bg-orange-500 text-slate-950 shadow-sm font-black'
                       : 'text-slate-300 hover:text-white'
@@ -711,7 +734,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               <button
                 type="button"
                 onClick={loginWithGoogle}
-                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/20 text-xs font-semibold cursor-pointer transition-all"
+                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/20 text-xs font-semibold cursor-pointer transition-colors"
                 title="Sign in with Google to enable cloud backups"
               >
                 <LogIn className="w-3 h-3 text-amber-300" />
@@ -726,7 +749,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 sounds.playClick();
                 setIsSettingsOpen(!isSettingsOpen);
               }}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
                 testGame || isSettingsOpen
                   ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-sm'
                   : 'bg-slate-800 text-slate-200 border-white/15 hover:bg-slate-700'
@@ -815,7 +838,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       type="button"
                       onClick={handleSaveToCloud}
                       disabled={isCloudBusy}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-sm transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-sm transition-colors"
                     >
                       <UploadCloud className={`w-3.5 h-3.5 ${isCloudBusy ? 'animate-bounce' : ''}`} />
                       <span>Sync to Cloud</span>
@@ -824,7 +847,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       type="button"
                       onClick={handleLoadFromCloud}
                       disabled={isCloudBusy}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/15 text-xs cursor-pointer transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/15 text-xs cursor-pointer transition-colors"
                     >
                       <DownloadCloud className="w-3.5 h-3.5 text-indigo-300" />
                       <span>Restore Cloud</span>
@@ -834,7 +857,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={loginWithGoogle}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow transition-all"
+                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow transition-colors"
                   >
                     <LogIn className="w-3.5 h-3.5 text-indigo-600" />
                     <span>Sign in with Google</span>
@@ -857,7 +880,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       sounds.playClick();
                       onToggleTestGame();
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer shrink-0 ${
                       testGame
                         ? 'bg-red-600 text-white border-red-400 shadow'
                         : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
@@ -884,7 +907,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       duration: 3500,
                     });
                   }}
-                  className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 cursor-pointer transition-all"
+                  className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   <span>Restore All Defaults</span>
@@ -904,8 +927,12 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
             )}
             lessonGoal={lessonGoal ?? ''}
             showStarterExamples={theme === 'classic'}
+            activeBankId={currentActiveBankId}
+            activeBankName={currentActiveBankName}
+            onActiveBankChange={handleActiveBankChange}
             onApply={(bank) => {
-              onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name);
+              handleActiveBankChange(bank.id, bank.name);
+              onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name, bank.id);
               setActiveTab('deck');
             }}
             onClose={() => setActiveTab('deck')}
@@ -929,7 +956,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setBlockFilter('all')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
                       blockFilter === 'all'
                         ? 'bg-indigo-600 text-white border-indigo-400'
                         : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
@@ -940,7 +967,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setBlockFilter('filled')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
                       blockFilter === 'filled'
                         ? 'bg-emerald-600 text-white border-emerald-400'
                         : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
@@ -951,7 +978,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setBlockFilter('empty')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-all cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
                       blockFilter === 'empty'
                         ? 'bg-slate-700 text-white border-slate-500'
                         : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
@@ -977,9 +1004,9 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                         key={b.id}
                         type="button"
                         onClick={() => handleSelectBlock(b.id)}
-                        className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-pointer relative flex flex-col items-center justify-center ${
+                        className={`p-2 rounded-xl font-mario text-sm border transition-colors cursor-pointer relative flex flex-col items-center justify-center ${
                           isCurrent
-                            ? 'bg-amber-400 text-slate-950 border-2 border-yellow-100 font-black shadow-md ring-2 ring-amber-400 ring-offset-2 ring-offset-slate-900 z-10'
+                            ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-sm z-10'
                             : isMystery
                             ? 'bg-amber-950/50 text-amber-300 border-amber-500/40 hover:bg-amber-900/60'
                             : filled
@@ -1012,7 +1039,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   type="button"
                   onClick={handlePrevBlock}
                   disabled={selectedBlockId <= 1}
-                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-all cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-colors cursor-pointer"
                   title="Previous block (Alt+Left)"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
@@ -1025,7 +1052,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   type="button"
                   onClick={handleNextBlock}
                   disabled={selectedBlockId >= blocks.length}
-                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-all cursor-pointer"
+                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-colors cursor-pointer"
                   title="Next block (Alt+Right)"
                 >
                   <span>Next</span>
@@ -1060,7 +1087,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                       key={t}
                       type="button"
                       onClick={() => handleTypeChange(t)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${
                         editingQuestion.type === t
                           ? 'bg-indigo-600 text-white border-indigo-300 shadow glass-glow-blue'
                           : 'bg-slate-800/80 text-slate-300 border-white/10 hover:bg-slate-700'
@@ -1168,7 +1195,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                             setIsCustomPoints(false);
                             updateDraftQuestion(prev => ({ ...prev, rewardCoins: amt }));
                           }}
-                          className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
+                          className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-colors cursor-pointer ${
                             !isCustomPoints && (editingQuestion.rewardCoins || 1) === amt
                               ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
                               : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
@@ -1187,7 +1214,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                           sounds.playClick();
                           setIsCustomPoints(true);
                         }}
-                        className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-all cursor-pointer ${
+                        className={`px-3.5 py-1.5 rounded-xl font-mario text-sm border transition-colors cursor-pointer ${
                           isCustomPoints || ![1, 3, 5, 10].includes(editingQuestion.rewardCoins || 1)
                             ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow glass-glow-gold'
                             : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
@@ -1254,7 +1281,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={handleClearCurrent}
-                    className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Empties prompt and answers for this block (with undo)"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -1264,7 +1291,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   <button
                     type="button"
                     onClick={handleResetCurrentToDefault}
-                    className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1.5 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="Restore standard curriculum question for this block"
                   >
                     <RotateCcw className="w-3.5 h-3.5 text-sky-400" />
@@ -1278,7 +1305,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     type="button"
                     onClick={handlePrevBlock}
                     disabled={selectedBlockId <= 1}
-                    className="px-3.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1 transition-all cursor-pointer"
+                    className="px-3.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 disabled:opacity-40 text-slate-200 rounded-xl text-xs font-bold border border-white/15 flex items-center gap-1 transition-colors cursor-pointer"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                     <span>Prev Block</span>
@@ -1287,7 +1314,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     type="button"
                     onClick={handleNextBlock}
                     disabled={selectedBlockId >= blocks.length}
-                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold border border-indigo-400/50 flex items-center gap-1 transition-all cursor-pointer shadow"
+                    className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white rounded-xl text-xs font-bold border border-indigo-400/50 flex items-center gap-1 transition-colors cursor-pointer shadow"
                   >
                     <span>Next Block</span>
                     <ChevronRight className="w-3.5 h-3.5" />
