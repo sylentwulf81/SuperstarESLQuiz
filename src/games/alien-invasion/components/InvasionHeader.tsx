@@ -18,7 +18,12 @@ interface InvasionHeaderProps {
   onExitToLauncher: () => void;
 }
 
-export const InvasionHeader: React.FC<InvasionHeaderProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrap InvasionHeader in React.memo to prevent unnecessary VDOM re-renders
+ * during state hover highlights, question modal toggles, and pulse timer ticks.
+ */
+export const InvasionHeader: React.FC<InvasionHeaderProps> = React.memo(function InvasionHeader({
   teams,
   counts,
   capturedCount,
@@ -29,7 +34,7 @@ export const InvasionHeader: React.FC<InvasionHeaderProps> = ({
   onDeclareWinner,
   onResetGame,
   onExitToLauncher,
-}) => {
+}) {
   return (
     <header className="shrink-0 px-3 py-2 sm:px-4 border-b border-white/10 bg-slate-950/70 backdrop-blur-md">
       <div className="flex items-center justify-between gap-3">
@@ -110,4 +115,4 @@ export const InvasionHeader: React.FC<InvasionHeaderProps> = ({
       </div>
     </header>
   );
-};
+});
