@@ -78,7 +78,6 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   const [progress, setProgress] = useState(0);
   const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
 
-  useEffect(() => {
   // Stop any lingering background music when entering launcher
   useEffect(() => {
     bgm.pause();

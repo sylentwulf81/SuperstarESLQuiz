@@ -522,11 +522,8 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
         sounds.playPowerUp();
       } else if (card.type === 'blue_shell') {
         sounds.playBlueShell();
-      } else if (card.type === 'super_coins_10' || card.type === 'coins_10') {
-        sounds.playStarCoin();
-      } else {
-        sounds.playCoin();
       }
+      // Coin sounds are played upon claiming the reward
     }, 1580);
   };
 
@@ -535,8 +532,6 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
     if (!selectedCard) return;
     if (selectedCard.coins > 0) {
       sounds.playClaimReward();
-    } else {
-      sounds.playPowerUp();
     }
     onCardSelected(selectedCard);
   };
