@@ -175,30 +175,32 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
 
       {/* Button & Result Display */}
-      {!hasRolled ? (
-        <button
-          type="button"
-          onClick={startRoll}
-          disabled={isRolling}
-          className={`bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario rounded-2xl shadow-xl border-2 border-white flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 ${
-            compact ? 'px-4 py-2 text-sm sm:text-base' : 'px-6 py-3 text-lg sm:text-xl'
-          }`}
-        >
-          <Dices className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-slate-950`} />
-          {isRolling ? 'ROLLING...' : 'TAP TO ROLL!'}
-        </button>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className={`inline-flex items-center gap-2 rounded-full bg-emerald-500/25 border border-emerald-400/60 text-emerald-200 font-mario shadow-lg ${
-            compact ? 'px-3 py-1 text-sm sm:text-base' : 'px-5 py-2 text-lg sm:text-xl'
-          }`}
-        >
-          <Sparkles className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-emerald-300`} />
-          <span>ROLLED A {face}!</span>
-        </motion.div>
-      )}
+      <div className={`flex items-center justify-center shrink-0 ${compact ? 'h-9' : 'h-12'}`}>
+        {!hasRolled ? (
+          <button
+            type="button"
+            onClick={startRoll}
+            disabled={isRolling}
+            className={`bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario rounded-2xl shadow-xl border-2 border-white flex items-center gap-2 cursor-pointer transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 ${
+              compact ? 'px-4 py-1.5 text-sm sm:text-base' : 'px-6 py-2.5 text-lg sm:text-xl'
+            }`}
+          >
+            <Dices className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-slate-950`} />
+            {isRolling ? 'ROLLING...' : 'TAP TO ROLL!'}
+          </button>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className={`inline-flex items-center gap-2 rounded-full bg-emerald-500/25 border border-emerald-400/60 text-emerald-200 font-mario shadow-lg ${
+              compact ? 'px-3 py-1 text-sm sm:text-base' : 'px-5 py-2 text-lg sm:text-xl'
+            }`}
+          >
+            <Sparkles className={`${compact ? 'w-4 h-4' : 'w-5 h-5'} text-emerald-300`} />
+            <span>ROLLED A {face}!</span>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };
