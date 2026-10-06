@@ -123,7 +123,71 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <h2 className="font-mario text-[clamp(1.35rem,3.2vw,3.1rem)] text-yellow-300 leading-tight text-shadow-mario text-balance">
               <MarkedPrompt text={question.title} />
             </h2>
-            {answerText && (
+            {question.type === 'true_false' ? (
+              <div className="mt-2 hshort:mt-1.5 mx-auto w-full flex flex-col gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 max-w-md mx-auto w-full">
+                  <div
+                    className={`p-2.5 sm:p-3 rounded-2xl border-2 flex items-center justify-center gap-2 font-mario text-base sm:text-xl transition-all ${
+                      answerRevealed
+                        ? question.isTrue
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
+                          : 'bg-slate-900/50 border-white/10 text-slate-500 opacity-40'
+                        : 'bg-slate-800/90 text-white border-white/20'
+                    }`}
+                  >
+                    <Check className={`w-5 h-5 ${answerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} strokeWidth={3} />
+                    <span>TRUE</span>
+                  </div>
+                  <div
+                    className={`p-2.5 sm:p-3 rounded-2xl border-2 flex items-center justify-center gap-2 font-mario text-base sm:text-xl transition-all ${
+                      answerRevealed
+                        ? !question.isTrue
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
+                          : 'bg-slate-900/50 border-white/10 text-slate-500 opacity-40'
+                        : 'bg-slate-800/90 text-white border-white/20'
+                    }`}
+                  >
+                    <X className={`w-5 h-5 ${answerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} strokeWidth={3} />
+                    <span>FALSE</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  {!answerRevealed ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playCardFlip();
+                        setAnswerRevealed(true);
+                      }}
+                      className="px-4 py-1.5 rounded-xl bg-indigo-700/80 hover:bg-indigo-600 text-white font-mario text-xs sm:text-sm border border-indigo-400/50 inline-flex items-center gap-2 cursor-pointer shadow"
+                    >
+                      <Eye className="w-4 h-4 text-yellow-300" />
+                      <span>Reveal Answer</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {question.explanation && (
+                        <span className="text-xs text-yellow-200 font-bold bg-black/60 px-3 py-1 rounded-full border border-white/15">
+                          {question.explanation}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setAnswerRevealed(false);
+                        }}
+                        className="p-1 rounded-lg bg-black/55 hover:bg-white/20 text-indigo-100 border border-white/20 cursor-pointer"
+                        title="Hide answer"
+                      >
+                        <EyeOff className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : answerText && (
               <div
                 className={`relative mt-2 hshort:mt-1.5 mx-auto w-full min-h-[3.25rem] hshort:min-h-[2.85rem] px-5 rounded-2xl border-2 flex items-center justify-center ${
                   answerRevealed

@@ -35,15 +35,55 @@ export const GameBoard = React.memo(function GameBoard({
     return map;
   }, [teams]);
 
+  // Dynamically compute optimal grid layout based on block count
+  const { lgCols, lgRows, smCols, smRows } = useMemo(() => {
+    const total = blocks.length;
+    if (total <= 0) return { lgCols: 12, lgRows: 5, smCols: 6, smRows: 10 };
+
+    // Standard 60-block setup
+    if (total === 60) return { lgCols: 12, lgRows: 5, smCols: 6, smRows: 10 };
+
+    // Dynamic desktop layout: target ~2.4:1 landscape ratio (12:5)
+    // Find factors or optimal rectangular arrangement
+    let bestLgCols = Math.ceil(Math.sqrt(total * 2.2));
+    bestLgCols = Math.max(4, Math.min(12, bestLgCols));
+    const bestLgRows = Math.ceil(total / bestLgCols);
+
+    // Dynamic portrait layout: target ~0.6:1 portrait ratio (6:10)
+    let bestSmCols = Math.ceil(Math.sqrt(total * 0.6));
+    bestSmCols = Math.max(3, Math.min(8, bestSmCols));
+    const bestSmRows = Math.ceil(total / bestSmCols);
+
+    return {
+      lgCols: bestLgCols,
+      lgRows: bestLgRows,
+      smCols: bestSmCols,
+      smRows: bestSmRows,
+    };
+  }, [blocks.length]);
+
+  const lgAspect = `${lgCols}/${lgRows}`;
+  const smAspect = `${smCols}/${smRows}`;
+
   return (
     <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
       <div
-        className="
-          relative max-h-full
-          w-[min(100%,calc(100cqh*0.6))] aspect-[6/10]
-          lg:w-[min(100%,calc(100cqh*12/5))] lg:aspect-[12/5]
-        "
+        style={{
+          aspectRatio: undefined,
+        }}
+        className="relative max-h-full"
       >
+        <div
+          style={{
+            ['--lg-aspect' as any]: `${lgCols} / ${lgRows}`,
+            ['--sm-aspect' as any]: `${smCols} / ${smRows}`,
+          }}
+          className={`
+            relative max-h-full max-w-full
+            w-[min(100%,calc(100cqh*${smCols}/${smRows}))] aspect-[var(--sm-aspect)]
+            lg:w-[min(100%,calc(100cqh*${lgCols}/${lgRows}))] lg:aspect-[var(--lg-aspect)]
+          `}
+        >
         {isGameOver && (
           <div className="absolute inset-x-2 top-2 z-30 flex justify-center pointer-events-none">
             <div className="pointer-events-auto w-[min(100%,48rem)]">
@@ -85,7 +125,17 @@ export const GameBoard = React.memo(function GameBoard({
           </div>
         )}
 
-        <div className="w-full h-full grid grid-cols-6 grid-rows-10 lg:grid-cols-12 lg:grid-rows-5 gap-[clamp(0.2rem,0.8vmin,0.65rem)]">
+        <div
+          style={{
+            ['--lg-cols' as any]: `repeat(${lgCols}, minmax(0, 1fr))`,
+            ['--lg-rows' as any]: `repeat(${lgRows}, minmax(0, 1fr))`,
+            ['--sm-cols' as any]: `repeat(${smCols}, minmax(0, 1fr))`,
+            ['--sm-rows' as any]: `repeat(${smRows}, minmax(0, 1fr))`,
+            gridTemplateColumns: `var(--sm-cols)`,
+            gridTemplateRows: `var(--sm-rows)`,
+          }}
+          className="w-full h-full grid lg:[grid-template-columns:var(--lg-cols)] lg:[grid-template-rows:var(--lg-rows)] gap-[clamp(0.2rem,0.8vmin,0.65rem)]"
+        >
           {blocks.map(block => {
             const isOpened = block.isOpened;
             const isClearedWithX = isOpened && block.isIncorrectCleared;
@@ -152,5 +202,6 @@ export const GameBoard = React.memo(function GameBoard({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 });
