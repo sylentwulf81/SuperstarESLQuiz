@@ -68,8 +68,17 @@ const FALLBACK: InvasionQuestion = {
   answer: 'Any correct sentence.',
 };
 
+/**
+ * Bolt Performance Optimization:
+ * Pre-compute module-level Map lookup for state questions to replace O(N) array scans (.find())
+ * with O(1) constant-time hash map lookups.
+ */
+const INVASION_QUESTIONS_MAP = new Map<string, InvasionQuestion>(
+  INVASION_QUESTIONS.map(q => [q.stateId, q])
+);
+
 export function questionForState(stateId: string): InvasionQuestion {
-  return INVASION_QUESTIONS.find(q => q.stateId === stateId) ?? { ...FALLBACK, stateId };
+  return INVASION_QUESTIONS_MAP.get(stateId) ?? { ...FALLBACK, stateId };
 }
 
 export function scrambleWord(word: string): string[] {
