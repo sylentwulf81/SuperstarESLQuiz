@@ -196,17 +196,29 @@ function newBankId(): string {
   return `lib${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export interface SaveBankResult {
+  saved: CloudQuestionBank | null;
+  error?: string;
+}
+
 /**
- * Save a named question bank to this user's cloud library.
+ * Save or update a named question bank to this user's cloud library.
  */
 export async function saveQuestionBankToFirestore(
   userId: string,
-  bank: { name: string; lessonGoal: string; questions: Question[] }
-): Promise<CloudQuestionBank | null> {
-  if (!userId) return null;
+  bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }
+): Promise<SaveBankResult> {
+  if (!userId) {
+    return { saved: null, error: 'User is not signed in' };
+  }
   const name = bank.name.trim().slice(0, 40);
-  if (!name || !Array.isArray(bank.questions) || bank.questions.length === 0) return null;
-  const id = newBankId();
+  if (!name) {
+    return { saved: null, error: 'Set name cannot be empty' };
+  }
+  if (!Array.isArray(bank.questions) || bank.questions.length === 0) {
+    return { saved: null, error: 'No questions provided to save' };
+  }
+  const id = bank.id?.trim() || newBankId();
   const saved: CloudQuestionBank = {
     id,
     name,
@@ -214,22 +226,39 @@ export async function saveQuestionBankToFirestore(
     questions: bank.questions,
     updatedAt: new Date().toISOString(),
   };
+
+  const questionsData = JSON.stringify(saved.questions);
+  const approximateBytes = new Blob([questionsData]).size;
+  if (approximateBytes > 950_000) {
+    return {
+      saved: null,
+      error: `Question set is ${(approximateBytes / 1024 / 1024).toFixed(1)} MB, which exceeds Firestore's 1 MB document limit. Try compressing or removing question images.`,
+    };
+  }
+
   try {
-    await setDoc(doc(db, 'users', userId, 'questionSets', id), {
-      id,
-      userId,
-      kind: 'library',
-      name: saved.name,
-      title: saved.name,
-      theme: 'classic',
-      lessonGoal: saved.lessonGoal,
-      questionsData: JSON.stringify(saved.questions),
-      updatedAt: saved.updatedAt,
-    });
-    return saved;
-  } catch (err) {
+    await setDoc(
+      doc(db, 'users', userId, 'questionSets', id),
+      {
+        id,
+        userId,
+        kind: 'library',
+        name: saved.name,
+        title: saved.name,
+        theme: 'classic',
+        lessonGoal: saved.lessonGoal,
+        questionsData,
+        updatedAt: saved.updatedAt,
+      },
+      { merge: true }
+    );
+    return { saved };
+  } catch (err: any) {
     console.error('Failed to save question bank:', err);
-    return null;
+    return {
+      saved: null,
+      error: err?.message || 'Could not save question bank to Firestore.',
+    };
   }
 }
 

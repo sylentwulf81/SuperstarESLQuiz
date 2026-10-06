@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import { AuthProvider } from '@/shared/context/AuthContext';
 import { GameTheme } from '@/shared/types';
 import { sounds } from '@/shared/utils/sound';
+import { bgm } from '@/shared/utils/bgm';
 import { LauncherScreen } from '@/launcher/LauncherScreen';
 import { LauncherGame, PlayableGameModule } from '@/launcher/catalog';
 
@@ -54,16 +55,19 @@ function AppShell() {
     setSoundEnabled(prev => {
       const next = !prev;
       sounds.enabled = next;
+      bgm.setMuted(!next);
       return next;
     });
   }, []);
 
   const exitToLauncher = useCallback(() => {
+    bgm.pause();
     setSession({ kind: 'launcher' });
   }, []);
 
   const handleLaunchGame = useCallback((game: LauncherGame) => {
     if (!game.isPlayable) return;
+    bgm.pause();
     if (game.gameModule === MARIO_BLAST_CLASSIC_MODULE) {
       setSession({ kind: MARIO_BLAST_CLASSIC_MODULE });
       return;

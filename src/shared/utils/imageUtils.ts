@@ -6,9 +6,9 @@
 
 export function compressImageFile(
   file: File,
-  maxWidth = 960,
-  maxHeight = 720,
-  quality = 0.82
+  maxWidth = 640,
+  maxHeight = 480,
+  quality = 0.72
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // If SVG, read as text/dataURL directly
@@ -93,8 +93,8 @@ export interface ImageCropRect {
 export function cropAndCompressImage(
   img: HTMLImageElement,
   crop: ImageCropRect,
-  maxEdge = 960,
-  quality = 0.85
+  maxEdge = 640,
+  quality = 0.75
 ): string {
   const naturalW = img.naturalWidth || img.width;
   const naturalH = img.naturalHeight || img.height;
@@ -124,4 +124,32 @@ export function cropAndCompressImage(
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
   return canvas.toDataURL('image/jpeg', quality);
+}
+
+/**
+ * Downscale and compress an existing base64 data URL to ensure it fits comfortably in Firestore.
+ */
+export async function optimizeDataUrl(dataUrl: string, maxEdge = 640, quality = 0.72): Promise<string> {
+  if (!dataUrl || !dataUrl.startsWith('data:image/')) return dataUrl;
+  if (dataUrl.startsWith('data:image/svg+xml')) return dataUrl;
+  try {
+    const img = await loadImageElement(dataUrl);
+    const naturalW = img.naturalWidth || img.width;
+    const naturalH = img.naturalHeight || img.height;
+    if (naturalW <= maxEdge && naturalH <= maxEdge && dataUrl.length < 80_000) {
+      return dataUrl;
+    }
+    const ratio = Math.min(maxEdge / naturalW, maxEdge / naturalH, 1);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(naturalW * ratio));
+    canvas.height = Math.max(1, Math.round(naturalH * ratio));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return dataUrl;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  } catch {
+    return dataUrl;
+  }
 }

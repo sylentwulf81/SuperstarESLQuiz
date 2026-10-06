@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { InvasionTeam, factionOf } from './data/factions';
 import { US_STATE_PATHS } from './data/usStatePaths';
@@ -12,6 +12,7 @@ import { InvasionVictoryModal } from './components/InvasionVictoryModal';
 import { InvasionCinematic } from './components/InvasionCinematic';
 import { ENDING_SCENES, INTRO_SCENES } from './data/cinematicScenes';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
+import { bgm } from '@/shared/utils/bgm';
 import {
   createMapTakeoverState,
   reduceMapTakeover,
@@ -48,6 +49,13 @@ export function AlienInvasion({
     }
   }, []);
 
+  useEffect(() => {
+    bgm.pause();
+    return () => {
+      bgm.pause();
+    };
+  }, []);
+
   const dispatch = useCallback((event: MapTakeoverEvent) => {
     setState(prev => {
       const result = reduceMapTakeover(prev, event);
@@ -63,8 +71,14 @@ export function AlienInvasion({
   }, [runEffects]);
 
   const { view, teams, owners, selectedStateId, pulseId, isVictoryOpen, isEndingOpen } = state;
-  const counts = useMemo(() => stateCounts(state), [state]);
-  const captured = capturedCount(state);
+
+  /**
+   * Bolt Performance Optimization:
+   * 1) Memoize counts on [state.teams, state.owners] so state selection/pulse changes do not re-run stateCounts().
+   * 2) Memoize captured count on [state.owners] to avoid filtering US_STATE_PATHS on every render pass.
+   */
+  const counts = useMemo(() => stateCounts(state), [state.teams, state.owners]);
+  const captured = useMemo(() => capturedCount(state), [state.owners]);
 
   const winnerFactionId = useMemo(() => {
     const sorted = [...teams].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0));
@@ -74,6 +88,10 @@ export function AlienInvasion({
   const handleStartGame = useCallback((nextTeams: InvasionTeam[]) => {
     dispatch({ type: 'START', teams: nextTeams });
   }, [dispatch]);
+
+  const handleOpenRules = useCallback(() => setIsRulesOpen(true), []);
+  const handleDeclareWinner = useCallback(() => dispatch({ type: 'DECLARE_WINNER' }), [dispatch]);
+  const handleResetGame = useCallback(() => dispatch({ type: 'RESTART' }), [dispatch]);
 
   const selectedQuestion = selectedStateId ? questionForState(selectedStateId) : null;
 
@@ -113,9 +131,9 @@ export function AlienInvasion({
               totalStates={US_STATE_PATHS.length}
               soundEnabled={soundEnabled}
               onToggleSound={onToggleSound}
-              onOpenRules={() => setIsRulesOpen(true)}
-              onDeclareWinner={() => dispatch({ type: 'DECLARE_WINNER' })}
-              onResetGame={() => dispatch({ type: 'RESTART' })}
+              onOpenRules={handleOpenRules}
+              onDeclareWinner={handleDeclareWinner}
+              onResetGame={handleResetGame}
               onExitToLauncher={onExitToLauncher}
             />
             <div className="flex-1 min-h-0 p-2 sm:p-3">
