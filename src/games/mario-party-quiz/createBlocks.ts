@@ -14,11 +14,33 @@ export const TOTAL_BLOCKS = 60;
 export function createGameBlocks(
   theme: GameTheme,
   customQuestions?: Question[],
-  shouldShuffle: boolean = false
+  shouldShuffle: boolean = false,
+  targetCount?: number
 ): BlockState[] {
   let rawDeck: Question[] = [];
   const defaultSource =
     theme === 'summer' ? SUMMER_QUESTIONS : theme === 'classic' ? CLASSIC_QUESTIONS : DEFAULT_QUESTIONS;
+
+  // Read saved block count if not passed explicitly
+  const effectiveCount = targetCount ?? (() => {
+    try {
+      const savedCount = localStorage.getItem(`mp_block_count_${theme}`);
+      if (savedCount) {
+        const parsed = parseInt(savedCount, 10);
+        if (!isNaN(parsed) && parsed >= 10 && parsed <= 60) return parsed;
+      }
+    } catch {}
+    return TOTAL_BLOCKS;
+  })();
+
+  // Read saved shuffle preference if shouldShuffle is requested
+  const isShuffleEnabled = shouldShuffle ? (() => {
+    try {
+      const savedPref = localStorage.getItem(`mp_shuffle_blocks_${theme}`);
+      if (savedPref !== null) return savedPref === 'true';
+    } catch {}
+    return true; // Default to true for backward compatibility
+  })() : false;
 
   if (customQuestions && Array.isArray(customQuestions) && customQuestions.length > 0) {
     rawDeck = customQuestions.map(q => ({ ...q }));
@@ -41,14 +63,16 @@ export function createGameBlocks(
 
   if (rawDeck.length === 0) {
     rawDeck = defaultSource.map(q => ({ ...q }));
-  } else if (rawDeck.length < TOTAL_BLOCKS) {
+  } else if (rawDeck.length < effectiveCount) {
     const extra = defaultSource.slice(rawDeck.length).map(q => ({ ...q }));
     rawDeck = [...rawDeck, ...extra];
-  } else if (rawDeck.length > TOTAL_BLOCKS) {
-    rawDeck = rawDeck.slice(0, TOTAL_BLOCKS);
   }
 
-  if (shouldShuffle) {
+  if (rawDeck.length > effectiveCount) {
+    rawDeck = rawDeck.slice(0, effectiveCount);
+  }
+
+  if (isShuffleEnabled) {
     for (let i = rawDeck.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [rawDeck[i], rawDeck[j]] = [rawDeck[j], rawDeck[i]];

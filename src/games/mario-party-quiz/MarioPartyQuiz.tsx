@@ -175,6 +175,40 @@ export function MarioPartyQuiz({
     persistPartyLessonGoal(theme, '');
   };
 
+  const handleResizeBlocks = (newCount: number) => {
+    const rawQuestions = blocks.map(b => b.question);
+    const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: resizedBlocks,
+      toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
+    });
+    persistQuestions(resizedBlocks);
+  };
+
+  const handleCreateBlankDeck = (count?: number) => {
+    handleActiveBankChange(undefined, undefined);
+    const target = count ?? blocks.length;
+    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
+      id: i + 1,
+      type: 'multiple_choice',
+      title: '',
+      options: ['', '', '', ''],
+      correctIndex: 0,
+      rewardCoins: 1,
+      blockNumber: i + 1,
+    }));
+    const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: newBlocks,
+      toast: `✨ Created a fresh blank question deck (${target} blocks)!`,
+    });
+    setLessonGoal('');
+    persistPartyLessonGoal(theme, '');
+    persistQuestions(newBlocks);
+  };
+
   const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
     try {
       return localStorage.getItem(`mp_active_bank_id_${theme}`) || undefined;
@@ -405,6 +439,8 @@ export function MarioPartyQuiz({
             blocks={blocks}
             onUpdateBlockQuestion={handleUpdateBlockQuestion}
             onResetAllQuestions={handleResetAllQuestions}
+            onResizeBlocks={handleResizeBlocks}
+            onCreateBlankDeck={handleCreateBlankDeck}
             onSaveCloud={handleManualSync}
             onLoadCloud={handleManualLoad}
             onClose={() => setIsCustomizerOpen(false)}

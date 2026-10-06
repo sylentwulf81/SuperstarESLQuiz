@@ -246,6 +246,40 @@ export function MarioBlastClassic({
     setLessonGoal(resetClassicLessonGoal());
   };
 
+  const handleResizeBlocks = (newCount: number) => {
+    const rawQuestions = blocks.map(b => b.question);
+    const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: resizedBlocks,
+      toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
+    });
+    persistQuestions(resizedBlocks);
+  };
+
+  const handleCreateBlankDeck = (count?: number) => {
+    handleActiveBankChange(undefined, undefined);
+    const target = count ?? blocks.length;
+    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
+      id: i + 1,
+      type: 'multiple_choice',
+      title: '',
+      options: ['', '', '', ''],
+      correctIndex: 0,
+      rewardCoins: 1,
+      blockNumber: i + 1,
+    }));
+    const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: newBlocks,
+      toast: `✨ Created a fresh blank question deck (${target} blocks)!`,
+    });
+    setLessonGoal('');
+    persistClassicLessonGoal('');
+    persistQuestions(newBlocks);
+  };
+
   const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
     const nextGoal = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
@@ -496,6 +530,8 @@ export function MarioBlastClassic({
             blocks={blocks}
             onUpdateBlockQuestion={handleUpdateBlockQuestion}
             onResetAllQuestions={handleResetAllQuestions}
+            onResizeBlocks={handleResizeBlocks}
+            onCreateBlankDeck={handleCreateBlankDeck}
             onSaveCloud={async () => { await handleManualSync(); }}
             onLoadCloud={async () => { await handleManualLoad(); }}
             onClose={() => setIsCustomizerOpen(false)}

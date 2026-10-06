@@ -20,6 +20,10 @@ import {
   Layers,
   Sparkles,
   Sliders,
+  Shuffle,
+  ArrowDownUp,
+  PlusCircle,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -53,6 +57,8 @@ interface CustomizerModalProps {
   blocks: BlockState[];
   onUpdateBlockQuestion: (blockId: number, question: GameQuestion) => void;
   onResetAllQuestions: () => void;
+  onResizeBlocks?: (newCount: number) => void;
+  onCreateBlankDeck?: (count?: number) => void;
   onSaveCloud?: () => Promise<void>;
   onLoadCloud?: () => Promise<void>;
   onClose: () => void;
@@ -62,6 +68,7 @@ interface CustomizerModalProps {
   onLessonGoalChange?: (goal: string) => void;
   onLessonGoalCommit?: (goal: string) => void;
   testGame?: boolean;
+  onToggleTestGame?: () => void;
   onApplyQuestionBank?: (questions: GameQuestion[], lessonGoal: string, name: string, bankId?: string) => void;
   activeBankId?: string;
   activeBankName?: string;
@@ -76,6 +83,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   blocks,
   onUpdateBlockQuestion,
   onResetAllQuestions,
+  onResizeBlocks,
+  onCreateBlankDeck,
   onSaveCloud,
   onLoadCloud,
   onClose,
@@ -108,9 +117,56 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
   // Navigation & View tabs
   const [activeTab, setActiveTab] = useState<TabMode>('deck');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNewDeckConfirmOpen, setIsNewDeckConfirmOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
   const [blockFilter, setBlockFilter] = useState<BlockFilter>('all');
+
+  // Deck size & shuffle state synced with localStorage
+  const [totalCount, setTotalCount] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`mp_block_count_${theme}`);
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 10 && val <= 60) return val;
+      }
+    } catch {}
+    return blocks.length || 60;
+  });
+
+  const [isShuffleEnabled, setIsShuffleEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(`mp_shuffle_blocks_${theme}`);
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    return true;
+  });
+
+  const handleToggleShuffle = useCallback(() => {
+    sounds.playClick();
+    setIsShuffleEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem(`mp_shuffle_blocks_${theme}`, String(next));
+      } catch {}
+      toast(next ? 'Shuffle Enabled' : 'Sequential Order Enabled', {
+        description: next
+          ? 'Blocks will be randomized on game start.'
+          : 'Blocks will appear strictly in order 1, 2, 3... on the board.',
+      });
+      return next;
+    });
+  }, [theme]);
+
+  const handleTotalCountChange = useCallback((newCount: number) => {
+    const clamped = Math.max(10, Math.min(60, newCount));
+    setTotalCount(clamped);
+    try {
+      localStorage.setItem(`mp_block_count_${theme}`, String(clamped));
+    } catch {}
+    if (onResizeBlocks) {
+      onResizeBlocks(clamped);
+    }
+  }, [theme, onResizeBlocks]);
 
   const currentBlock = useMemo(() => {
     return blocks.find(b => b.id === selectedBlockId) || blocks[0];
@@ -729,25 +785,18 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               </button>
             )}
 
-            {/* Deck Settings Popover Toggle */}
+            {/* New Deck Button */}
             <button
               type="button"
               onClick={() => {
                 sounds.playClick();
-                setIsSettingsOpen(!isSettingsOpen);
+                setIsNewDeckConfirmOpen(true);
               }}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${
-                testGame || isSettingsOpen
-                  ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-sm'
-                  : 'bg-slate-800 text-slate-200 border-white/15 hover:bg-slate-700'
-              }`}
-              title="Game settings & deck options"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-400/50 bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
+              title="Create a new blank question deck"
             >
-              <Sliders className="w-3.5 h-3.5" />
-              <span>Settings</span>
-              {testGame && (
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping" />
-              )}
+              <PlusCircle className="w-3.5 h-3.5 text-rose-400" />
+              <span>New Deck</span>
             </button>
 
             {/* Modal Close Button */}
@@ -785,121 +834,80 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
           </div>
         )}
 
-        {/* Settings Dialog Overlay */}
+        {/* New Deck Confirmation Dialog Overlay */}
         <AnimatePresence>
-          {isSettingsOpen && (
+          {isNewDeckConfirmOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-14 right-4 z-40 w-full max-w-md bg-slate-900/98 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl p-4 space-y-4 text-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
             >
-              <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-mario text-base text-yellow-300 flex items-center gap-1.5">
-                  <Sliders className="w-4 h-4 text-amber-300" />
-                  Deck Settings & Rules
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="p-1 rounded-lg hover:bg-white/10 text-slate-300"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Cloud Sync Buttons */}
-              <div className="space-y-1.5 bg-black/30 p-2.5 rounded-xl border border-white/10">
-                <div className="flex items-center justify-between text-indigo-200 font-bold mb-1">
-                  <span className="flex items-center gap-1">
-                    <Cloud className="w-3.5 h-3.5 text-indigo-400" />
-                    Cloud Backup
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {lastSyncedAt ? `Saved ${lastSyncedAt}` : 'Firestore'}
-                  </span>
-                </div>
-                {isLoggedIn ? (
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleSaveToCloud}
-                      disabled={isCloudBusy}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs cursor-pointer shadow-sm transition-colors"
-                    >
-                      <UploadCloud className={`w-3.5 h-3.5 ${isCloudBusy ? 'animate-bounce' : ''}`} />
-                      <span>Sync to Cloud</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleLoadFromCloud}
-                      disabled={isCloudBusy}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-white/15 text-xs cursor-pointer transition-colors"
-                    >
-                      <DownloadCloud className="w-3.5 h-3.5 text-indigo-300" />
-                      <span>Restore Cloud</span>
-                    </button>
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="w-full max-w-md bg-slate-900 border-2 border-rose-500/60 rounded-3xl p-6 shadow-2xl space-y-4"
+              >
+                <div className="flex items-center gap-3 text-rose-400">
+                  <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-6 h-6 text-rose-400" />
                   </div>
-                ) : (
+                  <div>
+                    <h3 className="font-mario text-lg text-yellow-300">Create New Blank Deck?</h3>
+                    <p className="text-xs text-slate-300">This will clear existing questions and start with a fresh blank template.</p>
+                  </div>
+                </div>
+
+                <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10 text-xs text-slate-300 space-y-1.5">
+                  <p>• Creates an empty deck with {totalCount} blank question blocks.</p>
+                  <p>• Clears current prompts, images, and custom answer options.</p>
+                  <p>• Resets the lesson goal so you can start from scratch.</p>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={loginWithGoogle}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow transition-colors"
+                    onClick={() => setIsNewDeckConfirmOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-white/15 cursor-pointer"
                   >
-                    <LogIn className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Sign in with Google</span>
+                    Cancel
                   </button>
-                )}
-              </div>
-
-              {/* Test Mode */}
-              {theme === 'classic' && onToggleTestGame && (
-                <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-black/30 border border-white/10">
-                  <div>
-                    <span className="font-bold text-red-200 block">Test Mode</span>
-                    <span className="text-[11px] text-slate-400 leading-tight block">
-                      Mystery cards turn red and display names for rehearsing.
-                    </span>
-                  </div>
                   <button
                     type="button"
                     onClick={() => {
-                      sounds.playClick();
-                      onToggleTestGame();
+                      sounds.playResetDeck();
+                      if (onCreateBlankDeck) {
+                        onCreateBlankDeck(totalCount);
+                      } else {
+                        // Fallback: clear all questions manually
+                        for (let i = 1; i <= blocks.length; i++) {
+                          onUpdateBlockQuestion(i, {
+                            id: i,
+                            type: 'multiple_choice',
+                            title: '',
+                            options: ['', '', '', ''],
+                            correctIndex: 0,
+                            rewardCoins: 1,
+                          });
+                        }
+                      }
+                      if (onLessonGoalChange) {
+                        onLessonGoalChange('');
+                        onLessonGoalCommit?.('');
+                      }
+                      handleSelectBlock(1);
+                      setIsNewDeckConfirmOpen(false);
+                      toast.success(`Created New Blank Deck (${totalCount} blocks)!`, {
+                        description: 'Ready for your questions and prompts.',
+                      });
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-colors cursor-pointer shrink-0 ${
-                      testGame
-                        ? 'bg-red-600 text-white border-red-400 shadow'
-                        : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
-                    }`}
+                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold border border-rose-400 cursor-pointer shadow-lg"
                   >
-                    <FlaskConical className="w-3.5 h-3.5" />
-                    <span>{testGame ? 'On' : 'Off'}</span>
+                    Confirm & Clear
                   </button>
                 </div>
-              )}
-
-              {/* Restore All Defaults */}
-              <div className="pt-2 border-t border-white/10 flex justify-between items-center">
-                <span className="text-[11px] text-slate-400">Need to start over completely?</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playResetDeck();
-                    onResetAllQuestions();
-                    handleSelectBlock(1);
-                    setIsSettingsOpen(false);
-                    toast.info('Deck Restored to Defaults', {
-                      description: `All ${blocks.length} questions reset to standard curriculum.`,
-                      duration: 3500,
-                    });
-                  }}
-                  className="px-3 py-1.5 bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 rounded-xl text-xs font-bold border border-rose-500/30 flex items-center gap-1.5 cursor-pointer transition-colors"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Restore All Defaults</span>
-                </button>
-              </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1020,31 +1028,75 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 </div>
               </div>
 
-              {/* Navigator Bottom Bar (Prev / Next Buttons) */}
-              <div className="shrink-0 mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={handlePrevBlock}
-                  disabled={selectedBlockId <= 1}
-                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-colors cursor-pointer"
-                  title="Previous block (Alt+Left)"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                  <span>Prev</span>
-                </button>
-                <span className="text-[11px] font-mario text-amber-300 px-1">
-                  #{currentBlock.id}
-                </span>
-                <button
-                  type="button"
-                  onClick={handleNextBlock}
-                  disabled={selectedBlockId >= blocks.length}
-                  className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-40 text-slate-200 border border-white/10 text-xs font-bold transition-colors cursor-pointer"
-                  title="Next block (Alt+Right)"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+              {/* Navigator Bottom Bar: Total Questions Stepper & Shuffled/Sequential Toggle */}
+              <div className="shrink-0 mt-2.5 pt-2.5 border-t border-white/10 space-y-2">
+                <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[11px] font-bold text-indigo-200">Deck Size:</span>
+                    <span className="text-xs font-mario text-amber-300">
+                      {totalCount} blocks
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      disabled={totalCount <= 10}
+                      onClick={() => handleTotalCountChange(totalCount - 1)}
+                      className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-bold text-xs flex items-center justify-center border border-white/15 cursor-pointer active:scale-95"
+                      title="Decrease total questions"
+                    >
+                      -
+                    </button>
+                    <input
+                      type="number"
+                      min={10}
+                      max={60}
+                      value={totalCount}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val)) {
+                          handleTotalCountChange(val);
+                        }
+                      }}
+                      className="w-11 h-6 bg-black/60 border border-white/20 rounded-lg text-center text-xs font-mario text-yellow-300 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    />
+                    <button
+                      type="button"
+                      disabled={totalCount >= 60}
+                      onClick={() => handleTotalCountChange(totalCount + 1)}
+                      className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-bold text-xs flex items-center justify-center border border-white/15 cursor-pointer active:scale-95"
+                      title="Increase total questions"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold text-slate-300">Order:</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleShuffle}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-sm ${
+                      isShuffleEnabled
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400/80 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
+                    }`}
+                    title={isShuffleEnabled ? 'Questions randomized when game starts' : 'Questions presented in exact order created (1, 2, 3...)'}
+                  >
+                    {isShuffleEnabled ? (
+                      <>
+                        <Shuffle className="w-3.5 h-3.5 text-yellow-300" />
+                        <span>🎲 Shuffled</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownUp className="w-3.5 h-3.5 text-emerald-200" />
+                        <span>🔢 Sequential (1 to {totalCount})</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 

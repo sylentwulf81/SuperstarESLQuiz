@@ -440,14 +440,14 @@ export const QuestionModal = React.memo(function QuestionModal({
                     className={`min-h-[5.5rem] sm:min-h-[7rem] rounded-3xl border-2 text-2xl sm:text-3xl lg:text-4xl font-mario transition-all flex items-center justify-center gap-3 px-5 py-4 shadow-xl cursor-pointer ${
                       isAnswerRevealed
                         ? question.isTrue
-                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.45)]'
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.55)] font-black'
                           : selectedTrueFalse === true
-                          ? 'bg-red-700 border-red-500 text-white/90 line-through opacity-60'
-                          : 'bg-slate-900/50 border-white/10 text-slate-400 opacity-40'
-                        : 'bg-slate-800/95 hover:bg-emerald-950/60 hover:border-emerald-400/70 border-white/25 text-white active:scale-98'
+                          ? 'bg-rose-700 border-rose-400 text-white/90 line-through opacity-70'
+                          : 'bg-slate-900/60 border-white/10 text-slate-400 opacity-40'
+                        : 'bg-slate-800/95 hover:bg-emerald-950/70 hover:border-emerald-400/70 border-white/25 text-white active:scale-98'
                     }`}
                   >
-                    <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-400 shrink-0 drop-shadow" />
+                    <CheckCircle className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 drop-shadow ${isAnswerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} />
                     <span>TRUE</span>
                   </button>
 
@@ -459,17 +459,36 @@ export const QuestionModal = React.memo(function QuestionModal({
                     className={`min-h-[5.5rem] sm:min-h-[7rem] rounded-3xl border-2 text-2xl sm:text-3xl lg:text-4xl font-mario transition-all flex items-center justify-center gap-3 px-5 py-4 shadow-xl cursor-pointer ${
                       isAnswerRevealed
                         ? !question.isTrue
-                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.45)]'
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400/80 shadow-[0_0_25px_rgba(16,185,129,0.55)] font-black'
                           : selectedTrueFalse === false
-                          ? 'bg-red-700 border-red-500 text-white/90 line-through opacity-60'
-                          : 'bg-slate-900/50 border-white/10 text-slate-400 opacity-40'
-                        : 'bg-slate-800/95 hover:bg-rose-950/60 hover:border-rose-400/70 border-white/25 text-white active:scale-98'
+                          ? 'bg-rose-700 border-rose-400 text-white/90 line-through opacity-70'
+                          : 'bg-slate-900/60 border-white/10 text-slate-400 opacity-40'
+                        : 'bg-slate-800/95 hover:bg-rose-950/70 hover:border-rose-400/70 border-white/25 text-white active:scale-98'
                     }`}
                   >
-                    <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-rose-400 shrink-0 drop-shadow" />
+                    <AlertCircle className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 drop-shadow ${isAnswerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} />
                     <span>FALSE</span>
                   </button>
                 </div>
+
+                {/* Eye Reveal Button for Host / Teacher before team clicks */}
+                {!isAnswerRevealed && (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playCardFlip();
+                        sounds.playPowerUp();
+                        setIsAnswerRevealed(true);
+                        setStatus('correct');
+                      }}
+                      className="px-5 py-2.5 rounded-2xl bg-indigo-700/80 hover:bg-indigo-600 text-white font-mario text-sm sm:text-base border border-indigo-400/50 flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <Eye className="w-5 h-5 text-yellow-300" />
+                      <span>Reveal Answer</span>
+                    </button>
+                  </div>
+                )}
 
                 {isAnswerRevealed && question.explanation && (
                   <div className="p-4 sm:p-5 bg-black/60 rounded-2xl border border-white/20 text-center space-y-1 shadow-inner animate-in fade-in duration-300">
