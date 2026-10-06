@@ -980,8 +980,8 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                           <Ghost className="w-6 h-6 text-purple-300" />
                           <h4 className="font-mario text-lg sm:text-xl text-white leading-tight">Which team will you steal from?</h4>
                         </div>
-                        <div className="shrink-0 max-h-[7.5rem] sm:max-h-[9rem] overflow-y-auto">
-                          <div className="flex flex-wrap justify-center gap-2">
+                        <div className="shrink-0">
+                          <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
                             {eligibleOpponents.map(opp => {
                               const oppChar = CHARACTERS[opp.characterId];
                               const isSelected = booTargetTeamId === opp.id;
@@ -994,23 +994,23 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                                     setBooDieRoll(null);
                                     sounds.playBoo();
                                   }}
-                                  className={`min-w-[5.25rem] p-2 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center gap-1 ${
-                                    isSelected ? 'border-yellow-300 ring-4 ring-purple-400' : 'border-white/30 hover:brightness-110'
+                                  className={`px-2 py-1.5 rounded-xl border ${oppChar.bgColor} bg-opacity-70 text-white font-bold cursor-pointer flex flex-col items-center gap-0.5 transition-all ${
+                                    isSelected ? 'border-yellow-300 ring-4 ring-purple-400 scale-105' : 'border-white/30 hover:brightness-110'
                                   }`}
                                 >
-                                  <TeamAvatar characterId={opp.characterId} size="md" customUrl={opp.customImageUrl} />
-                                  <span className="text-xs font-black truncate w-full text-center">{opp.name}</span>
-                                  <CoinScore coins={opp.coins} />
+                                  <TeamAvatar characterId={opp.characterId} size="sm" customUrl={opp.customImageUrl} />
+                                  <span className="text-[11px] font-black truncate max-w-[4.5rem] text-center">{opp.name}</span>
+                                  <CoinScore coins={opp.coins} size="sm" />
                                 </button>
                               );
                             })}
                           </div>
                         </div>
-                        <div className="flex-1 min-h-[9rem] overflow-y-auto flex flex-col items-center justify-center gap-2">
+                        <div className="flex-1 min-h-[9rem] flex flex-col items-center justify-center gap-2">
                           {booTargetTeamId ? (
                             <DiceRoller
                               key={booTargetTeamId}
-                              compact={gameTheme === 'classic'}
+                              compact={true}
                               title="Roll the steal die!"
                               subtitle={`How many coins from ${targetOpponent?.name}?`}
                               themeColor="purple"

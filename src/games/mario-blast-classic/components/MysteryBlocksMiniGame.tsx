@@ -161,7 +161,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
                   disabled={revealing}
                   onClick={() => handlePick(idx)}
                   style={{
-                    width: 'min(10.5rem, 28vw, calc(min(42dvh, 22rem) * 2 / 3))',
+                    width: 'min(17rem, 28vw, calc(min(48dvh, 26rem) * 2 / 3))',
                   }}
                   className={`relative shrink-0 aspect-[2/3] h-auto [perspective:900px] cursor-pointer disabled:cursor-default ${
                     isChosen ? 'z-[1]' : ''
