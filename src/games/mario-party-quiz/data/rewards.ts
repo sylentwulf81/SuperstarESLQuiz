@@ -167,13 +167,20 @@ function weightOf(card: RewardCard): number {
   return REWARD_WEIGHTS[card.type] ?? 1;
 }
 
-/** Weighted sampling without replacement: each pick favors higher-weight cards,
- * but every remaining card always has some (never-zero) chance. */
+/**
+ * Weighted sampling that guarantees returning `count` cards.
+ * If `pool.length >= count`, cards are drawn without replacement.
+ * If `pool.length < count` (e.g. 1st place catch-up restrictions leave 5 cards),
+ * all unique eligible cards are drawn first, and remaining slots are filled
+ * by weighted sampling from the eligible pool (favoring coin cards) with unique IDs.
+ */
 function weightedSample(pool: RewardCard[], count: number): RewardCard[] {
+  if (pool.length === 0) return [];
   const remaining = [...pool];
   const picked: RewardCard[] = [];
-  const n = Math.min(count, remaining.length);
-  for (let i = 0; i < n; i++) {
+
+  // Pass 1: Draw without replacement
+  while (picked.length < count && remaining.length > 0) {
     const total = remaining.reduce((sum, card) => sum + weightOf(card), 0);
     let roll = Math.random() * total;
     let idx = remaining.length - 1;
@@ -187,6 +194,23 @@ function weightedSample(pool: RewardCard[], count: number): RewardCard[] {
     picked.push(remaining[idx]);
     remaining.splice(idx, 1);
   }
+
+  // Pass 2: If pool size is less than count, fill remaining slots from the pool
+  let dupCounter = 1;
+  while (picked.length < count) {
+    const total = pool.reduce((sum, card) => sum + weightOf(card), 0);
+    let roll = Math.random() * total;
+    let chosen = pool[pool.length - 1];
+    for (let j = 0; j < pool.length; j++) {
+      roll -= weightOf(pool[j]);
+      if (roll <= 0) {
+        chosen = pool[j];
+        break;
+      }
+    }
+    picked.push({ ...chosen, id: `${chosen.id}_dup_${dupCounter++}` });
+  }
+
   return picked;
 }
 

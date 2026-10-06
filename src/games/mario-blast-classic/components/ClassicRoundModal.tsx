@@ -9,6 +9,7 @@ import { GameModalShell } from '@/shared/components/GameModalShell';
 import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { ClassicCardSlot } from '../engine';
 import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
+import { MysteryCardBack } from '@/shared/components/MysteryCardBack';
 
 export type { ClassicCardSlot };
 
@@ -282,21 +283,12 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         )}
                       </div>
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-red-600 via-rose-900 to-red-950 flex flex-col items-center justify-between p-1.5 sm:p-2">
-                        <span className="font-mario text-[8px] sm:text-[10px] text-yellow-300 bg-black/50 px-1.5 py-0.5 rounded-full">
-                          {previewUnclaimed ? 'TEST' : '★'}
-                        </span>
-                        {previewUnclaimed ? (
-                          <span className="font-mario text-[clamp(0.65rem,8cqw,0.95rem)] text-yellow-100 text-center leading-tight text-shadow-mario px-0.5">
-                            {slot.card?.title}
-                          </span>
-                        ) : (
-                          <span className="font-mario text-[clamp(1.75rem,28cqh,4.5rem)] text-yellow-300 text-shadow-mario leading-none">
-                            ?
-                          </span>
-                        )}
-                        <span className="text-[9px] sm:text-[11px] font-black text-amber-200">{idx + 1}</span>
-                      </div>
+                      <MysteryCardBack
+                        idx={idx}
+                        slotNumber={idx + 1}
+                        badgeText={previewUnclaimed ? 'TEST' : undefined}
+                        previewTitle={previewUnclaimed ? slot.card?.title : undefined}
+                      />
                     )}
                   </button>
                 );

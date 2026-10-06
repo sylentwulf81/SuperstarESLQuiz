@@ -83,7 +83,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     title: 'Super Summer Blast',
     shortTitle: 'Super Summer Blast',
     tagline: '60-Block Mystery Roulette & Interactive ESL Board Activity',
-    description: 'The flagship classroom board activity! Teams take turns choosing numbered mystery blocks, answering vocabulary, unscramble, and trivia challenges, then spinning for surprise items like Stars, Boo Steals, and Bowser Revolutions.',
+    description: 'The flagship classroom board activity! Teams pick mystery blocks, answer trivia challenges, and spin the roulette for Stars, Boo Steals, and Bowser Revolutions.',
     category: 'board',
     activityStyle: 'board_turn_based',
     badge: 'CLASS READY',
@@ -161,7 +161,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     shortTitle: 'Super Blast Classic',
     tagline: 'Have You Ever…? Live Classroom Race & Mystery Cards',
     description:
-      'Board Classic: one team picks the block, every team can answer, and correct teams draw from six mystery cards. Race for first pick — Gold Stars, Mystery Blocks, and Bowser cards can slam the round shut.',
+      'Board Classic: one team picks the block, all teams can answer, and winners draw mystery cards. Race for first pick — Stars and Bowser cards can slam the round shut.',
     category: 'board',
     activityStyle: 'board_classic',
     badge: 'NEW',

@@ -4,6 +4,7 @@ import {
   GraduationCap,
   Sparkles, 
   Play, 
+  Pause,
   BookOpen, 
   Search, 
   CheckCircle2, 
@@ -42,6 +43,7 @@ import { SnesBoxArt } from '@/launcher/SnesBoxArt';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
 const SPOTLIGHT_ROTATE_MS = 7000;
+const SPOTLIGHT_TICK_MS = 50;
 
 function hexToRgba(hex: string, alpha: number): string {
   const clean = hex.replace('#', '');
@@ -71,29 +73,49 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 
   const spotlightGames = useMemo(() => LAUNCHER_GAMES.filter(g => g.isPlayable), []);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
-  const [isAutoRotating, setIsAutoRotating] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [progress, setProgress] = useState(0);
   const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
 
+  // Stop any lingering background music when entering launcher
   useEffect(() => {
     bgm.pause();
   }, []);
 
+  // Featured game auto-rotation & progress bar tick
   useEffect(() => {
-    if (!isAutoRotating || spotlightGames.length <= 1) return;
-    const timer = window.setInterval(() => {
-      setSpotlightIndex(prev => (prev + 1) % spotlightGames.length);
-    }, SPOTLIGHT_ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [isAutoRotating, spotlightGames.length]);
+    if (isPaused || isHovered || spotlightGames.length <= 1) return;
+
+    const interval = window.setInterval(() => {
+      setProgress(prev => {
+        const nextProgress = prev + (SPOTLIGHT_TICK_MS / SPOTLIGHT_ROTATE_MS) * 100;
+        if (nextProgress >= 100) {
+          setSpotlightIndex(current => (current + 1) % spotlightGames.length);
+          return 0;
+        }
+        return nextProgress;
+      });
+    }, SPOTLIGHT_TICK_MS);
+
+    return () => window.clearInterval(interval);
+  }, [isPaused, isHovered, spotlightGames.length]);
 
   const goToSpotlight = useCallback((index: number) => {
     sounds.playPop();
-    setIsAutoRotating(false);
+    setProgress(0);
     setSpotlightIndex(((index % spotlightGames.length) + spotlightGames.length) % spotlightGames.length);
   }, [spotlightGames.length]);
 
   const goToPrevSpotlight = useCallback(() => goToSpotlight(spotlightIndex - 1), [goToSpotlight, spotlightIndex]);
   const goToNextSpotlight = useCallback(() => goToSpotlight(spotlightIndex + 1), [goToSpotlight, spotlightIndex]);
+
+  const togglePause = useCallback(() => {
+    sounds.playClick();
+    setIsPaused(prev => !prev);
+  }, []);
+
+  const countdownSeconds = Math.max(1, Math.ceil(((100 - progress) / 100) * (SPOTLIGHT_ROTATE_MS / 1000)));
 
   const filteredGames = useMemo(() => {
     return LAUNCHER_GAMES.filter(game => {
@@ -201,7 +223,23 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       {/* Main Launcher Body */}
       <main className="flex-1 max-w-[1750px] w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
         {/* Spotlight Hero Banner (Epic Games / Steam Featured Carousel) */}
-        <section className="relative rounded-3xl overflow-hidden border-2 border-white/15 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black">
+        <section
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+          className="relative rounded-3xl overflow-hidden border-2 border-white/15 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black group/hero"
+        >
+          {/* Top Edge Glowing Auto-Rotation Progress Bar */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-white/10 overflow-hidden z-30 pointer-events-none">
+            <div
+              className="h-full transition-[width] duration-100 ease-linear"
+              style={{
+                width: `${progress}%`,
+                backgroundColor: spotlightGame.cover.accentColor,
+                boxShadow: `0 0 10px ${spotlightGame.cover.accentColor}`
+              }}
+            />
+          </div>
+
           {/* Ambient Spotlight Background Graphic */}
           <div
             key={spotlightGame.id}
@@ -211,25 +249,12 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             }}
           />
 
-          {/* Carousel Prev/Next Arrows */}
-          {spotlightGames.length > 1 && (
-            <>
-              <button
-                onClick={goToPrevSpotlight}
-                aria-label="Previous featured activity"
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center cursor-pointer transition-all hover:scale-110"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                onClick={goToNextSpotlight}
-                aria-label="Next featured activity"
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black/50 hover:bg-black/70 text-white border border-white/20 flex items-center justify-center cursor-pointer transition-all hover:scale-110"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          )}
+          {/* Slide Indicator Counter Badge (Top Right) */}
+          <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/15 text-xs text-white/75 backdrop-blur-md shadow-md">
+            <span className="font-bold text-yellow-300">{spotlightIndex + 1}</span>
+            <span className="text-white/40">/</span>
+            <span>{spotlightGames.length}</span>
+          </div>
 
           <div className="relative z-10 p-6 sm:p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[380px]">
             {/* Left Info Column */}
@@ -258,7 +283,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                 {spotlightGame.tagline}
               </p>
 
-              <p className="text-sm text-slate-300/80 leading-relaxed max-w-2xl">
+              <p className="text-sm text-slate-300/80 leading-relaxed max-w-2xl line-clamp-2 min-h-[2.6rem]">
                 {spotlightGame.description}
               </p>
 
@@ -321,24 +346,88 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             <div className="w-full sm:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
               <SnesBoxArt game={spotlightGame} size="hero" />
 
-              <div className="w-full flex items-center justify-center gap-2 p-2.5 rounded-2xl bg-black/60 border border-white/10 px-3">
-                {spotlightGames.map((game, idx) => (
-                  <button
-                    key={game.id}
-                    onClick={() => goToSpotlight(idx)}
-                    title={game.shortTitle}
-                    aria-label={`Show ${game.shortTitle}`}
-                    aria-current={idx === spotlightIndex}
-                    className="p-1.5 cursor-pointer group"
-                  >
-                    <span
-                      className={`block rounded-full transition-all ${
-                        idx === spotlightIndex ? 'w-6 h-2.5' : 'w-2.5 h-2.5 opacity-50 group-hover:opacity-80'
-                      }`}
-                      style={{ backgroundColor: game.cover.accentColor }}
-                    />
-                  </button>
-                ))}
+              {/* Redesigned Carousel Navigation & Timer HUD */}
+              <div className="w-full flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-2xl bg-slate-950/80 border border-white/15 backdrop-blur-md px-3 shadow-xl">
+                {/* Back / Prev Button */}
+                <button
+                  onClick={goToPrevSpotlight}
+                  title="Previous featured activity"
+                  aria-label="Previous featured activity"
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                {/* Progress Indicators for all slides */}
+                <div className="flex items-center gap-2">
+                  {spotlightGames.map((game, idx) => {
+                    const isActive = idx === spotlightIndex;
+                    return (
+                      <button
+                        key={game.id}
+                        onClick={() => goToSpotlight(idx)}
+                        title={game.shortTitle}
+                        aria-label={`Show ${game.shortTitle}`}
+                        aria-current={isActive}
+                        className="p-1 cursor-pointer group flex items-center"
+                      >
+                        <span
+                          className={`block rounded-full transition-all duration-300 overflow-hidden ${
+                            isActive
+                              ? 'w-7 sm:w-9 h-2 bg-white/20 ring-1 ring-white/20'
+                              : 'w-2 sm:w-2.5 h-2 bg-white/30 group-hover:bg-white/60'
+                          }`}
+                        >
+                          {isActive ? (
+                            <span
+                              className="block h-full rounded-full transition-[width] duration-100 ease-linear"
+                              style={{
+                                width: `${progress}%`,
+                                backgroundColor: game.cover.accentColor,
+                                boxShadow: `0 0 6px ${game.cover.accentColor}`
+                              }}
+                            />
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  onClick={goToNextSpotlight}
+                  title="Next featured activity"
+                  aria-label="Next featured activity"
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+
+                {/* Countdown & Pause/Play Control Badge */}
+                <button
+                  onClick={togglePause}
+                  aria-label={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
+                  title={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-all cursor-pointer text-xs"
+                >
+                  {isPaused ? (
+                    <>
+                      <Play className="w-3 h-3 text-amber-300 fill-current" />
+                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Play</span>
+                    </>
+                  ) : isHovered ? (
+                    <>
+                      <Pause className="w-3 h-3 text-amber-300" />
+                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Hover</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-3 h-3 text-amber-400" />
+                      <span className="text-[11px] font-mono font-bold text-slate-200">{countdownSeconds}s</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -420,7 +509,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
                 {/* Lower Information & Actions Body */}
                 <div className="p-4 flex-1 flex flex-col justify-between gap-4 bg-slate-950/80">
                   <div className="space-y-3">
-                    <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed min-h-[2.5rem]">
                       {game.description}
                     </p>
 

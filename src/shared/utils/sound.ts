@@ -328,11 +328,6 @@ class SoundEngine {
         this.playNote(item.f, item.d, 'triangle', 0.28);
       }, item.t);
     });
-
-    // Layer with subtle sparkling coin harmonizer
-    setTimeout(() => {
-      this.playCoin();
-    }, 490);
   }
 
   // Generic UI Click (short percussive snap)
@@ -728,10 +723,6 @@ class SoundEngine {
         this.playNote(n.f, n.d, 'triangle', 0.25);
       }, n.t);
     });
-
-    setTimeout(() => {
-      this.playCoin();
-    }, 240);
   }
 
   /** Classroom-loud round-ender sting — students look up. */
