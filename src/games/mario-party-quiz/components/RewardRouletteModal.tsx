@@ -15,6 +15,7 @@ import { InkedPayoutReveal } from '@/shared/components/InkedPayoutReveal';
 import { TeamAvatar } from './TeamAvatar';
 import { DiceRoller } from './DiceRoller';
 import { GameModalShell } from '@/shared/components/GameModalShell';
+import { MysteryCardBack } from '@/shared/components/MysteryCardBack';
 
 interface RewardRouletteModalProps {
   cards: RewardCard[];
@@ -596,44 +597,11 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
   };
 
   const renderCardBack = (idx: number, flipped: boolean) => (
-    <div
-      style={{
-        backfaceVisibility: 'hidden',
-        WebkitBackfaceVisibility: 'hidden',
-        transform: 'rotateY(0deg) translateZ(1px)',
-      }}
-      className={`absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border-2 border-amber-400/90 bg-gradient-to-br from-red-700 via-rose-900 to-red-950 flex flex-col items-center justify-between p-2.5 sm:p-3 transition-opacity duration-200 ${
-        flipped ? 'opacity-0 pointer-events-none' : 'opacity-100'
-      } ${!flipped ? 'hover:shadow-[0_0_25px_rgba(245,158,11,0.5)]' : ''}`}
-    >
-      <svg className="absolute inset-0 w-full h-full opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id={`argyle-${idx}`} width="28" height="28" patternUnits="userSpaceOnUse">
-            <path d="M14 0 L28 14 L14 28 L0 14 Z" fill="none" stroke="#fbbf24" strokeWidth="1" />
-            <circle cx="14" cy="14" r="1.5" fill="#fde047" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill={`url(#argyle-${idx})`} />
-      </svg>
-      <div className="absolute inset-1.5 rounded-xl border border-amber-300/40 pointer-events-none" />
-      <div className="relative z-10 text-center pt-1">
-        <span className="font-mario text-[10px] sm:text-xs text-yellow-300 tracking-wider bg-black/60 px-2.5 py-0.5 rounded-full border border-amber-400/50 shadow-sm">
-          ★ MYSTERY ★
-        </span>
-      </div>
-      <div className="relative z-10 my-auto">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1.5 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_20px_rgba(250,204,21,0.5)] flex items-center justify-center">
-          <div className="w-full h-full rounded-full bg-gradient-to-b from-red-900 to-red-950 border border-yellow-200/60 flex items-center justify-center">
-            <span className="font-mario text-4xl sm:text-5xl text-yellow-300 text-shadow-mario leading-none">?</span>
-          </div>
-        </div>
-      </div>
-      <div className="relative z-10 pb-1">
-        <span className="text-[10px] font-bold text-amber-200 uppercase tracking-wider bg-black/50 px-2 py-0.5 rounded-full border border-amber-400/40 animate-pulse">
-          TAP TO PICK
-        </span>
-      </div>
-    </div>
+    <MysteryCardBack
+      idx={idx}
+      flipped={flipped}
+      preserve3d={true}
+    />
   );
 
   const renderCardFront = (card: RewardCard, picked: boolean, compact = false) => {
