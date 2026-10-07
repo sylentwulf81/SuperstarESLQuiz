@@ -9,6 +9,7 @@ import {
 } from '@/shared/types';
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
 
+export type ExportPdfMode = 'cheat_sheet' | 'cards';
 export type AnswerOrientation = 'upside_down' | 'upright';
 export type PageFormat = 'letter' | 'a4';
 
@@ -16,13 +17,16 @@ export interface DeckPdfOptions {
   questions: Question[];
   deckName?: string;
   lessonGoal?: string;
+  exportMode?: ExportPdfMode;
   answerOrientation?: AnswerOrientation;
   pageFormat?: PageFormat;
   includeHints?: boolean;
   includeExplanations?: boolean;
+  includeOptionsList?: boolean;
   showFoldLine?: boolean;
   filterMode?: 'all' | 'populated_only';
 }
+
 
 export interface FormattedAnswer {
   answerText: string;
@@ -106,13 +110,264 @@ export function getQuestionTypeDisplay(type: string): { label: string; bg: [numb
 }
 
 /**
+ * Builds a compact Teacher Answer Key / Cheat Sheet designed for fast second-screen
+ * reference on phones and tablets during live classroom games (e.g. Classic or Party mode).
+ * Features:
+ * - Multi-question compact layout (~10-15 questions per page, 30 questions in ~2-3 pages)
+ * - Clear bold Question # matching classroom block numbers
+ * - High-contrast bold emerald answer badge for instant 0.5s visual verification
+ * - Prompt text and full multiple choice option preview
+ * - Optional hints and notes/explanations
+ * - No upside-down text or scissors fold lines needed
+ */
+export function generateCheatSheetPdf(options: DeckPdfOptions): { doc: jsPDF; filename: string } {
+  const {
+    questions,
+    deckName = 'Superstar ESL Quiz Deck',
+    lessonGoal = '',
+    pageFormat = 'letter',
+    includeHints = true,
+    includeExplanations = true,
+    includeOptionsList = true,
+    filterMode = 'all',
+  } = options;
+
+  const targetQuestions = filterMode === 'populated_only'
+    ? questions.filter(q => q.title && q.title.trim().length > 0 && q.title !== 'Blank Question')
+    : questions;
+
+  const itemsToExport = targetQuestions.length > 0 ? targetQuestions : questions;
+
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: pageFormat,
+  });
+
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 12;
+  const contentWidth = pageWidth - marginX * 2;
+  const headerHeight = 15;
+  const topMargin = 10;
+  const bottomMargin = 10;
+  const maxContentY = pageHeight - bottomMargin;
+
+  const drawHeader = () => {
+    // Header Banner
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.35);
+    doc.roundedRect(marginX, topMargin, contentWidth, headerHeight, 2, 2, 'FD');
+
+    // Title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 23, 42);
+    const titleText = `${deckName.toUpperCase()} • TEACHER ANSWER KEY`;
+    const titleTruncated = titleText.length > 55 ? titleText.slice(0, 53) + '…' : titleText;
+    doc.text(titleTruncated, marginX + 3.5, topMargin + 5.5);
+
+    // Subtitle / Goal
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.2);
+    doc.setTextColor(100, 116, 139);
+    if (lessonGoal && lessonGoal.trim()) {
+      const goalTruncated = lessonGoal.length > 60 ? lessonGoal.slice(0, 58) + '…' : lessonGoal;
+      doc.text(`Goal: ${goalTruncated}  •  Phone/Tablet Second-Screen Reference`, marginX + 3.5, topMargin + 10.8);
+    } else {
+      doc.text('Superstar ESL Quiz • Phone / Tablet Second-Screen Reference (Confidential)', marginX + 3.5, topMargin + 10.8);
+    }
+
+    // Right Badge
+    doc.setFillColor(254, 243, 199);
+    doc.setDrawColor(245, 158, 11);
+    doc.roundedRect(pageWidth - marginX - 35, topMargin + 3.2, 32, 8.5, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(146, 64, 14);
+    doc.text('TEACHER KEY', pageWidth - marginX - 35 + 16, topMargin + 8.8, { align: 'center' });
+  };
+
+  let currentY = topMargin + headerHeight + 3.5;
+  drawHeader();
+
+  itemsToExport.forEach((q, index) => {
+    const questionNumber = q.blockNumber || q.id || index + 1;
+    const typeMeta = getQuestionTypeDisplay(q.type);
+    const answerInfo = getQuestionAnswer(q);
+    const promptRaw = q.title || '(Blank Question)';
+    const cleanPrompt = formatPromptForPrint(promptRaw);
+
+    // Prompt lines
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.8);
+    const promptLines = doc.splitTextToSize(cleanPrompt, contentWidth - 44);
+
+    // Multiple choice options summary line
+    let optionsLine = '';
+    if (includeOptionsList && q.type === 'multiple_choice') {
+      const mc = q as MultipleChoiceQuestion;
+      if (mc.options && mc.options.length > 0) {
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+        optionsLine = mc.options.map((opt, i) => `${letters[i]}) ${opt}`).join('   ');
+      }
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    const optionsLines = optionsLine ? doc.splitTextToSize(optionsLine, contentWidth - 44) : [];
+
+    // Answer lines
+    const ansPrefix = q.type === 'mystery_card' ? 'EVENT:' : 'ANSWER:';
+    const ansString = `${ansPrefix} ${answerInfo.answerText}`;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    const answerLines = doc.splitTextToSize(ansString, contentWidth - 14);
+
+    // Note / hint lines
+    let noteText = '';
+    if (includeExplanations && answerInfo.explanationText) {
+      noteText = `Note: ${answerInfo.explanationText}`;
+    } else if (includeHints && answerInfo.hintText) {
+      noteText = `Hint: ${answerInfo.hintText}`;
+    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    const noteLines = noteText ? doc.splitTextToSize(noteText, contentWidth - 14) : [];
+
+    // Compute dynamic row height
+    const promptHeight = promptLines.length * 3.5;
+    const optionsHeight = optionsLines.length > 0 ? optionsLines.length * 2.8 + 1 : 0;
+    const answerHeight = answerLines.length * 3.4 + 2.5;
+    const noteHeight = noteLines.length > 0 ? noteLines.length * 2.6 + 1 : 0;
+    const padding = 5;
+    const cardHeight = Math.max(14, promptHeight + optionsHeight + answerHeight + noteHeight + padding);
+
+    // Break page if necessary
+    if (currentY + cardHeight > maxContentY) {
+      doc.addPage(pageFormat, 'portrait');
+      drawHeader();
+      currentY = topMargin + headerHeight + 3.5;
+    }
+
+    // Card Container
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(marginX, currentY, contentWidth, cardHeight, 2, 2, 'FD');
+
+    // Number Badge (#1)
+    doc.setFillColor(241, 245, 249);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(marginX + 2.5, currentY + 2.5, 12, 6.5, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`#${questionNumber}`, marginX + 8.5, currentY + 6.8, { align: 'center' });
+
+    // Type Badge
+    const typeLabel = typeMeta.label.length > 14 ? typeMeta.label.slice(0, 12) + '…' : typeMeta.label;
+    doc.setFillColor(...typeMeta.bg);
+    doc.setDrawColor(...typeMeta.border);
+    doc.roundedRect(marginX + 16, currentY + 2.5, 21, 6.5, 1.5, 1.5, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.5);
+    doc.setTextColor(...typeMeta.text);
+    doc.text(typeLabel, marginX + 26.5, currentY + 6.8, { align: 'center' });
+
+    // Reward Coins (right)
+    if (q.rewardCoins) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(6.5);
+      doc.setTextColor(180, 83, 9);
+      doc.text(`★ ${q.rewardCoins}`, pageWidth - marginX - 3.5, currentY + 6.8, { align: 'right' });
+    }
+
+    // Prompt lines
+    let textY = currentY + 5.8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.8);
+    doc.setTextColor(15, 23, 42);
+    promptLines.forEach((line: string, i: number) => {
+      doc.text(line, marginX + 39, textY + i * 3.5);
+    });
+    textY += promptLines.length * 3.5;
+
+    // Options breakdown
+    if (optionsLines.length > 0) {
+      textY += 0.8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.8);
+      doc.setTextColor(100, 116, 139);
+      optionsLines.forEach((line: string, i: number) => {
+        doc.text(line, marginX + 39, textY + i * 2.8);
+      });
+      textY += optionsLines.length * 2.8;
+    }
+
+    // High-Contrast Answer Box
+    textY += 1.2;
+    doc.setFillColor(236, 253, 245);
+    doc.setDrawColor(167, 243, 208);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(marginX + 2.5, textY, contentWidth - 5, answerHeight, 1.5, 1.5, 'FD');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(6, 95, 70);
+    answerLines.forEach((line: string, i: number) => {
+      doc.text(line, marginX + 5, textY + 3.8 + i * 3.4);
+    });
+    textY += answerHeight;
+
+    // Optional Note / Explanation
+    if (noteLines.length > 0) {
+      textY += 1.2;
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(6.8);
+      doc.setTextColor(71, 85, 105);
+      noteLines.forEach((line: string, i: number) => {
+        doc.text(line, marginX + 5, textY + i * 2.6);
+      });
+    }
+
+    currentY += cardHeight + 2;
+  });
+
+  // Footer on all pages
+  const totalPages = doc.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(
+      `Superstar ESL Quiz • Teacher Second-Screen Answer Key (${itemsToExport.length} Questions)`,
+      marginX,
+      pageHeight - 4.5
+    );
+    doc.text(
+      `Page ${p} of ${totalPages}`,
+      pageWidth - marginX,
+      pageHeight - 4.5,
+      { align: 'right' }
+    );
+  }
+
+  const sanitizedName = deckName.toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 30) || 'question_deck';
+  const filename = `${sanitizedName}_teacher_answer_key.pdf`;
+
+  return { doc, filename };
+}
+
+/**
  * Builds the PDF with 1 page per question containing:
  * - Question Number & Deck Metadata
  * - Question Type badge
  * - Question prompt & options
  * - Answer in a concealed format (Upside down or fold-away flap)
  */
-export function generateDeckPdf(options: DeckPdfOptions): { doc: jsPDF; filename: string } {
+export function generateCardPagesPdf(options: DeckPdfOptions): { doc: jsPDF; filename: string } {
   const {
     questions,
     deckName = 'Superstar ESL Quiz Deck',
@@ -124,6 +379,7 @@ export function generateDeckPdf(options: DeckPdfOptions): { doc: jsPDF; filename
     showFoldLine = true,
     filterMode = 'all',
   } = options;
+
 
   const targetQuestions = filterMode === 'populated_only'
     ? questions.filter(q => q.title && q.title.trim().length > 0 && q.title !== 'Blank Question')
@@ -493,6 +749,17 @@ export function generateDeckPdf(options: DeckPdfOptions): { doc: jsPDF; filename
   const filename = `${sanitizedName}_questions.pdf`;
 
   return { doc, filename };
+}
+
+/**
+ * Main export generator: delegates to Teacher Cheat Sheet (default)
+ * or Full-Page Flashcards based on exportMode.
+ */
+export function generateDeckPdf(options: DeckPdfOptions): { doc: jsPDF; filename: string } {
+  if (options.exportMode === 'cards') {
+    return generateCardPagesPdf(options);
+  }
+  return generateCheatSheetPdf(options);
 }
 
 /**
