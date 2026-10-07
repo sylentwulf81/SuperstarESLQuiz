@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Check, X as XIcon, Trophy } from 'lucide-react';
 import { BlockState, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
@@ -15,8 +15,9 @@ interface GameBoardProps {
 }
 
 /**
- * Primary desktop (lg+): centered 12×5 landscape board with square cells.
- * Narrower views: compressed 6×10 portrait board.
+ * Primary desktop (landscape): centered board with square cells fitting the viewport.
+ * Narrower views (portrait): responsive aspect ratio.
+ * Dynamic layout: measures available space and smoothly sizes blocks for 10 to 60 questions.
  */
 export const GameBoard = React.memo(function GameBoard({
   blocks,
@@ -25,8 +26,31 @@ export const GameBoard = React.memo(function GameBoard({
   isGameOver,
   onOpenLeaderboard,
 }: GameBoardProps) {
-  // Bolt Performance Optimization: Precompute team lookup map to convert O(N_teams) array find
-  // calls per block (60 blocks per render) into O(1) hash map lookups.
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number }>({
+    width: 0,
+    height: 0,
+  });
+
+  // Measure available container dimensions
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setContainerSize({ width, height });
+        }
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Precompute team lookup map for O(1) lookups
   const teamsMap = useMemo(() => {
     const map: Record<string, Team> = {};
     for (const team of teams) {
@@ -35,55 +59,88 @@ export const GameBoard = React.memo(function GameBoard({
     return map;
   }, [teams]);
 
-  // Dynamically compute optimal grid layout based on block count
-  const { lgCols, lgRows, smCols, smRows } = useMemo(() => {
+  // Dynamically compute optimal grid layout based on block count and orientation
+  const isLandscape = containerSize.width === 0 || containerSize.width >= containerSize.height;
+
+  const { cols, rows } = useMemo(() => {
     const total = blocks.length;
-    if (total <= 0) return { lgCols: 12, lgRows: 5, smCols: 6, smRows: 10 };
+    if (total <= 0) return { cols: 12, rows: 5 };
 
-    // Standard 60-block setup
-    if (total === 60) return { lgCols: 12, lgRows: 5, smCols: 6, smRows: 10 };
+    if (isLandscape) {
+      if (total === 60) return { cols: 12, rows: 5 };
+      if (total <= 12) return { cols: Math.min(total, 6), rows: Math.ceil(total / Math.min(total, 6)) };
+      if (total <= 20) return { cols: 5, rows: Math.ceil(total / 5) };
+      if (total <= 30) return { cols: Math.min(total, 8), rows: Math.ceil(total / Math.min(total, 8)) };
+      if (total <= 40) return { cols: 10, rows: Math.ceil(total / 10) };
+      // General formula for landscape: aspect ratio ~ 1.8 to 2.4
+      let bestCols = Math.ceil(Math.sqrt(total * 2.2));
+      bestCols = Math.max(4, Math.min(12, bestCols));
+      const bestRows = Math.ceil(total / bestCols);
+      return { cols: bestCols, rows: bestRows };
+    } else {
+      // Portrait / narrower mobile/tablet layout
+      if (total === 60) return { cols: 6, rows: 10 };
+      if (total <= 12) return { cols: 3, rows: Math.ceil(total / 3) };
+      if (total <= 24) return { cols: 4, rows: Math.ceil(total / 4) };
+      let bestCols = Math.ceil(Math.sqrt(total * 0.65));
+      bestCols = Math.max(3, Math.min(8, bestCols));
+      const bestRows = Math.ceil(total / bestCols);
+      return { cols: bestCols, rows: bestRows };
+    }
+  }, [blocks.length, isLandscape]);
 
-    // Dynamic desktop layout: target ~2.4:1 landscape ratio (12:5)
-    // Find factors or optimal rectangular arrangement
-    let bestLgCols = Math.ceil(Math.sqrt(total * 2.2));
-    bestLgCols = Math.max(4, Math.min(12, bestLgCols));
-    const bestLgRows = Math.ceil(total / bestLgCols);
+  // Calculate board dimensions that fit within container while maintaining aspect ratio
+  const boardDimensions = useMemo(() => {
+    const { width: w, height: h } = containerSize;
+    if (w <= 0 || h <= 0) return null;
 
-    // Dynamic portrait layout: target ~0.6:1 portrait ratio (6:10)
-    let bestSmCols = Math.ceil(Math.sqrt(total * 0.6));
-    bestSmCols = Math.max(3, Math.min(8, bestSmCols));
-    const bestSmRows = Math.ceil(total / bestSmCols);
+    const targetRatio = cols / rows;
+    const currentRatio = w / h;
+
+    let finalW: number;
+    let finalH: number;
+
+    if (currentRatio > targetRatio) {
+      // Container is wider than board ratio -> fit height
+      finalH = h;
+      finalW = h * targetRatio;
+    } else {
+      // Container is taller than board ratio -> fit width
+      finalW = w;
+      finalH = w / targetRatio;
+    }
 
     return {
-      lgCols: bestLgCols,
-      lgRows: bestLgRows,
-      smCols: bestSmCols,
-      smRows: bestSmRows,
+      width: Math.floor(finalW),
+      height: Math.floor(finalH),
     };
-  }, [blocks.length]);
+  }, [containerSize, cols, rows]);
 
-  const lgAspect = `${lgCols}/${lgRows}`;
-  const smAspect = `${smCols}/${smRows}`;
+  // Compute block size estimate for proportional font scaling
+  const approxCellSize = useMemo(() => {
+    if (!boardDimensions) return 48;
+    return Math.min(boardDimensions.width / cols, boardDimensions.height / rows);
+  }, [boardDimensions, cols, rows]);
+
+  // Font size scales naturally with cell size
+  const numberFontSize = Math.max(16, Math.min(52, Math.floor(approxCellSize * 0.46)));
+  const teamLabelFontSize = Math.max(9, Math.min(16, Math.floor(approxCellSize * 0.16)));
+  const coinLabelFontSize = Math.max(10, Math.min(18, Math.floor(approxCellSize * 0.18)));
 
   return (
-    <div className="@container/board w-full h-full min-h-0 flex items-center justify-center px-2 sm:px-3 py-1">
+    <div
+      ref={containerRef}
+      className="w-full h-full min-h-0 flex items-center justify-center p-2 sm:p-3 overflow-hidden"
+    >
       <div
         style={{
-          aspectRatio: undefined,
+          width: boardDimensions ? `${boardDimensions.width}px` : '100%',
+          height: boardDimensions ? `${boardDimensions.height}px` : '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
         }}
-        className="relative max-h-full"
+        className="relative flex items-center justify-center transition-all duration-150"
       >
-        <div
-          style={{
-            ['--lg-aspect' as any]: `${lgCols} / ${lgRows}`,
-            ['--sm-aspect' as any]: `${smCols} / ${smRows}`,
-          }}
-          className={`
-            relative max-h-full max-w-full
-            w-[min(100%,calc(100cqh*${smCols}/${smRows}))] aspect-[var(--sm-aspect)]
-            lg:w-[min(100%,calc(100cqh*${lgCols}/${lgRows}))] lg:aspect-[var(--lg-aspect)]
-          `}
-        >
         {isGameOver && (
           <div className="absolute inset-x-2 top-2 z-30 flex justify-center pointer-events-none">
             <div className="pointer-events-auto w-[min(100%,48rem)]">
@@ -127,14 +184,10 @@ export const GameBoard = React.memo(function GameBoard({
 
         <div
           style={{
-            ['--lg-cols' as any]: `repeat(${lgCols}, minmax(0, 1fr))`,
-            ['--lg-rows' as any]: `repeat(${lgRows}, minmax(0, 1fr))`,
-            ['--sm-cols' as any]: `repeat(${smCols}, minmax(0, 1fr))`,
-            ['--sm-rows' as any]: `repeat(${smRows}, minmax(0, 1fr))`,
-            gridTemplateColumns: `var(--sm-cols)`,
-            gridTemplateRows: `var(--sm-rows)`,
+            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
           }}
-          className="w-full h-full grid lg:[grid-template-columns:var(--lg-cols)] lg:[grid-template-rows:var(--lg-rows)] gap-[clamp(0.2rem,0.8vmin,0.65rem)]"
+          className="w-full h-full grid gap-[clamp(0.2rem,0.8vmin,0.65rem)]"
         >
           {blocks.map(block => {
             const isOpened = block.isOpened;
@@ -164,31 +217,40 @@ export const GameBoard = React.memo(function GameBoard({
                 }`}
               >
                 {!isOpened ? (
-                  <span className="relative z-10 font-mario text-white text-shadow-mario tracking-wider leading-none select-none text-[clamp(0.85rem,4.6cqw,2.15rem)]">
+                  <span
+                    style={{ fontSize: `${numberFontSize}px` }}
+                    className="relative z-10 font-mario text-white text-shadow-mario tracking-wider leading-none select-none"
+                  >
                     {block.id}
                   </span>
                 ) : (
                   <div className="relative z-10 flex flex-col items-center justify-center p-0.5 w-full min-h-0">
                     {isClearedWithX ? (
-                      <XIcon className="text-red-400 stroke-[3] w-[45%] h-[45%] max-w-8 max-h-8" />
+                      <XIcon className="text-red-400 stroke-[3] w-[45%] h-[45%] max-w-10 max-h-10" />
                     ) : openedChar ? (
                       <>
                         <TeamAvatar
                           characterId={openedChar.id}
                           size="sm"
                           customUrl={openedTeam?.customImageUrl}
-                          className="w-[42%] h-[42%] max-w-8 max-h-8"
+                          className="w-[42%] h-[42%] max-w-10 max-h-10"
                         />
-                        <span className="font-bold text-white/90 truncate max-w-full leading-tight text-center text-[clamp(0.5rem,1.6cqw,0.75rem)] mt-0.5">
+                        <span
+                          style={{ fontSize: `${teamLabelFontSize}px` }}
+                          className="font-bold text-white/90 truncate max-w-full leading-tight text-center mt-0.5"
+                        >
                           {openedTeam?.name}
                         </span>
                         {block.rewardCoins ? (
-                          <span className="font-mario text-yellow-300 text-shadow-gold flex items-center justify-center gap-0.5 text-[clamp(0.55rem,1.7cqw,0.8rem)] w-full truncate">
+                          <span
+                            style={{ fontSize: `${coinLabelFontSize}px` }}
+                            className="font-mario text-yellow-300 text-shadow-gold flex items-center justify-center gap-0.5 w-full truncate"
+                          >
                             +{block.rewardCoins}
                             <MarioCoin size="xs" />
                           </span>
                         ) : (
-                          <Check className="w-3 h-3 text-emerald-400" />
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
                         )}
                       </>
                     ) : (
@@ -202,6 +264,5 @@ export const GameBoard = React.memo(function GameBoard({
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 });
