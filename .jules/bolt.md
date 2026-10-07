@@ -29,3 +29,7 @@
 ## 2025-05-25 - Selective State Memoization & Header Component Isolation in Map Takeovers
 **Learning:** Top-level map takeover state (`AlienInvasion`) was re-running 50-state array filtering (`capturedCount(state)`) on every render pass, and re-triggering `stateCounts(state)` on state hover selections, question modal toggles, and pulse timer ticks because `useMemo` depended on the whole `state` object. `InvasionHeader` was also re-rendering unnecessarily due to inline callback allocations.
 **Action:** Memoize `counts` on `[state.teams, state.owners]` and `captured` on `[state.owners]`, wrap action handlers in `useCallback`, and wrap `InvasionHeader` in `React.memo` to eliminate redundant O(N) state counting and prevent header VDOM re-renders during state highlights and pulse animations.
+
+## 2025-05-26 - Static Lookup Hoisting and Setup Component Memoization
+**Learning:** Game setup screens (such as `InvasionSetup`) were re-allocating initial team lookup objects via `Object.fromEntries` array mapping on component instantiation/re-renders, and executing linear `INVASION_FACTION_LIST.find()` scans when starting games.
+**Action:** Hoist initial team name lookups to module level (`INITIAL_TEAM_NAMES`) for constant O(1) property access, and wrap setup containers in `React.memo` to prevent unnecessary VDOM re-renders during parent layout or router updates.
