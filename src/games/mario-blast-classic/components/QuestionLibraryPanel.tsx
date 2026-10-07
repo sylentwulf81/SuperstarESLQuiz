@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { Library, LogIn, Trash2, CheckCircle2, RefreshCw, Download, Upload, Copy, AlertTriangle } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
+import { Library, LogIn, Trash2, CheckCircle2, RefreshCw, Download, Upload, Copy, AlertTriangle, FileDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -9,6 +10,7 @@ import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { optimizeDataUrl } from '@/shared/utils/imageUtils';
 import { sounds } from '@/shared/utils/sound';
+import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
 
 interface QuestionLibraryPanelProps {
   questions: Question[];
@@ -42,6 +44,7 @@ export function QuestionLibraryPanel({
   const [loadingMine, setLoadingMine] = useState(false);
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState<Armed>(null);
+  const [exportPdfDeck, setExportPdfDeck] = useState<{ questions: Question[]; name: string; goal: string } | null>(null);
   const importFileRef = useRef<HTMLInputElement>(null);
 
   const populatedCount = useMemo(() => {
@@ -193,6 +196,17 @@ export function QuestionLibraryPanel({
     }
   };
 
+  const handleExportPdf = () => {
+    sounds.playClick();
+    const exportName = name.trim() || activeBankName || 'Question Deck';
+    const finalCount = Math.max(1, Math.min(saveCount, questions.length));
+    setExportPdfDeck({
+      questions: questions.slice(0, finalCount),
+      name: exportName,
+      goal: targetGoal.trim(),
+    });
+  };
+
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -243,6 +257,17 @@ export function QuestionLibraryPanel({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Export PDF button */}
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            title="Export questions to PDF with hidden teacher answer key"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/15 cursor-pointer transition-colors"
+          >
+            <FileDown className="w-3.5 h-3.5 text-rose-400" />
+            <span className="hidden sm:inline">Export PDF</span>
+          </button>
+
           {/* Export JSON backup button */}
           <button
             type="button"
@@ -534,6 +559,13 @@ export function QuestionLibraryPanel({
                     setName(appliedBank.name);
                     onApply(appliedBank);
                   }}
+                  onExportPdf={(targetBank) => {
+                    setExportPdfDeck({
+                      questions: targetBank.questions,
+                      name: targetBank.name,
+                      goal: targetBank.lessonGoal,
+                    });
+                  }}
                 />
               ))}
             </div>
@@ -580,12 +612,31 @@ export function QuestionLibraryPanel({
                     void handleSave(targetId, targetName);
                   }}
                   onDelete={handleDelete}
+                  onExportPdf={(targetBank) => {
+                    setExportPdfDeck({
+                      questions: targetBank.questions,
+                      name: targetBank.name,
+                      goal: targetBank.lessonGoal,
+                    });
+                  }}
                 />
               ))}
             </div>
           )}
         </section>
       </div>
+
+      {/* Export Deck as PDF Modal */}
+      <AnimatePresence>
+        {exportPdfDeck && (
+          <ExportPdfModal
+            questions={exportPdfDeck.questions}
+            deckName={exportPdfDeck.name}
+            lessonGoal={exportPdfDeck.goal}
+            onClose={() => setExportPdfDeck(null)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -601,6 +652,7 @@ function BankCard({
   onApply,
   onDelete,
   onUpdate,
+  onExportPdf,
 }: {
   key?: React.Key;
   bank: QuestionBank;
@@ -613,6 +665,7 @@ function BankCard({
   onApply: (bank: QuestionBank) => void;
   onDelete?: (id: string) => void;
   onUpdate?: (id: string, name: string) => void;
+  onExportPdf?: (bank: QuestionBank) => void;
 }) {
   const sample = bank.questions[0]?.title ?? '';
   const loadArmed = armed?.id === bank.id && armed.mode === 'load';
@@ -715,6 +768,22 @@ function BankCard({
             title="Update this set with your currently open Question Studio questions"
           >
             {updateArmed ? 'Overwrite?' : 'Update'}
+          </button>
+        )}
+
+        {/* Export PDF Button */}
+        {onExportPdf && (
+          <button
+            type="button"
+            aria-label={`Export ${bank.name} as PDF`}
+            onClick={() => {
+              sounds.playClick();
+              onExportPdf(bank);
+            }}
+            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-rose-300 border border-white/10 cursor-pointer transition-colors"
+            title="Export this set to PDF with concealed answers"
+          >
+            <FileDown className="w-3.5 h-3.5" />
           </button>
         )}
 

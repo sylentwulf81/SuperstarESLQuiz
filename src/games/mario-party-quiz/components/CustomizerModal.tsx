@@ -24,6 +24,7 @@ import {
   ArrowDownUp,
   PlusCircle,
   AlertTriangle,
+  FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -47,6 +48,7 @@ import { DEFAULT_CLASSIC_LESSON_GOAL } from '@/games/mario-blast-classic/data/cl
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { PromptMarkField } from './PromptMarkField';
 import { QuestionLibraryPanel } from '@/games/mario-blast-classic/components/QuestionLibraryPanel';
+import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { DEFAULT_QUESTIONS } from '../data/questions';
 import { SUMMER_QUESTIONS } from '../data/summerQuestions';
@@ -118,6 +120,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   // Navigation & View tabs
   const [activeTab, setActiveTab] = useState<TabMode>('deck');
   const [isNewDeckConfirmOpen, setIsNewDeckConfirmOpen] = useState(false);
+  const [isExportPdfOpen, setIsExportPdfOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
   const [blockFilter, setBlockFilter] = useState<BlockFilter>('all');
 
@@ -785,6 +788,22 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
               </button>
             )}
 
+            {/* Export PDF Button */}
+            <button
+              id="studio-export-pdf-btn"
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                flushSave();
+                setIsExportPdfOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/20 to-amber-500/20 hover:from-rose-500/35 hover:to-amber-500/35 text-rose-200 hover:text-white border border-rose-400/40 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Export question deck to PDF with hidden teacher answer key on each page"
+            >
+              <FileDown className="w-3.5 h-3.5 text-rose-400" />
+              <span className="hidden sm:inline">Export PDF</span>
+            </button>
+
             {/* New Deck Button */}
             <button
               type="button"
@@ -1271,6 +1290,22 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
           </div>
         )}
       </motion.div>
+
+      {/* Export Deck as PDF Modal */}
+      <AnimatePresence>
+        {isExportPdfOpen && (
+          <ExportPdfModal
+            questions={blocks.map(b =>
+              b.id === currentBlock.id
+                ? { ...editingQuestion, title: legacySlashesToMarks(editingQuestion.title) }
+                : b.question
+            )}
+            deckName={currentActiveBankName || (THEME_UI[theme]?.gameTitle ?? 'ESL Quiz Deck')}
+            lessonGoal={lessonGoal}
+            onClose={() => setIsExportPdfOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };

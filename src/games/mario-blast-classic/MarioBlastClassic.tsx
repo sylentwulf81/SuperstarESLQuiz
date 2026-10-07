@@ -268,6 +268,7 @@ export function MarioBlastClassic({
       correctIndex: 0,
       rewardCoins: 1,
       blockNumber: i + 1,
+      category: 'grammar',
     }));
     const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
     dispatch({
