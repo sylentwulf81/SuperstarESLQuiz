@@ -16,18 +16,23 @@ interface InvasionSetupProps {
   onBackToLauncher: () => void;
 }
 
-export const InvasionSetup: React.FC<InvasionSetupProps> = ({
+// Module-level pre-computed initial team names lookup to avoid re-allocating map objects on component render
+const INITIAL_TEAM_NAMES: Record<InvasionFactionId, string> = Object.fromEntries(
+  INVASION_FACTION_LIST.map(faction => [faction.id, faction.name])
+) as Record<InvasionFactionId, string>;
+
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped InvasionSetup in React.memo to prevent unnecessary VDOM re-renders when parent state updates.
+ * 2) Pre-computed module-level INITIAL_TEAM_NAMES lookup object to eliminate array map allocations on mount/renders.
+ */
+export const InvasionSetup: React.FC<InvasionSetupProps> = React.memo(function InvasionSetup({
   onStartGame,
   onOpenRules,
   onBackToLauncher,
-}) => {
+}) {
   const [selectedIds, setSelectedIds] = useState<InvasionFactionId[]>([]);
-  const [teamNames, setTeamNames] = useState<Record<InvasionFactionId, string>>(() =>
-    Object.fromEntries(INVASION_FACTION_LIST.map(faction => [faction.id, faction.name])) as Record<
-      InvasionFactionId,
-      string
-    >
-  );
+  const [teamNames, setTeamNames] = useState<Record<InvasionFactionId, string>>(INITIAL_TEAM_NAMES);
 
   const toggleFaction = (factionId: InvasionFactionId) => {
     if (selectedIds.includes(factionId)) {
@@ -47,7 +52,7 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = ({
     const teams: InvasionTeam[] = selectedIds.map(factionId => ({
       id: `team_${factionId}`,
       factionId,
-      name: teamNames[factionId] || INVASION_FACTION_LIST.find(f => f.id === factionId)?.name || factionId,
+      name: teamNames[factionId] || INITIAL_TEAM_NAMES[factionId] || factionId,
     }));
     onStartGame(teams);
   };
@@ -191,4 +196,4 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = ({
       </div>
     </div>
   );
-};
+});
