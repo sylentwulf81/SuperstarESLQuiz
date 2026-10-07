@@ -178,7 +178,7 @@ function getCardTheme(type: string): CardTheme {
   return CARD_THEMES[type] || DEFAULT_THEME;
 }
 
-function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'md' | 'lg' | 'xl' }) {
+function CoinScore({ coins, size = 'md' }: { coins: number; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
   const big = size === 'lg' || size === 'xl';
   const huge = size === 'xl';
   return (
