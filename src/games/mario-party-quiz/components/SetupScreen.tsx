@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Play, Check, Sun, Snowflake, Shuffle,
@@ -22,61 +22,72 @@ interface SetupScreenProps {
   onBackToLauncher?: () => void;
 }
 
-export const SetupScreen: React.FC<SetupScreenProps> = ({
+/** Pre-computed module-level default team names to avoid array mapping on component instantiation. */
+const DEFAULT_TEAM_NAMES: Record<CharacterId, string> = Object.fromEntries(
+  CHARACTER_LIST.map((char) => [char.id, char.name])
+) as Record<CharacterId, string>;
+
+/** Pre-computed list of all character IDs for quick select-all toggles. */
+const ALL_CHARACTER_IDS: CharacterId[] = CHARACTER_LIST.map((char) => char.id);
+
+/** Module-level avatar reader helper. */
+const readStoredAvatar = (charId: CharacterId) => {
+  try {
+    return localStorage.getItem(`avatar_${charId}`) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped SetupScreen in React.memo to prevent unnecessary VDOM re-renders during parent layout or theme updates.
+ * 2) Hoisted DEFAULT_TEAM_NAMES, ALL_CHARACTER_IDS, and readStoredAvatar to module scope.
+ * 3) Wrapped action handlers in useCallback hooks to stabilize references.
+ */
+export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function SetupScreen({
   theme,
   lessonGoal,
   onStartGame,
   onOpenRules,
   onOpenStudio,
   onBackToLauncher,
-}) => {
+}) {
   const [selectedChars, setSelectedChars] = useState<CharacterId[]>([]);
-
-  const [teamNames, setTeamNames] = useState<Record<CharacterId, string>>(() =>
-    Object.fromEntries(CHARACTER_LIST.map((char) => [char.id, char.name])) as Record<CharacterId, string>
-  );
-
+  const [teamNames, setTeamNames] = useState<Record<CharacterId, string>>(DEFAULT_TEAM_NAMES);
   const [startingCoins, setStartingCoins] = useState<number>(0);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
 
-  const readStoredAvatar = (charId: CharacterId) => {
-    try {
-      return localStorage.getItem(`avatar_${charId}`) || undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
-  const toggleCharacter = (charId: CharacterId) => {
+  const toggleCharacter = useCallback((charId: CharacterId) => {
     if (selectedChars.includes(charId)) {
       sounds.playCharacterDeselect();
-      setSelectedChars(selectedChars.filter(id => id !== charId));
+      setSelectedChars(prev => prev.filter(id => id !== charId));
     } else {
       sounds.playCharacterSelect();
-      setSelectedChars([...selectedChars, charId]);
+      setSelectedChars(prev => [...prev, charId]);
     }
-  };
+  }, [selectedChars]);
 
-  const handleNameChange = (charId: CharacterId, newName: string) => {
+  const handleNameChange = useCallback((charId: CharacterId, newName: string) => {
     setTeamNames(prev => ({ ...prev, [charId]: newName }));
-  };
+  }, []);
 
   const allSelected = selectedChars.length === CHARACTER_LIST.length;
 
-  const toggleSelectAll = () => {
-    if (allSelected) {
+  const toggleSelectAll = useCallback(() => {
+    if (selectedChars.length === CHARACTER_LIST.length) {
       sounds.playCharacterDeselect();
       setSelectedChars([]);
     } else {
       sounds.playCharacterSelect();
-      setSelectedChars(CHARACTER_LIST.map((char) => char.id));
+      setSelectedChars(ALL_CHARACTER_IDS);
     }
-  };
+  }, [selectedChars.length]);
 
   const isStartReady = selectedChars.length >= 2;
 
-  const handleStart = () => {
-    if (!isStartReady) return;
+  const handleStart = useCallback(() => {
+    if (selectedChars.length < 2) return;
     sounds.playGameStart();
     const teams: Team[] = selectedChars.map(charId => ({
       id: `team_${charId}`,
@@ -92,7 +103,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       customImageUrl: readStoredAvatar(charId),
     }));
     onStartGame(teams, startingCoins);
-  };
+  }, [selectedChars, teamNames, startingCoins, onStartGame]);
 
   return (
     <div className="w-full flex-1 overflow-y-auto p-3 sm:p-4 lg:p-3 flex flex-col items-center justify-start sm:justify-center">
@@ -353,4 +364,4 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});

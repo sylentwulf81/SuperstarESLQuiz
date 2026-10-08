@@ -33,3 +33,7 @@
 ## 2025-05-26 - Static Lookup Hoisting and Setup Component Memoization
 **Learning:** Game setup screens (such as `InvasionSetup`) were re-allocating initial team lookup objects via `Object.fromEntries` array mapping on component instantiation/re-renders, and executing linear `INVASION_FACTION_LIST.find()` scans when starting games.
 **Action:** Hoist initial team name lookups to module level (`INITIAL_TEAM_NAMES`) for constant O(1) property access, and wrap setup containers in `React.memo` to prevent unnecessary VDOM re-renders during parent layout or router updates.
+
+## 2025-05-27 - Setup Screen Memoization & Static Team Name Hoisting
+**Learning:** `SetupScreen` rendered in `MarioPartyQuiz` and `MarioBlastClassic` was unmemoized and re-allocating default team names (`Object.fromEntries`) and character ID arrays on every render pass, triggering redundant VDOM re-renders whenever parent layout/backdrop or ambient particles updated.
+**Action:** Wrap `SetupScreen` in `React.memo`, hoist static lookup maps (`DEFAULT_TEAM_NAMES`, `ALL_CHARACTER_IDS`, `readStoredAvatar`) to module scope, and wrap action handlers in `useCallback` hooks with explicit dependency arrays.
