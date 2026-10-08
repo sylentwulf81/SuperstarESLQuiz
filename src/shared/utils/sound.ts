@@ -895,6 +895,59 @@ class SoundEngine {
       this.playBowser();
     }, 180);
   }
+
+  // Sneaky mischievous Nabbit thief scamper & chuckle sound
+  playNabbit() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    // Cheeky staccato cartoon tiptoe squeaks
+    const squeaks = [
+      { f: 620, endF: 880, d: 0.08, t: 0 },
+      { f: 880, endF: 1150, d: 0.08, t: 85 },
+      { f: 720, endF: 980, d: 0.08, t: 170 },
+      { f: 1040, endF: 1350, d: 0.12, t: 255 },
+    ];
+
+    squeaks.forEach(sq => {
+      setTimeout(() => {
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(sq.f, now);
+        osc.frequency.exponentialRampToValueAtTime(sq.endF, now + sq.d);
+
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + sq.d);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + sq.d);
+      }, sq.t);
+    });
+
+    // Mischievous cartoon zip slide / scamper finish
+    setTimeout(() => {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1250, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + 0.32);
+
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.32);
+    }, 360);
+  }
 }
 
 export const sounds = new SoundEngine();

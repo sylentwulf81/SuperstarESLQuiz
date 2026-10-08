@@ -49,6 +49,138 @@ export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: Them
     );
   }
 
+  if (theme === 'halloween') {
+    return (
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none" style={{ contain: 'strict' }}>
+        <svg
+          viewBox="0 0 1920 1080"
+          preserveAspectRatio="xMidYMid slice"
+          className="w-full h-full object-cover"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <linearGradient id="halloweenSky" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#0f051d" />
+              <stop offset="45%" stopColor="#220b38" />
+              <stop offset="85%" stopColor="#3b112c" />
+              <stop offset="100%" stopColor="#1a0826" />
+            </linearGradient>
+
+            <radialGradient id="halloweenMoonGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fffbeb" stopOpacity="0.9" />
+              <stop offset="35%" stopColor="#fef08a" stopOpacity="0.45" />
+              <stop offset="70%" stopColor="#f97316" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="#581c87" stopOpacity="0" />
+            </radialGradient>
+
+            <linearGradient id="hauntedHill1" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#1e1035" />
+              <stop offset="100%" stopColor="#0b0314" />
+            </linearGradient>
+
+            <linearGradient id="hauntedHill2" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#2e1045" />
+              <stop offset="100%" stopColor="#0f041a" />
+            </linearGradient>
+
+            <radialGradient id="jackGlow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stopColor="#fef08a" />
+              <stop offset="50%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="#c2410c" stopOpacity="0" />
+            </radialGradient>
+          </defs>
+
+          {/* Deep Twilight Sky */}
+          <rect width="1920" height="1080" fill="url(#halloweenSky)" />
+
+          {/* Glowing Full Moon */}
+          <circle cx="1450" cy="220" r="260" fill="url(#halloweenMoonGlow)" />
+          <circle cx="1450" cy="220" r="110" fill="#fef9c3" stroke="#fef08a" strokeWidth="4" />
+          <circle cx="1420" cy="180" r="18" fill="#fde047" opacity="0.35" />
+          <circle cx="1480" cy="240" r="24" fill="#fde047" opacity="0.3" />
+          <circle cx="1440" cy="270" r="14" fill="#fde047" opacity="0.25" />
+
+          {/* Distant Spooky Rolling Hills */}
+          <path
+            d="M -100,740 Q 250,560 620,740 T 1300,710 T 2050,730 L 2050,1080 L -100,1080 Z"
+            fill="url(#hauntedHill1)"
+            opacity="0.85"
+          />
+
+          {/* Haunted Castle Silhouette on distant hill */}
+          <g transform="translate(420, 480) scale(0.9)" fill="#0f041a" opacity="0.95">
+            <rect x="0" y="50" width="120" height="130" />
+            <polygon points="-10,50 60,-15 130,50" />
+            <rect x="-50" y="80" width="45" height="100" />
+            <polygon points="-55,80 -27,20 0,80" />
+            <rect x="125" y="80" width="45" height="100" />
+            <polygon points="120,80 148,20 175,80" />
+            <rect x="45" y="75" width="30" height="40" rx="15" fill="#fbbf24" opacity="0.85" />
+            <rect x="-35" y="105" width="16" height="25" rx="8" fill="#fbbf24" opacity="0.75" />
+            <rect x="140" y="105" width="16" height="25" rx="8" fill="#fbbf24" opacity="0.75" />
+          </g>
+
+          {/* Flying Bat Silhouettes */}
+          <g fill="#180828" opacity="0.8">
+            <path d="M 1340,160 Q 1355,140 1370,160 Q 1380,145 1390,160 Q 1380,168 1365,166 Z" transform="scale(1.4)" />
+            <path d="M 1250,220 Q 1262,205 1275,220 Q 1283,208 1292,220 Q 1284,227 1271,225 Z" transform="scale(1.1)" />
+            <path d="M 1120,180 Q 1130,168 1142,180 Q 1150,170 1158,180 Q 1150,186 1139,184 Z" transform="scale(1.2)" />
+          </g>
+
+          {/* Midground Spooky Hills */}
+          <path
+            d="M -50,830 Q 320,670 750,830 T 1550,810 T 2100,820 L 2100,1080 L -50,1080 Z"
+            fill="url(#hauntedHill2)"
+          />
+
+          {/* Gnarled Spooky Bare Tree Left */}
+          <g transform="translate(140, 680)" stroke="#090211" strokeLinecap="round">
+            <path d="M 50,200 Q 60,110 50,40 Q 40,-20 10,-80 Q 30,-120 10,-160" strokeWidth="26" fill="none" />
+            <path d="M 50,60 Q 90,20 120,-30 Q 140,-50 160,-70" strokeWidth="16" fill="none" />
+            <path d="M 100,10 Q 80,-40 60,-90" strokeWidth="10" fill="none" />
+            <path d="M 45,100 Q 10,70 -30,50 Q -50,30 -70,10" strokeWidth="14" fill="none" />
+          </g>
+
+          {/* Glowing Jack-o'-lantern on the hill */}
+          <g transform="translate(260, 890)">
+            <ellipse cx="0" cy="0" rx="38" ry="30" fill="#ea580c" stroke="#9a3412" strokeWidth="2.5" />
+            <ellipse cx="-16" cy="0" rx="18" ry="28" fill="#f97316" />
+            <ellipse cx="16" cy="0" rx="18" ry="28" fill="#f97316" />
+            <ellipse cx="0" cy="0" rx="14" ry="29" fill="#fb923c" />
+            <path d="M -3,-30 Q -8,-45 2,-48 Q 5,-40 3,-30 Z" fill="#3f6212" stroke="#1a2e05" strokeWidth="1.5" />
+            <polygon points="-16,-12 -8,-4 -22,-4" fill="#fef08a" />
+            <polygon points="16,-12 8,-4 22,-4" fill="#fef08a" />
+            <polygon points="0,-4 -4,2 4,2" fill="#fef08a" />
+            <path d="M -18,10 Q 0,22 18,10 Q 12,18 0,18 Q -12,18 -18,10 Z" fill="#fef08a" />
+            <circle cx="0" cy="5" r="30" fill="url(#jackGlow)" opacity="0.6" />
+          </g>
+
+          {/* Right Gnarled Tree & Pumpkin */}
+          <g transform="translate(1760, 720)" stroke="#090211" strokeLinecap="round">
+            <path d="M 20,180 Q 10,90 20,30 Q 30,-30 70,-90 Q 60,-130 90,-170" strokeWidth="24" fill="none" />
+            <path d="M 20,50 Q -30,10 -60,-30 Q -80,-60 -100,-80" strokeWidth="15" fill="none" />
+            <path d="M -20,20 Q -10,-30 0,-70" strokeWidth="9" fill="none" />
+          </g>
+
+          <g transform="translate(1680, 915) scale(0.85)">
+            <ellipse cx="0" cy="0" rx="38" ry="30" fill="#ea580c" stroke="#9a3412" strokeWidth="2.5" />
+            <ellipse cx="-16" cy="0" rx="18" ry="28" fill="#f97316" />
+            <ellipse cx="16" cy="0" rx="18" ry="28" fill="#f97316" />
+            <ellipse cx="0" cy="0" rx="14" ry="29" fill="#fb923c" />
+            <path d="M -3,-30 Q -8,-45 2,-48 Q 5,-40 3,-30 Z" fill="#3f6212" stroke="#1a2e05" strokeWidth="1.5" />
+            <polygon points="-16,-12 -8,-4 -22,-4" fill="#fef08a" />
+            <polygon points="16,-12 8,-4 22,-4" fill="#fef08a" />
+            <path d="M -18,10 Q 0,22 18,10 Q 12,18 0,18 Q -12,18 -18,10 Z" fill="#fef08a" />
+            <circle cx="0" cy="5" r="30" fill="url(#jackGlow)" opacity="0.6" />
+          </g>
+        </svg>
+
+        {/* Ambient Twilight Color Overlay for UI contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#130524]/65 via-[#1a082c]/55 to-[#0b0314]/85" />
+      </div>
+    );
+  }
+
   if (theme === 'summer') {
     return (
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none" style={{ contain: 'strict' }}>

@@ -52,6 +52,7 @@ import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { DEFAULT_QUESTIONS } from '../data/questions';
 import { SUMMER_QUESTIONS } from '../data/summerQuestions';
+import { HALLOWEEN_QUESTIONS } from '../data/halloweenQuestions';
 import { CLASSIC_QUESTIONS } from '@/games/mario-blast-classic/data/classicQuestions';
 
 interface CustomizerModalProps {
@@ -386,7 +387,9 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     undoHistoryRef.current = { blockId: currentBlock.id, question: prevQ };
 
     const defaultDeck =
-      theme === 'summer'
+      theme === 'halloween'
+        ? HALLOWEEN_QUESTIONS
+        : theme === 'summer'
         ? SUMMER_QUESTIONS
         : theme === 'classic'
         ? CLASSIC_QUESTIONS

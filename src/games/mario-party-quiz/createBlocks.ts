@@ -1,6 +1,7 @@
 import { BlockState, GameQuestion, GameTheme, Question } from '@/shared/types';
 import { DEFAULT_QUESTIONS } from './data/questions';
 import { SUMMER_QUESTIONS } from './data/summerQuestions';
+import { HALLOWEEN_QUESTIONS } from './data/halloweenQuestions';
 import { CLASSIC_QUESTIONS } from '@/games/mario-blast-classic/data/classicQuestions';
 
 export const TOTAL_BLOCKS = 60;
@@ -19,7 +20,13 @@ export function createGameBlocks(
 ): BlockState[] {
   let rawDeck: Question[] = [];
   const defaultSource =
-    theme === 'summer' ? SUMMER_QUESTIONS : theme === 'classic' ? CLASSIC_QUESTIONS : DEFAULT_QUESTIONS;
+    theme === 'halloween'
+      ? HALLOWEEN_QUESTIONS
+      : theme === 'summer'
+      ? SUMMER_QUESTIONS
+      : theme === 'classic'
+      ? CLASSIC_QUESTIONS
+      : DEFAULT_QUESTIONS;
 
   // Read saved block count if not passed explicitly
   const effectiveCount = targetCount ?? (() => {

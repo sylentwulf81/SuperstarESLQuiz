@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, BookOpen, Layers, GraduationCap, Sparkles, Languages } from 'lucide-react';
+import { X, BookOpen, GraduationCap, Languages } from 'lucide-react';
 import { sounds } from '@/shared/utils/sound';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 
@@ -19,16 +19,6 @@ const EN = {
     'Hide a revealed answer if you clicked it by mistake. Skip action lets a team pass on a card without playing it.',
     'Question Studio sets the lesson goal, lets you tap a word to highlight it, and can save the set in the Question Library.',
   ],
-  cards: [
-    'Super Mushroom: pick 1 of 3 super-cards (2, 3, 5, or 7 coins). That amount is doubled right now — it is not saved for later.',
-    'King Boo: shuffles the other teams’ coins. Yours stay put.',
-    'Gold Star: +15 coins, then Round Over.',
-    'Blooper: ink one rival. Their next coin card pays only 1 coin.',
-    'Bowser’s Revolution: swap coins with a rival, then Round Over.',
-    'Bowser’s Fury: −5 coins to every rival, then Round Over.',
-    'Mystery Blocks: pick 1 of 3 — Treasure (10–15), 0 coins, or Piranha (round over).',
-    'Most cards are plain coin hauls (+3 / +5 / +10). About 1–2 cards per round are actions. King Boo and Bowser cards show up more as the board clears and coin totals rise (never guaranteed). 1st place cannot draw Bowser catch-up cards.',
-  ],
 };
 
 const JA = {
@@ -41,16 +31,6 @@ const JA = {
     '次の問題へ進むのはホストがボタンを押したときです。',
     '答えを誤って出してしまったら Hide で隠せます。Skip action でカード効果を使わずに通せます。',
     'Question Studio でレッスンゴールを変え、変える単語をタップでオレンジにできます。セットは Question Library に保存できます。',
-  ],
-  cards: [
-    'スーパーキノコ：3枚から1枚（2 / 3 / 5 / 7コイン）を選び、すぐ2倍。次のカードには残らない。',
-    'キングテレサ：他チームのコインをシャッフル。自分のコインはそのまま。',
-    'ゴールドスター：+15コインのあとラウンド終了。',
-    'ブルーパー：相手1チームにインク。次のコインカードが必ず+1。',
-    'クッパレボリューション：相手とコインを交換したあとラウンド終了。',
-    'クッパフューリー：他チーム全員−5コインのあとラウンド終了。',
-    'ミステリーブロック：3つのうち1つ（宝10–15 / 0 / パックンで終了）。',
-    'カードの多くはコイン（+3 / +5 / +10）。アクションはだいたい1〜2枚/ラウンド。キングテレサとクッパ系は盤面が進みコインが増えるほど出やすくなります（保証なし）。1位はクッパのキャッチアップカードを引けません。',
   ],
 };
 
@@ -105,19 +85,6 @@ export const ClassicRulebookModal: React.FC<ClassicRulebookModalProps> = ({ onCl
                 <li key={step}>{step}</li>
               ))}
             </ol>
-          </section>
-          <section>
-            <h3 className="font-mario text-sm text-amber-300 flex items-center gap-2 mb-2">
-              <Layers className="w-4 h-4" /> Classic card remaps
-            </h3>
-            <ul className="space-y-1.5 text-sm text-slate-100">
-              {t.cards.map(card => (
-                <li key={card} className="flex gap-2">
-                  <Sparkles className="w-3.5 h-3.5 text-yellow-300 shrink-0 mt-0.5" />
-                  {card}
-                </li>
-              ))}
-            </ul>
           </section>
         </div>
       </motion.div>

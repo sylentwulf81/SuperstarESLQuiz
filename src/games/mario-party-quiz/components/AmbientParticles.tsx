@@ -12,6 +12,8 @@ const WASH: Record<GameTheme, string> = {
     'radial-gradient(ellipse 55% 50% at 100% 0%, rgba(251,191,36,0.14), transparent 70%), radial-gradient(ellipse 45% 45% at 0% 100%, rgba(34,211,238,0.08), transparent 70%)',
   christmas:
     'radial-gradient(ellipse 55% 50% at 100% 0%, rgba(103,232,249,0.12), transparent 70%), radial-gradient(ellipse 45% 45% at 0% 100%, rgba(99,102,241,0.12), transparent 70%)',
+  halloween:
+    'radial-gradient(ellipse 55% 50% at 100% 0%, rgba(249,115,22,0.18), transparent 70%), radial-gradient(ellipse 50% 50% at 0% 100%, rgba(147,51,234,0.18), transparent 70%), radial-gradient(ellipse 40% 40% at 50% 50%, rgba(234,88,12,0.08), transparent 70%)',
 };
 
 /**

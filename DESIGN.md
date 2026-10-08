@@ -34,6 +34,7 @@ On the frontend, call them **activities** (or educational activities) — never 
 - Team identity is the avatar + color, not a caption.
 - Scores and coins should be readable from across a classroom.
 - Hover and highlight with glow/brightness, not tiny text changes.
+- **Modal sizing consistency & visual polish are paramount:** Modals must maintain stable, fixed container dimensions regardless of team counts or content states. Do not dynamically expand/contract modal dimensions (e.g. popping from 4 to 8 cards); keep grid slots fixed and grey out/disable inactive slots rather than reflowing the modal layout.
 
 ## Checklist before shipping a screen
 

@@ -43,4 +43,14 @@ export const THEME_UI: Record<
     deckLabel: 'Classic',
     firebaseTitle: 'Classic Custom Questions',
   },
+  halloween: {
+    short: 'Halloween',
+    edition: 'Halloween Edition',
+    gameTitle: 'Super Halloween Blast',
+    startParty: 'HALLOWEEN BLAST',
+    badgeClass: 'bg-orange-500/20 text-orange-300 border-orange-500/50',
+    barClass: 'bg-gradient-to-r from-orange-500 via-purple-600 to-amber-500 shadow-[0_0_15px_rgba(249,115,22,0.5)]',
+    deckLabel: 'Halloween',
+    firebaseTitle: 'Halloween Custom Questions',
+  },
 };

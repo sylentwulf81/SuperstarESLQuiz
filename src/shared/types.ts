@@ -7,7 +7,7 @@ export type CharacterId =
   | 'luigi'
   | 'rosalina'
   | 'toad';
-export type GameTheme = 'christmas' | 'summer' | 'classic';
+export type GameTheme = 'christmas' | 'summer' | 'classic' | 'halloween';
 
 export interface CharacterInfo {
   id: CharacterId;

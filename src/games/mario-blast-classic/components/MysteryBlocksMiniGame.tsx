@@ -76,8 +76,11 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
         if (bloopered) return;
         if (mushroomBoost) sounds.playPowerUp();
         else sounds.playStarCoin();
-      } else if (outcome.kind === 'piranha') sounds.playWrong();
-      else sounds.playPop();
+      } else if (outcome.kind === 'piranha') {
+        sounds.playWrong();
+      } else {
+        sounds.playNabbit();
+      }
     }, 420);
   };
 
