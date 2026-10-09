@@ -42,8 +42,9 @@ type ShellSession =
   | {
       kind: typeof MARIO_PARTY_QUIZ_MODULE;
       theme: GameTheme;
+      initialOpenStudio?: boolean;
     }
-  | { kind: typeof MARIO_BLAST_CLASSIC_MODULE }
+  | { kind: typeof MARIO_BLAST_CLASSIC_MODULE; initialOpenStudio?: boolean }
   | { kind: typeof ALIEN_INVASION_MODULE };
 
 function AppShell() {
@@ -83,6 +84,16 @@ function AppShell() {
     });
   }, []);
 
+  const handleOpenStudioFromLauncher = useCallback(() => {
+    bgm.pause();
+    sounds.playClick();
+    setSession({
+      kind: MARIO_PARTY_QUIZ_MODULE,
+      theme: 'classic',
+      initialOpenStudio: true,
+    });
+  }, []);
+
   if (session.kind === MARIO_BLAST_CLASSIC_MODULE) {
     return (
       <Suspense fallback={<GameLoadingFallback />}>
@@ -102,6 +113,7 @@ function AppShell() {
           onExitToLauncher={exitToLauncher}
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
+          onOpenStudio={handleOpenStudioFromLauncher}
         />
       </Suspense>
     );
@@ -112,6 +124,7 @@ function AppShell() {
       <Suspense fallback={<GameLoadingFallback />}>
         <MarioPartyQuiz
           initialTheme={session.theme}
+          initialOpenStudio={session.initialOpenStudio}
           onExitToLauncher={exitToLauncher}
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
@@ -125,6 +138,7 @@ function AppShell() {
       <LauncherScreen
         onLaunchGame={handleLaunchGame}
         onOpenRulebook={() => setIsRulesModalOpen(true)}
+        onOpenStudio={handleOpenStudioFromLauncher}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />
@@ -148,7 +162,7 @@ export default function App() {
     <AuthProvider>
       <AppShell />
       <Toaster
-        position="top-center"
+        position="bottom-center"
         richColors
         theme="dark"
         closeButton

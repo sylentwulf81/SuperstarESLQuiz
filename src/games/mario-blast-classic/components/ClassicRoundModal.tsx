@@ -10,6 +10,7 @@ import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { ClassicCardSlot, RoundOverReason } from '../engine';
 import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 import { MysteryCardBack } from '@/shared/components/MysteryCardBack';
+import { shuffleWordLetters } from '@/shared/utils/shuffle';
 
 export type { ClassicCardSlot };
 
@@ -51,6 +52,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   onFinishRound,
 }: ClassicRoundModalProps) {
   const [answerRevealed, setAnswerRevealed] = useState(isRoundOver);
+  const [showScrambledClue, setShowScrambledClue] = useState(false);
+
+  const scrambledChars = useMemo(() => {
+    if (question.type !== 'unscramble') return [];
+    const targetStr = question.targetWord || (Array.isArray(question.scrambledLetters) ? question.scrambledLetters.join('') : '') || '';
+    return shuffleWordLetters(targetStr);
+  }, [question]);
 
   const teamsMap = useMemo(() => {
     const map = new Map<string, Team>();
@@ -222,6 +230,43 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
               <MarkedPrompt text={question.title} />
             </h2>
+
+            {/* Unscramble Clue Toggle & Banner */}
+            {question.type === 'unscramble' && scrambledChars.length > 0 && (
+              <div className="mt-3 mx-auto w-full max-w-xl flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setShowScrambledClue(prev => !prev);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                    showScrambledClue
+                      ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-black'
+                      : 'bg-slate-800/80 hover:bg-slate-700 text-amber-200 border-white/15'
+                  }`}
+                >
+                  <Eye className="w-3.5 h-3.5 text-amber-300" />
+                  <span>{showScrambledClue ? 'Hide Scrambled Clue' : 'Show Scrambled Clue (Hint)'}</span>
+                </button>
+
+                {showScrambledClue && (
+                  <div className="p-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border-2 border-amber-400/60 rounded-2xl flex flex-wrap items-center justify-center gap-2 shadow-lg animate-in fade-in duration-200">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 w-full text-center">
+                      Scrambled Word Letters:
+                    </span>
+                    {scrambledChars.map((char, idx) => (
+                      <span
+                        key={idx}
+                        className="font-mario text-2xl sm:text-3xl text-yellow-300 bg-black/70 px-3 py-1.5 rounded-xl border border-yellow-400/50 shadow-sm"
+                      >
+                        {char}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Answer Box */}
             {question.type === 'true_false' ? (

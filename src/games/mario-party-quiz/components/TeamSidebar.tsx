@@ -8,10 +8,14 @@ import { TeamAvatar } from './TeamAvatar';
 
 export interface TeamSidebarProps {
   teams: Team[];
+  allTeams?: Team[];
+  startIndex?: number;
   currentTeamIndex: number;
   onSelectTeamTurn: (index: number) => void;
   onAdjustCoins: (teamId: string, delta: number) => void;
   className?: string;
+  side?: 'left' | 'right';
+  hideMobileTrack?: boolean;
 }
 
 const RANK_STYLES: Record<number, { badge: string; text: string }> = {
@@ -31,18 +35,24 @@ const RANK_STYLES: Record<number, { badge: string; text: string }> = {
 
 /**
  * Full-height Classroom Team Sidebar.
- * Displays on the left rail vertically on widescreen displays (projectors & smartboards),
+ * Displays vertically on widescreen displays (projectors & smartboards),
  * providing huge, easily-readable coin totals from the back of the room.
+ * Supports split dual-rail mode (max 4 per side) to eliminate scrolling with 5+ teams.
  */
 export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamSidebar({
   teams,
+  allTeams,
+  startIndex = 0,
   currentTeamIndex,
   onSelectTeamTurn,
   onAdjustCoins,
   className = '',
+  side = 'left',
+  hideMobileTrack = false,
 }) {
+  const rankingSource = allTeams || teams;
   const { teamRanksMap, highestScore } = useMemo(() => {
-    const sorted = [...teams].sort((a, b) => b.coins - a.coins);
+    const sorted = [...rankingSource].sort((a, b) => b.coins - a.coins);
     const ranks: Record<string, number> = {};
     sorted.forEach((team, idx) => {
       ranks[team.id] = idx + 1;
@@ -51,7 +61,9 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
       teamRanksMap: ranks,
       highestScore: sorted[0]?.coins ?? 0,
     };
-  }, [teams]);
+  }, [rankingSource]);
+
+  const borderClass = side === 'right' ? 'border-l border-white/15' : 'border-r border-white/15';
 
   return (
     <aside
@@ -59,21 +71,22 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
       aria-label="Classroom Teams"
     >
       {/* Desktop / Projector Vertical Rail */}
-      <div className="hidden lg:flex flex-col h-full w-60 xl:w-68 bg-slate-900/95 border-r border-white/15 p-3 overflow-y-auto gap-2.5 shadow-2xl backdrop-blur-md">
+      <div className={`hidden lg:flex flex-col h-full w-56 xl:w-64 bg-slate-900/95 ${borderClass} p-3 overflow-y-auto gap-2.5 shadow-2xl backdrop-blur-md`}>
         <div className="px-1 py-0.5 flex items-center justify-between border-b border-white/10 pb-2 shrink-0">
           <span className="font-mario text-xs xl:text-sm text-yellow-300 tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            STANDINGS
+            {side === 'right' ? 'TEAMS' : 'STANDINGS'}
           </span>
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            {teams.length} Teams
+            {rankingSource.length} Teams
           </span>
         </div>
 
         <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto px-1 py-1 [scrollbar-width:thin]">
           {teams.map((team, idx) => {
+            const globalIndex = startIndex + idx;
             const char = CHARACTERS[team.characterId];
-            const isActive = idx === currentTeamIndex;
+            const isActive = globalIndex === currentTeamIndex;
             const rank = teamRanksMap[team.id];
             const isLeader = team.coins === highestScore && team.coins > 0;
             const rankInfo = rank <= 3 && team.coins > 0 ? RANK_STYLES[rank] : null;
@@ -86,7 +99,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                 onClick={() => {
                   if (!isActive) {
                     sounds.playPop();
-                    onSelectTeamTurn(idx);
+                    onSelectTeamTurn(globalIndex);
                   }
                 }}
                 className={`relative rounded-2xl border-2 transition-all cursor-pointer flex flex-col p-2.5 shadow-md ${
@@ -207,50 +220,52 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
       </div>
 
       {/* Mobile / Narrow Screen Horizontal Track */}
-      <div className="lg:hidden w-full bg-slate-900/95 border-b border-white/15 p-1.5 shadow-md overflow-x-auto [scrollbar-width:none]">
-        <div className="flex items-center justify-center gap-1.5 min-w-max mx-auto px-1">
-          {teams.map((team, idx) => {
-            const char = CHARACTERS[team.characterId];
-            const isActive = idx === currentTeamIndex;
-            const rank = teamRanksMap[team.id];
-            const rankInfo = rank <= 3 && team.coins > 0 ? RANK_STYLES[rank] : null;
+      {!hideMobileTrack && (
+        <div className="lg:hidden w-full bg-slate-900/95 border-b border-white/15 p-1.5 shadow-md overflow-x-auto [scrollbar-width:none]">
+          <div className="flex items-center justify-center gap-1.5 min-w-max mx-auto px-1">
+            {rankingSource.map((team, idx) => {
+              const char = CHARACTERS[team.characterId];
+              const isActive = idx === currentTeamIndex;
+              const rank = teamRanksMap[team.id];
+              const rankInfo = rank <= 3 && team.coins > 0 ? RANK_STYLES[rank] : null;
 
-            return (
-              <div
-                key={team.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  if (!isActive) {
-                    sounds.playPop();
-                    onSelectTeamTurn(idx);
-                  }
-                }}
-                className={`relative flex items-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all cursor-pointer select-none ${
-                  isActive
-                    ? `${char.bgColor} bg-opacity-40 border-yellow-300 ring-2 ring-yellow-400 text-white`
-                    : 'bg-slate-800/80 border-white/15 text-slate-200'
-                }`}
-              >
-                {rankInfo && (
-                  <span
-                    className={`absolute -top-1.5 -left-1.5 h-4 px-1 rounded-md text-[8px] flex items-center justify-center border ${rankInfo.badge}`}
-                  >
-                    {rankInfo.text}
-                  </span>
-                )}
-                <TeamAvatar characterId={team.characterId} size="sm" customUrl={team.customImageUrl} />
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-black/50 border border-white/15">
-                  <MarioCoin size="xs" />
-                  <span className="font-mario text-base text-yellow-300 leading-none">
-                    {team.coins}
-                  </span>
+              return (
+                <div
+                  key={team.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    if (!isActive) {
+                      sounds.playPop();
+                      onSelectTeamTurn(idx);
+                    }
+                  }}
+                  className={`relative flex items-center gap-1.5 px-2 py-1.5 rounded-xl border transition-all cursor-pointer select-none ${
+                    isActive
+                      ? `${char.bgColor} bg-opacity-40 border-yellow-300 ring-2 ring-yellow-400 text-white`
+                      : 'bg-slate-800/80 border-white/15 text-slate-200'
+                  }`}
+                >
+                  {rankInfo && (
+                    <span
+                      className={`absolute -top-1.5 -left-1.5 h-4 px-1 rounded-md text-[8px] flex items-center justify-center border ${rankInfo.badge}`}
+                    >
+                      {rankInfo.text}
+                    </span>
+                  )}
+                  <TeamAvatar characterId={team.characterId} size="sm" customUrl={team.customImageUrl} />
+                  <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-black/50 border border-white/15">
+                    <MarioCoin size="xs" />
+                    <span className="font-mario text-base text-yellow-300 leading-none">
+                      {team.coins}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
     </aside>
   );
 });

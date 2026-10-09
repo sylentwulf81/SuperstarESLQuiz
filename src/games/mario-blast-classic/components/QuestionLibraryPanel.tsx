@@ -109,7 +109,6 @@ export function QuestionLibraryPanel({
     const rawSlice = questions.slice(0, finalCount);
 
     setBusy(true);
-    sounds.playSaveCloud();
 
     // Optimize large base64 images so that cloud documents never exceed Firestore 1MB limits
     const selectedQuestions = await Promise.all(
@@ -143,6 +142,7 @@ export function QuestionLibraryPanel({
       return;
     }
 
+    sounds.playSaveCloud();
     const saved = result.bank;
     setMine(prev => [saved, ...prev.filter(bank => bank.id !== saved.id)]);
     setName(saved.name);
@@ -379,32 +379,32 @@ export function QuestionLibraryPanel({
 
           {/* Action Buttons: Update vs Save New */}
           {isEditingLoadedBank && activeBankId ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 id="library-update-set"
                 type="button"
                 disabled={busy}
                 onClick={() => void handleSave(activeBankId)}
                 className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black border border-emerald-200 cursor-pointer disabled:opacity-60 transition-all shadow-sm flex items-center gap-1.5"
-                title={`Update existing "${activeBankName}" in your library`}
+                title={`Update and overwrite existing "${activeBankName}" in your library`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Update Set ({Math.min(saveCount, questions.length)} Qs)</span>
+                <span>Update Active Set</span>
               </button>
               <button
-                id="library-save-copy"
+                id="library-save-new"
                 type="button"
                 disabled={busy}
-                onClick={() => void handleSave(undefined, name.trim() ? `${name.trim()} (Copy)` : undefined)}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/20 cursor-pointer disabled:opacity-60 transition-all flex items-center gap-1"
-                title="Save as a new separate question set"
+                onClick={() => void handleSave(undefined, name.trim() ? (name.trim() === activeBankName ? `${name.trim()} (New)` : name.trim()) : undefined)}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold border border-indigo-400 cursor-pointer disabled:opacity-60 transition-all shadow flex items-center gap-1.5"
+                title="Save as a brand new deck in your library (does NOT overwrite)"
               >
-                <Copy className="w-3.5 h-3.5 text-slate-400" />
-                <span>Save as Copy</span>
+                <PlusCircle className="w-3.5 h-3.5 text-yellow-300" />
+                <span>Save as New Deck</span>
               </button>
             </div>
           ) : existingMatch ? (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 id="library-overwrite-existing-set"
                 type="button"
@@ -414,17 +414,18 @@ export function QuestionLibraryPanel({
                 title={`Update existing "${existingMatch.name}" in your library`}
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Update “{existingMatch.name}” ({Math.min(saveCount, questions.length)} Qs)</span>
+                <span>Update “{existingMatch.name}”</span>
               </button>
               <button
                 id="library-save-duplicate-set"
                 type="button"
                 disabled={busy}
-                onClick={() => void handleSave(undefined, `${name.trim()} (Copy)`)}
-                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/20 cursor-pointer disabled:opacity-60 transition-all"
-                title="Save as a new set with a copy label"
+                onClick={() => void handleSave(undefined, `${name.trim()} (New)`)}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold border border-indigo-400 cursor-pointer disabled:opacity-60 transition-all shadow flex items-center gap-1.5"
+                title="Save as a new separate question set"
               >
-                <span>Save as Copy</span>
+                <PlusCircle className="w-3.5 h-3.5 text-yellow-300" />
+                <span>Save as New Deck</span>
               </button>
             </div>
           ) : (
@@ -433,9 +434,10 @@ export function QuestionLibraryPanel({
               type="button"
               disabled={busy}
               onClick={() => void handleSave()}
-              className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer disabled:opacity-60 transition-all shadow-sm"
+              className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-400 text-slate-950 text-xs font-black border border-orange-200 cursor-pointer disabled:opacity-60 transition-all shadow-sm flex items-center gap-1.5"
             >
-              Save to Library ({Math.min(saveCount, questions.length)} Qs)
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Save as New Deck ({Math.min(saveCount, questions.length)} Qs)</span>
             </button>
           )}
 

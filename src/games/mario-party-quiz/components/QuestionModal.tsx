@@ -66,12 +66,14 @@ export const QuestionModal = React.memo(function QuestionModal({
 
   const [spelledLetters, setSpelledLetters] = useState<string[]>([]);
   const [availableLetters, setAvailableLetters] = useState<{ id: string; char: string; isUsed: boolean }[]>([]);
+  const [showScrambledClue, setShowScrambledClue] = useState(false);
 
   const charInfo = CHARACTERS[currentTeam.characterId];
 
   useEffect(() => {
     setCurrentImage(question.imageUrl || question.image);
     setImageLoadFailed(false);
+    setShowScrambledClue(false);
     if (question.type === 'multiple_choice') {
       setShuffledOptions(getShuffledOptions(question));
       setSelectedOption(null);
@@ -86,7 +88,8 @@ export const QuestionModal = React.memo(function QuestionModal({
       setIsAnswerRevealed(false);
       setStatus('idle');
     } else if (question.type === 'unscramble') {
-      const randomized = shuffleWordLetters(question.targetWord || question.scrambledLetters.join(''));
+      const targetStr = question.targetWord || (Array.isArray(question.scrambledLetters) ? question.scrambledLetters.join('') : '') || 'WORD';
+      const randomized = shuffleWordLetters(targetStr);
       const letters = randomized.map((char, index) => ({
         id: `${char}-${index}`,
         char,
@@ -192,11 +195,11 @@ export const QuestionModal = React.memo(function QuestionModal({
 
   const handleCheckSpelling = () => {
     if (question.type !== 'unscramble') return;
-    const currentWord = spelledLetters.join('').replace(/\s+/g, '').toUpperCase();
-    const target = question.targetWord.replace(/\s+/g, '').toUpperCase();
+    const currentWord = spelledLetters.join('').replace(/[^A-Z0-9]/g, '').toUpperCase();
+    const target = (question.targetWord || '').replace(/[^A-Z0-9]/g, '').toUpperCase();
 
     setIsAnswerRevealed(true);
-    if (currentWord === target) {
+    if (currentWord === target && target.length > 0) {
       setStatus('correct');
       sounds.playWordSolved();
     } else {
@@ -623,10 +626,47 @@ export const QuestionModal = React.memo(function QuestionModal({
                   ))}
                 </div>
 
+                {/* Scrambled Clue Toggle for Lower Level Classes */}
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      setShowScrambledClue(prev => !prev);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                      showScrambledClue
+                        ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-black'
+                        : 'bg-slate-800/80 hover:bg-slate-700 text-amber-200 border-white/15'
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5 text-amber-300" />
+                    <span>{showScrambledClue ? 'Hide Scrambled Clue' : 'Show Scrambled Clue (Hint)'}</span>
+                  </button>
+                </div>
+
+                {showScrambledClue && (
+                  <div className="mx-auto px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border-2 border-amber-400/60 shadow-lg text-center animate-in fade-in duration-200">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block mb-1">
+                      Scrambled Word Letters:
+                    </span>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      {availableLetters.map((l, i) => (
+                        <span
+                          key={i}
+                          className="font-mario text-xl sm:text-2xl text-yellow-300 bg-black/70 px-2.5 py-1 rounded-xl border border-yellow-400/50 shadow-sm"
+                        >
+                          {l.char}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {isAnswerRevealed && status === 'correct' && (
                   <div className="p-2.5 bg-emerald-950/80 border-2 border-emerald-400/60 rounded-2xl text-center">
                     <span className="font-mario text-lg sm:text-2xl text-emerald-300">
-                      {question.targetWord.toUpperCase()}
+                      {(question.targetWord || '').toUpperCase()}
                     </span>
                   </div>
                 )}
@@ -659,7 +699,7 @@ export const QuestionModal = React.memo(function QuestionModal({
                       sounds.playCardFlip();
                       setIsAnswerRevealed(true);
                       setStatus('correct');
-                      setSpelledLetters(question.targetWord.replace(/\s+/g, '').split(''));
+                      setSpelledLetters((question.targetWord || '').replace(/[^A-Z0-9]/g, '').toUpperCase().split(''));
                     }}
                     className="px-4 py-2.5 bg-slate-800 text-amber-300 rounded-xl text-sm font-bold border border-white/25 cursor-pointer"
                   >

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, BookOpen, Check, Play, Rocket, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen, Check, Play, Rocket, Users, Settings2 } from 'lucide-react';
 import { sounds } from '@/shared/utils/sound';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import {
@@ -13,6 +13,7 @@ import { FactionAvatar } from './FactionAvatar';
 interface InvasionSetupProps {
   onStartGame: (teams: InvasionTeam[]) => void;
   onOpenRules: () => void;
+  onOpenStudio?: () => void;
   onBackToLauncher: () => void;
 }
 
@@ -29,6 +30,7 @@ const INITIAL_TEAM_NAMES: Record<InvasionFactionId, string> = Object.fromEntries
 export const InvasionSetup: React.FC<InvasionSetupProps> = React.memo(function InvasionSetup({
   onStartGame,
   onOpenRules,
+  onOpenStudio,
   onBackToLauncher,
 }) {
   const [selectedIds, setSelectedIds] = useState<InvasionFactionId[]>([]);
@@ -89,17 +91,34 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = React.memo(function I
                   <span>Paint the USA</span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  onOpenRules();
-                }}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 shrink-0 cursor-pointer border border-indigo-300/40"
-              >
-                <BookOpen className="w-4 h-4 text-yellow-300" />
-                VIEW RULES
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    onOpenRules();
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 shrink-0 cursor-pointer border border-indigo-300/40"
+                >
+                  <BookOpen className="w-4 h-4 text-yellow-300" />
+                  VIEW RULES
+                </button>
+                {onOpenStudio && (
+                  <button
+                    id="invasion-open-studio-btn"
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onOpenStudio();
+                    }}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-yellow-300 font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer hover:scale-102 active:scale-97 border border-yellow-400/40"
+                    title="Open Question Studio"
+                  >
+                    <Settings2 className="w-4 h-4 text-yellow-300" />
+                    <span>QUESTION STUDIO</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

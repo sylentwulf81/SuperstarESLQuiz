@@ -27,12 +27,14 @@ export interface AlienInvasionProps {
   onExitToLauncher: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  onOpenStudio?: () => void;
 }
 
 export function AlienInvasion({
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
+  onOpenStudio,
 }: AlienInvasionProps) {
   const [state, setState] = React.useState(createMapTakeoverState);
   const [isRulesOpen, setIsRulesOpen] = React.useState(false);
@@ -110,6 +112,7 @@ export function AlienInvasion({
           <InvasionSetup
             onStartGame={handleStartGame}
             onOpenRules={() => setIsRulesOpen(true)}
+            onOpenStudio={onOpenStudio}
             onBackToLauncher={onExitToLauncher}
           />
         )}

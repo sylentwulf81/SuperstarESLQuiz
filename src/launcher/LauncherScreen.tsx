@@ -32,7 +32,8 @@ import {
   ChevronRight,
   Filter,
   X,
-  ChevronLeft
+  ChevronLeft,
+  Settings2
 } from 'lucide-react';
 import { LAUNCHER_GAMES, LauncherGame, LibraryFilter, LIBRARY_FILTERS, LIBRARY_FILTER_LABELS, ACTIVITY_STYLE_LABELS } from '@/launcher/catalog';
 import { sounds } from '@/shared/utils/sound';
@@ -56,6 +57,7 @@ function hexToRgba(hex: string, alpha: number): string {
 interface LauncherScreenProps {
   onLaunchGame: (game: LauncherGame) => void;
   onOpenRulebook: () => void;
+  onOpenStudio?: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
 }
@@ -63,6 +65,7 @@ interface LauncherScreenProps {
 export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   onLaunchGame,
   onOpenRulebook,
+  onOpenStudio,
   soundEnabled,
   onToggleSound,
 }) => {
@@ -196,8 +199,21 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
             </div>
           </div>
 
-          {/* Right Action Tools: Sound & Account */}
+          {/* Right Action Tools: Studio, Sound & Account */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {onOpenStudio && (
+              <button
+                id="launcher-open-studio-btn"
+                type="button"
+                onClick={onOpenStudio}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-400/20 to-amber-500/20 hover:from-amber-500/30 hover:to-yellow-400/30 text-yellow-300 font-bold text-xs border border-yellow-400/40 shadow cursor-pointer transition-all active:scale-95"
+                title="Create, customize, and manage question decks in Question Studio"
+              >
+                <Settings2 className="w-4 h-4 text-yellow-300" />
+                <span className="hidden sm:inline font-mario">QUESTION STUDIO</span>
+              </button>
+            )}
+
             <button
               onClick={() => {
                 sounds.playClick();

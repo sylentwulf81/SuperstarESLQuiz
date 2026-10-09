@@ -15,7 +15,7 @@ import { RulebookModal } from './components/RulebookModal';
 import { CustomizerModal } from './components/CustomizerModal';
 import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
-import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team } from '@/shared/types';
+import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team, QuestionType } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
 import { loadPartyLessonGoal, persistPartyLessonGoal } from './data/lessonGoal';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
@@ -35,6 +35,7 @@ export { TOTAL_BLOCKS };
 
 export interface MarioPartyQuizProps {
   initialTheme?: GameTheme;
+  initialOpenStudio?: boolean;
   onExitToLauncher: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -42,6 +43,7 @@ export interface MarioPartyQuizProps {
 
 export function MarioPartyQuiz({
   initialTheme = 'summer',
+  initialOpenStudio = false,
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
@@ -52,7 +54,7 @@ export function MarioPartyQuiz({
   const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
   const [lessonGoal, setLessonGoal] = useState(() => loadPartyLessonGoal(theme));
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(initialOpenStudio);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
@@ -158,6 +160,11 @@ export function MarioPartyQuiz({
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
   };
 
+  const handleReorderBlocks = (newBlocks: BlockState[]) => {
+    dispatch({ type: 'SET_BLOCKS', blocks: newBlocks });
+    persistQuestions(newBlocks);
+  };
+
   const handleResetAllQuestions = () => {
     handleActiveBankChange(undefined, undefined);
     try {
@@ -187,19 +194,47 @@ export function MarioPartyQuiz({
     persistQuestions(resizedBlocks);
   };
 
-  const handleCreateBlankDeck = (count?: number) => {
+  const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
-    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
-      id: i + 1,
-      type: 'multiple_choice',
-      title: '',
-      options: ['', '', '', ''],
-      correctIndex: 0,
-      rewardCoins: 1,
-      blockNumber: i + 1,
-      category: 'grammar',
-    }));
+    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => {
+      const base = {
+        id: i + 1,
+        blockNumber: i + 1,
+        title: '',
+        category: 'grammar' as const,
+        rewardCoins: 1,
+      };
+      if (defaultType === 'multiple_choice') {
+        return {
+          ...base,
+          type: 'multiple_choice' as const,
+          options: ['', '', '', ''],
+          correctIndex: 0,
+        };
+      }
+      if (defaultType === 'true_false') {
+        return {
+          ...base,
+          type: 'true_false' as const,
+          isTrue: true,
+          explanation: '',
+        };
+      }
+      if (defaultType === 'unscramble') {
+        return {
+          ...base,
+          type: 'unscramble' as const,
+          targetWord: '',
+          scrambledLetters: [],
+        };
+      }
+      return {
+        ...base,
+        type: 'open_trivia' as const,
+        answer: '',
+      };
+    });
     const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
     dispatch({
       type: 'SET_BLOCKS',
@@ -378,12 +413,24 @@ export function MarioPartyQuiz({
               onManualLoad={handleManualLoad}
             />
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-              <TeamSidebar
-                teams={teams}
-                currentTeamIndex={currentTeamIndex}
-                onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-                onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
-              />
+              {teams.length <= 4 ? (
+                <TeamSidebar
+                  teams={teams}
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
+                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                />
+              ) : (
+                <TeamSidebar
+                  teams={teams.slice(0, 4)}
+                  allTeams={teams}
+                  startIndex={0}
+                  side="left"
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
+                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                />
+              )}
               <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <GameBoard
                   blocks={blocks}
@@ -393,6 +440,18 @@ export function MarioPartyQuiz({
                   onOpenLeaderboard={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
                 />
               </main>
+              {teams.length > 4 && (
+                <TeamSidebar
+                  teams={teams.slice(4)}
+                  allTeams={teams}
+                  startIndex={4}
+                  side="right"
+                  hideMobileTrack
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
+                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                />
+              )}
             </div>
           </div>
         )}
@@ -442,6 +501,7 @@ export function MarioPartyQuiz({
             theme={theme}
             blocks={blocks}
             onUpdateBlockQuestion={handleUpdateBlockQuestion}
+            onReorderBlocks={handleReorderBlocks}
             onResetAllQuestions={handleResetAllQuestions}
             onResizeBlocks={handleResizeBlocks}
             onCreateBlankDeck={handleCreateBlankDeck}

@@ -61,7 +61,8 @@ interface CustomizerModalProps {
   onUpdateBlockQuestion: (blockId: number, question: GameQuestion) => void;
   onResetAllQuestions: () => void;
   onResizeBlocks?: (newCount: number) => void;
-  onCreateBlankDeck?: (count?: number) => void;
+  onCreateBlankDeck?: (count?: number, defaultType?: QuestionType) => void;
+  onReorderBlocks?: (blocks: BlockState[]) => void;
   onSaveCloud?: () => Promise<void>;
   onLoadCloud?: () => Promise<void>;
   onClose: () => void;
@@ -88,6 +89,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   onResetAllQuestions,
   onResizeBlocks,
   onCreateBlankDeck,
+  onReorderBlocks,
   onSaveCloud,
   onLoadCloud,
   onClose,
@@ -121,8 +123,11 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   // Navigation & View tabs
   const [activeTab, setActiveTab] = useState<TabMode>('deck');
   const [isNewDeckConfirmOpen, setIsNewDeckConfirmOpen] = useState(false);
+  const [newDeckDefaultType, setNewDeckDefaultType] = useState<QuestionType>('open_trivia');
   const [isExportPdfOpen, setIsExportPdfOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
+  const [draggedBlockId, setDraggedBlockId] = useState<number | null>(null);
+  const [dragOverBlockId, setDragOverBlockId] = useState<number | null>(null);
   const [blockFilter, setBlockFilter] = useState<BlockFilter>('all');
 
   // Deck size & shuffle state synced with localStorage
@@ -284,6 +289,55 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
     }
   };
 
+  // Reorder / Shift blocks
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= blocks.length || toIndex >= blocks.length) return;
+    flushSave();
+    sounds.playClick();
+
+    // Reconstruct list with current unsaved draft for selected block if any
+    const currentQuestions = blocks.map(b => (b.id === selectedBlockId ? editingQuestionRef.current : b.question));
+    const moved = currentQuestions[fromIndex];
+    const updatedQuestions = [...currentQuestions];
+    updatedQuestions.splice(fromIndex, 1);
+    updatedQuestions.splice(toIndex, 0, moved);
+
+    // Re-index all blocks 1..N
+    const reindexedBlocks: BlockState[] = updatedQuestions.map((q, idx) => ({
+      ...blocks[idx],
+      id: idx + 1,
+      question: {
+        ...q,
+        id: idx + 1,
+        blockNumber: idx + 1,
+      },
+    }));
+
+    if (onReorderBlocks) {
+      onReorderBlocks(reindexedBlocks);
+    } else {
+      reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
+    }
+
+    const newTargetId = toIndex + 1;
+    activeBlockIdRef.current = newTargetId;
+    setSelectedBlockId(newTargetId);
+    const newQ = { ...reindexedBlocks[toIndex].question };
+    setEditingQuestion(newQ);
+    editingQuestionRef.current = newQ;
+    isDirtyRef.current = false;
+    setSaveStatus('saved');
+
+    toast.info(`Moved Question to Block #${newTargetId}`);
+  }, [blocks, selectedBlockId, flushSave, onReorderBlocks, onUpdateBlockQuestion]);
+
+  const handleShiftBlock = (direction: 'left' | 'right') => {
+    const currentIndex = blocks.findIndex(b => b.id === selectedBlockId);
+    if (currentIndex === -1) return;
+    const targetIndex = direction === 'left' ? currentIndex - 1 : currentIndex + 1;
+    handleReorder(currentIndex, targetIndex);
+  };
+
   // Safe modal close
   const handleClose = () => {
     flushSave();
@@ -418,6 +472,10 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
     updateDraftQuestion((prev) => {
       const newQ: any = { ...prev, type };
+      // If switching from mystery_card to regular question, clear mystery title
+      if (prev.type === 'mystery_card') {
+        newQ.title = '';
+      }
       if (type === 'multiple_choice') {
         newQ.options = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
         newQ.correctIndex = 0;
@@ -434,6 +492,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
         newQ.scrambledLetters = ['W', 'O', 'R', 'D'];
         newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
       } else if (type === 'mystery_card') {
+        newQ.title = 'Special Mystery Card';
         newQ.description =
           'You uncovered a Special Mystery Card! Pick a lucky mystery card for bonus coins, power-ups, or chaotic Mario surprises!';
         newQ.rewardCoins = 0;
@@ -881,10 +940,36 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10 text-xs text-slate-300 space-y-1.5">
+                <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10 text-xs text-slate-300 space-y-2">
                   <p>• Creates an empty deck with {totalCount} blank question blocks.</p>
                   <p>• Clears current prompts, images, and custom answer options.</p>
                   <p>• Resets the lesson goal so you can start from scratch.</p>
+
+                  <div className="pt-2 border-t border-white/10">
+                    <label className="text-[11px] font-bold text-amber-300 block mb-1.5 uppercase tracking-wider">
+                      Default Question Type for Blank Blocks:
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { type: 'open_trivia', label: '🎁 Open Trivia (Default)' },
+                        { type: 'multiple_choice', label: '🖼️ Multiple Choice' },
+                        { type: 'true_false', label: '⚖️ True/False' },
+                      ].map((opt) => (
+                        <button
+                          key={opt.type}
+                          type="button"
+                          onClick={() => setNewDeckDefaultType(opt.type as QuestionType)}
+                          className={`p-2 rounded-xl text-[11px] font-bold border transition-colors cursor-pointer text-center ${
+                            newDeckDefaultType === opt.type
+                              ? 'bg-amber-400 text-slate-950 border-amber-300 font-black shadow'
+                              : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end gap-3 pt-2">
@@ -899,18 +984,34 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     type="button"
                     onClick={() => {
                       sounds.playResetDeck();
+                      if (debounceTimerRef.current) {
+                        clearTimeout(debounceTimerRef.current);
+                        debounceTimerRef.current = null;
+                      }
+                      isDirtyRef.current = false;
+
+                      const defaultBlankQ: GameQuestion = {
+                        id: 1,
+                        blockNumber: 1,
+                        category: 'grammar',
+                        title: '',
+                        rewardCoins: 1,
+                        ...(newDeckDefaultType === 'multiple_choice'
+                          ? { type: 'multiple_choice' as const, options: ['', '', '', ''], correctIndex: 0 }
+                          : newDeckDefaultType === 'true_false'
+                          ? { type: 'true_false' as const, isTrue: true, explanation: '' }
+                          : { type: 'open_trivia' as const, answer: '' }),
+                      };
+
                       if (onCreateBlankDeck) {
-                        onCreateBlankDeck(totalCount);
+                        onCreateBlankDeck(totalCount, newDeckDefaultType);
                       } else {
                         // Fallback: clear all questions manually
                         for (let i = 1; i <= blocks.length; i++) {
                           onUpdateBlockQuestion(i, {
+                            ...defaultBlankQ,
                             id: i,
-                            type: 'multiple_choice',
-                            title: '',
-                            options: ['', '', '', ''],
-                            correctIndex: 0,
-                            rewardCoins: 1,
+                            blockNumber: i,
                           });
                         }
                       }
@@ -918,10 +1019,17 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                         onLessonGoalChange('');
                         onLessonGoalCommit?.('');
                       }
-                      handleSelectBlock(1);
+
+                      // Force-reset active block 1 so it clears immediately without needing to click away
+                      setSelectedBlockId(1);
+                      activeBlockIdRef.current = 1;
+                      setEditingQuestion(defaultBlankQ);
+                      editingQuestionRef.current = defaultBlankQ;
+                      setSaveStatus('saved');
+
                       setIsNewDeckConfirmOpen(false);
                       toast.success(`Created New Blank Deck (${totalCount} blocks)!`, {
-                        description: 'Ready for your questions and prompts.',
+                        description: `Default format: ${newDeckDefaultType.replace('_', ' ')}`,
                       });
                     }}
                     className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold border border-rose-400 cursor-pointer shadow-lg"
@@ -969,6 +1077,30 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                   </span>
                 </div>
 
+                {/* Question Type Color Legend */}
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-2 px-2 py-1.5 rounded-xl bg-black/40 border border-white/10 text-[10px] text-slate-300">
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
+                    <span>Trivia</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_4px_rgba(56,189,248,0.8)]" />
+                    <span>MC</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-purple-400 shadow-[0_0_4px_rgba(192,132,252,0.8)]" />
+                    <span>T/F</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]" />
+                    <span>Unscramble</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.8)]" />
+                    <span>Mystery</span>
+                  </span>
+                </div>
+
                 <div className="flex items-center gap-1 text-[11px]">
                   <button
                     type="button"
@@ -1006,42 +1138,107 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                 </div>
               </div>
 
-              {/* 60-Blocks Grid */}
+              {/* Blocks Grid with Drag & Drop */}
               <div className="flex-1 min-h-0 overflow-y-auto p-1.5">
                 <div className="grid grid-cols-6 gap-1.5">
                   {filteredBlocks.map((b) => {
                     const isCurrent = selectedBlockId === b.id;
                     const q = isCurrent ? editingQuestion : b.question;
+                    const isMystery = q.type === 'mystery_card';
+                    const hasEmptyPromptWarning = !isMystery && (!q.title || !q.title.trim());
                     const filled = Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question');
                     const hasImage = Boolean(q.imageUrl || q.image);
-                    const isMystery = q.type === 'mystery_card';
+                    const isBeingDragged = draggedBlockId === b.id;
+                    const isDragOver = dragOverBlockId === b.id && draggedBlockId !== b.id;
+
+                    // Question type color dot
+                    const typeDotColor =
+                      q.type === 'open_trivia'
+                        ? 'bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]'
+                        : q.type === 'multiple_choice'
+                        ? 'bg-sky-400 shadow-[0_0_4px_rgba(56,189,248,0.8)]'
+                        : q.type === 'true_false'
+                        ? 'bg-purple-400 shadow-[0_0_4px_rgba(192,132,252,0.8)]'
+                        : q.type === 'unscramble'
+                        ? 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.8)]'
+                        : 'bg-yellow-300 shadow-[0_0_4px_rgba(253,224,71,0.8)]';
 
                     return (
                       <button
                         key={b.id}
                         type="button"
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedBlockId(b.id);
+                          e.dataTransfer.setData('text/plain', String(b.id));
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          if (dragOverBlockId !== b.id) {
+                            setDragOverBlockId(b.id);
+                          }
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverBlockId === b.id) {
+                            setDragOverBlockId(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDragOverBlockId(null);
+                          const sourceIdStr = e.dataTransfer.getData('text/plain');
+                          const sourceId = parseInt(sourceIdStr, 10);
+                          setDraggedBlockId(null);
+                          if (!isNaN(sourceId) && sourceId !== b.id) {
+                            const fromIdx = blocks.findIndex(item => item.id === sourceId);
+                            const toIdx = blocks.findIndex(item => item.id === b.id);
+                            if (fromIdx !== -1 && toIdx !== -1) {
+                              handleReorder(fromIdx, toIdx);
+                            }
+                          }
+                        }}
                         onClick={() => handleSelectBlock(b.id)}
-                        className={`p-2 rounded-xl font-mario text-sm border transition-colors cursor-pointer relative flex flex-col items-center justify-center ${
-                          isCurrent
+                        className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-grab active:cursor-grabbing relative flex flex-col items-center justify-center ${
+                          isBeingDragged
+                            ? 'opacity-40 scale-95 border-dashed border-yellow-400'
+                            : isDragOver
+                            ? 'ring-2 ring-yellow-400 bg-indigo-900/60 scale-105 z-20 shadow-lg'
+                            : isCurrent
                             ? 'bg-amber-400 text-slate-950 border-amber-400 shadow-sm z-10'
                             : isMystery
                             ? 'bg-amber-950/50 text-amber-300 border-amber-500/40 hover:bg-amber-900/60'
                             : filled
                             ? 'bg-slate-800/90 text-slate-100 border-white/20 hover:bg-slate-700'
                             : 'bg-slate-900/60 text-slate-400 border-white/10 hover:bg-slate-800/60'
-                        }`}
+                        } ${hasEmptyPromptWarning && !isCurrent ? 'ring-1 ring-rose-500/60' : ''}`}
+                        title={`Block #${b.id}: ${q.type.replace('_', ' ')} (Drag to reorder)`}
                       >
                         {b.id}
-                        {/* Dot indicator for filled question */}
-                        {filled && !isCurrent && (
-                          <span className="absolute top-1 left-1 w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_4px_rgba(52,211,153,0.8)]" />
+
+                        {/* Color-coded dot indicator for question type */}
+                        {!isCurrent && (
+                          <span
+                            className={`absolute top-1 left-1 w-1.5 h-1.5 rounded-full ${typeDotColor}`}
+                            title={`Type: ${q.type}`}
+                          />
                         )}
+
+                        {/* Warning outline icon if question prompt is empty */}
+                        {hasEmptyPromptWarning && !isCurrent && (
+                          <span className="absolute top-0.5 right-0.5 text-[8px] text-rose-400" title="Question prompt is empty">
+                            ⚠️
+                          </span>
+                        )}
+
                         {/* Mystery block star */}
                         {isMystery && (
                           <span className="absolute -top-1 -right-1 text-[8px]">⭐</span>
                         )}
+
                         {/* Image clue icon */}
-                        {hasImage && (
+                        {hasImage && !isMystery && (
                           <span className="absolute -bottom-1 -right-1 text-[9px] drop-shadow">🖼️</span>
                         )}
                       </button>
@@ -1136,8 +1333,29 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                    <span className="text-[11px]">Autosaving changes</span>
+                  {/* Shift Block Position Buttons */}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">Position:</span>
+                    <button
+                      type="button"
+                      disabled={selectedBlockId <= 1}
+                      onClick={() => handleShiftBlock('left')}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 border border-white/15 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                      title="Move this question earlier (swap with previous block)"
+                    >
+                      <span>◀</span>
+                      <span className="text-[10px]">Shift Left</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={selectedBlockId >= blocks.length}
+                      onClick={() => handleShiftBlock('right')}
+                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 border border-white/15 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
+                      title="Move this question later (swap with next block)"
+                    >
+                      <span className="text-[10px]">Shift Right</span>
+                      <span>▶</span>
+                    </button>
                   </div>
                 </div>
 
@@ -1166,6 +1384,14 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
 
               {/* Scrollable Form Fields */}
               <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 [scrollbar-gutter:stable]">
+                {/* Empty Question Warning Banner */}
+                {editingQuestion.type !== 'mystery_card' && (!editingQuestion.title || !editingQuestion.title.trim()) && (
+                  <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl bg-rose-950/60 border border-rose-500/50 text-rose-300 text-xs font-semibold">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>⚠️ Question prompt is empty! Enter a question prompt or title below so students can see it in game.</span>
+                  </div>
+                )}
+
                 {/* Prompt Field */}
                 {theme === 'classic' ? (
                   <PromptMarkField
