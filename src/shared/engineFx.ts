@@ -16,7 +16,8 @@ export type EngineSound =
   | 'blockHit'
   | 'specialCard'
   | 'correct'
-  | 'blooper';
+  | 'blooper'
+  | 'nabbit';
 
 export type EngineEffect =
   | { kind: 'sound'; sound: EngineSound }
@@ -83,6 +84,9 @@ export function playEngineSound(sound: EngineSound) {
       return;
     case 'blooper':
       sounds.playBlooper();
+      return;
+    case 'nabbit':
+      sounds.playNabbit();
       return;
   }
 }

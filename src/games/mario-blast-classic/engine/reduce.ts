@@ -230,7 +230,8 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
           });
         }
       } else if (event.outcome.kind === 'bust') {
-        effects.push({ kind: 'toast', message: `💨 Empty block… ${drawingTeam.name} got 0 coins.` });
+        effects.push({ kind: 'sound', sound: 'nabbit' });
+        effects.push({ kind: 'toast', message: `🐰 Nabbit! 0 coins for ${drawingTeam.name}.` });
       }
       nextTeams = nextTeams.map(t =>
         t.id === drawingTeam.id ? { ...t, streak: t.streak + 1 } : t

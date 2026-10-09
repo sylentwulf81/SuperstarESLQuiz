@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { AmbientParticles } from './components/AmbientParticles';
 import { HeaderNav } from './components/HeaderNav';
 import { TeamLeaderboard } from './components/TeamLeaderboard';
+import { TeamSidebar } from './components/TeamSidebar';
 import { GameBoard } from './components/GameBoard';
 import { QuestionModal } from './components/QuestionModal';
 import { RewardRouletteModal } from './components/RewardRouletteModal';
@@ -376,21 +377,23 @@ export function MarioPartyQuiz({
               onManualSync={handleManualSync}
               onManualLoad={handleManualLoad}
             />
-            <TeamLeaderboard
-              teams={teams}
-              currentTeamIndex={currentTeamIndex}
-              onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-              onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
-            />
-            <main className="flex-1 min-h-0 flex flex-col">
-              <GameBoard
-                blocks={blocks}
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+              <TeamSidebar
                 teams={teams}
-                onSelectBlock={blockId => dispatch({ type: 'SELECT_BLOCK', blockId })}
-                isGameOver={boardCleared}
-                onOpenLeaderboard={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
+                currentTeamIndex={currentTeamIndex}
+                onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
+                onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
               />
-            </main>
+              <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <GameBoard
+                  blocks={blocks}
+                  teams={teams}
+                  onSelectBlock={blockId => dispatch({ type: 'SELECT_BLOCK', blockId })}
+                  isGameOver={boardCleared}
+                  onOpenLeaderboard={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
+                />
+              </main>
+            </div>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { AmbientParticles } from '@/games/mario-party-quiz/components/AmbientParticles';
 import { HeaderNav } from '@/games/mario-party-quiz/components/HeaderNav';
 import { TeamLeaderboard } from '@/games/mario-party-quiz/components/TeamLeaderboard';
+import { TeamSidebar } from '@/games/mario-party-quiz/components/TeamSidebar';
 import { GameBoard } from '@/games/mario-party-quiz/components/GameBoard';
 import { RewardRouletteModal } from '@/games/mario-party-quiz/components/RewardRouletteModal';
 import { SuperstarModal } from '@/games/mario-party-quiz/components/SuperstarModal';
@@ -63,6 +64,7 @@ export function MarioBlastClassic({
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
+  const [isReviewingRound, setIsReviewingRound] = useState(false);
   const pendingEffectsRef = useRef<EngineEffect[]>([]);
 
   const handleToggleCatchUpNote = useCallback(() => {
@@ -377,7 +379,10 @@ export function MarioBlastClassic({
   const handleResolveMushroom = useCallback((coins: SuperMushroomOffer) => {
     dispatch({ type: 'RESOLVE_MUSHROOM', coins });
   }, [dispatch]);
-  const handleContinueRoundOver = useCallback(() => dispatch({ type: 'CONTINUE_ROUND_OVER' }), [dispatch]);
+  const handleContinueRoundOver = useCallback(() => {
+    setIsReviewingRound(false);
+    dispatch({ type: 'CONTINUE_ROUND_OVER' });
+  }, [dispatch]);
   const handleCloseSuperstar = useCallback(() => dispatch({ type: 'CLOSE_SUPERSTAR' }), [dispatch]);
 
   return (
@@ -433,27 +438,29 @@ export function MarioBlastClassic({
               onManualSync={handleManualSync}
               onManualLoad={handleManualLoad}
             />
-            <TeamLeaderboard
-              teams={teams}
-              currentTeamIndex={currentTeamIndex}
-              onSelectTeamTurn={handleSelectTeamTurn}
-              onAdjustCoins={handleAdjustCoins}
-            />
-            <main className="flex-1 min-h-0 flex flex-col">
-              <GameBoard
-                blocks={blocks}
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+              <TeamSidebar
                 teams={teams}
-                onSelectBlock={handleSelectBlock}
-                isGameOver={boardCleared}
-                onOpenLeaderboard={handleDeclareWinner}
+                currentTeamIndex={currentTeamIndex}
+                onSelectTeamTurn={handleSelectTeamTurn}
+                onAdjustCoins={handleAdjustCoins}
               />
-            </main>
+              <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
+                <GameBoard
+                  blocks={blocks}
+                  teams={teams}
+                  onSelectBlock={handleSelectBlock}
+                  isGameOver={boardCleared}
+                  onOpenLeaderboard={handleDeclareWinner}
+                />
+              </main>
+            </div>
           </div>
         )}
       </div>
 
       <AnimatePresence>
-        {selectedQuestion && !roundOverReason && (
+        {selectedQuestion && (!roundOverReason || isReviewingRound) && (
           <ClassicRoundModal
             question={selectedQuestion}
             lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
@@ -468,6 +475,9 @@ export function MarioBlastClassic({
             onEndRound={handleEndRound}
             onCancelIfEmpty={handleCancelEmptyRound}
             testGame={testMode}
+            isRoundOver={Boolean(roundOverReason)}
+            roundOverReason={roundOverReason}
+            onFinishRound={handleContinueRoundOver}
           />
         )}
       </AnimatePresence>
@@ -511,10 +521,13 @@ export function MarioBlastClassic({
       </AnimatePresence>
 
       <AnimatePresence>
-        {roundOverReason && (
+        {roundOverReason && !isReviewingRound && (
           <RoundOverOverlay
             reason={roundOverReason}
             cardCount={slots.length}
+            question={selectedQuestion}
+            lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
+            onReviewQuestion={() => setIsReviewingRound(true)}
             onContinue={handleContinueRoundOver}
           />
         )}

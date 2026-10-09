@@ -91,6 +91,8 @@ export const HeaderNav = React.memo(function HeaderNav({
               className={`hidden xl:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm shrink-0 ${
                 theme === 'summer'
                   ? 'bg-amber-400 text-slate-950 border-amber-300'
+                  : theme === 'halloween'
+                  ? 'bg-orange-500/30 text-orange-300 border-orange-400/50'
                   : 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
               }`}
             >
