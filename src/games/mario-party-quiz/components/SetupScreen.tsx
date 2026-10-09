@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Users, Play, Sun, Snowflake, Shuffle,
@@ -25,14 +25,27 @@ interface SetupScreenProps {
 
 const AVAILABLE_COUNTS = [2, 3, 4, 5, 6, 7, 8] as const;
 
-export const SetupScreen: React.FC<SetupScreenProps> = ({
+/** Module-level avatar reader helper. */
+const readStoredAvatar = (charId: CharacterId) => {
+  try {
+    return localStorage.getItem(`avatar_${charId}`) || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * SetupScreen component:
+ * Manages team counts, mystery character draw, and starting coins.
+ */
+export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function SetupScreen({
   theme,
   lessonGoal,
   onStartGame,
   onOpenRules,
   onOpenStudio,
   onBackToLauncher,
-}) => {
+}) {
   const [teamCount, setTeamCount] = useState<number>(4);
   const [shuffledChars, setShuffledChars] = useState<CharacterInfo[]>(() => shuffleArray(CHARACTER_LIST));
   const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
@@ -45,23 +58,14 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
     return shuffledChars.slice(0, teamCount);
   }, [shuffledChars, teamCount]);
 
-  const readStoredAvatar = (charId: CharacterId) => {
-    try {
-      return localStorage.getItem(`avatar_${charId}`) || undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
-  const handleReshuffle = () => {
+  const handleReshuffle = useCallback(() => {
     sounds.playShuffle();
     setShuffledChars(shuffleArray(CHARACTER_LIST));
     setRevealedIndices(new Set());
     setCelebrationChar(null);
-  };
+  }, []);
 
-  const handleSelectCount = (count: number) => {
-    if (count === teamCount) return;
+  const handleSelectCount = useCallback((count: number) => {
     sounds.playPop();
     setTeamCount(count);
     // Keep revealed indices that are within the new count
@@ -72,30 +76,31 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       });
       return next;
     });
-  };
+  }, []);
 
-  const handleRevealSlot = (idx: number) => {
-    if (revealedIndices.has(idx)) return;
-    const char = activeRoster[idx];
-    if (!char) return;
+  const handleRevealSlot = useCallback((idx: number) => {
+    setRevealedIndices(prev => {
+      if (prev.has(idx)) return prev;
+      const char = activeRoster[idx];
+      if (char) {
+        sounds.playSpecialCardFanfare();
+        setTimeout(() => {
+          sounds.playCharacterSelect();
+        }, 180);
+        setCelebrationChar({ char, slotNumber: idx + 1 });
+      }
+      return new Set(prev).add(idx);
+    });
+  }, [activeRoster]);
 
-    sounds.playSpecialCardFanfare();
-    setTimeout(() => {
-      sounds.playCharacterSelect();
-    }, 180);
-
-    setRevealedIndices(prev => new Set(prev).add(idx));
-    setCelebrationChar({ char, slotNumber: idx + 1 });
-  };
-
-  const handleRevealAll = () => {
+  const handleRevealAll = useCallback(() => {
     sounds.playSpecialCardFanfare();
     const all = new Set<number>();
     for (let i = 0; i < teamCount; i++) {
       all.add(i);
     }
     setRevealedIndices(all);
-  };
+  }, [teamCount]);
 
   // Auto-dismiss celebration card after 1.8s
   useEffect(() => {
@@ -108,8 +113,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
 
   const isStartReady = teamCount >= 2;
 
-  const handleStart = () => {
-    if (!isStartReady) return;
+  const handleStart = useCallback(() => {
+    if (teamCount < 2) return;
     sounds.playGameStart();
     const teams: Team[] = activeRoster.map(char => ({
       id: `team_${char.id}`,
@@ -125,7 +130,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       customImageUrl: readStoredAvatar(char.id),
     }));
     onStartGame(teams, startingCoins);
-  };
+  }, [teamCount, activeRoster, startingCoins, onStartGame]);
 
   return (
     <div className="w-full flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col items-center justify-start sm:justify-center">
@@ -548,4 +553,4 @@ export const SetupScreen: React.FC<SetupScreenProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});
