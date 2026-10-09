@@ -37,3 +37,7 @@
 ## 2025-05-27 - Setup Screen Memoization & Static Team Name Hoisting
 **Learning:** `SetupScreen` rendered in `MarioPartyQuiz` and `MarioBlastClassic` was unmemoized and re-allocating default team names (`Object.fromEntries`) and character ID arrays on every render pass, triggering redundant VDOM re-renders whenever parent layout/backdrop or ambient particles updated.
 **Action:** Wrap `SetupScreen` in `React.memo`, hoist static lookup maps (`DEFAULT_TEAM_NAMES`, `ALL_CHARACTER_IDS`, `readStoredAvatar`) to module scope, and wrap action handlers in `useCallback` hooks with explicit dependency arrays.
+
+## 2025-05-28 - Memoization of Question Library Cards and PDF Export Previews
+**Learning:** `ExportPdfModal` was executing string regex formatting (`formatPromptForPrint`), type styling resolution (`getQuestionTypeDisplay`), and answer extraction (`getQuestionAnswer`) for all 60 questions on every UI setting toggle (hints, fold line, page format). `QuestionLibraryPanel` was re-rendering all starter and cloud deck cards (`BankCard`) and re-parsing sample text on every single text input keystroke.
+**Action:** Wrap `ExportPdfModal`, `QuestionLibraryPanel`, and `BankCard` in `React.memo`, memoize processed cheat sheet question items (`cheatSheetItems`) in `useMemo`, and memoize array option calculations (`uniqueCountOptions`) to eliminate redundant O(N) string transformations and VDOM re-renders during modal interactions.
