@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Library, LogIn, Trash2, CheckCircle2, RefreshCw, Download, Upload, Copy, AlertTriangle, FileDown } from 'lucide-react';
+import { Library, LogIn, Trash2, CheckCircle2, RefreshCw, Download, Upload, Copy, AlertTriangle, FileDown, PlusCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Question } from '@/shared/types';
 import { useAuth } from '@/shared/context/AuthContext';
@@ -26,7 +26,13 @@ interface QuestionLibraryPanelProps {
 
 type Armed = { id: string; mode: 'load' | 'delete' | 'update' } | null;
 
-export function QuestionLibraryPanel({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped QuestionLibraryPanel and BankCard in React.memo to prevent VDOM re-renders
+ *    and prompt regex parsing of all library bank cards during text input keystrokes.
+ * 2) Memoized uniqueCountOptions array in useMemo to eliminate garbage collection re-allocations on render.
+ */
+export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
   questions,
   lessonGoal,
   onApply,
@@ -239,8 +245,10 @@ export function QuestionLibraryPanel({
     e.target.value = '';
   };
 
-  const countOptions = [10, 15, 20, 25, 30, questions.length];
-  const uniqueCountOptions = Array.from(new Set(countOptions.filter(c => c <= questions.length)));
+  const uniqueCountOptions = useMemo(() => {
+    const countOptions = [10, 15, 20, 25, 30, questions.length];
+    return Array.from(new Set(countOptions.filter(c => c <= questions.length)));
+  }, [questions.length]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-slate-950/40">
@@ -641,9 +649,9 @@ export function QuestionLibraryPanel({
       </AnimatePresence>
     </div>
   );
-}
+});
 
-function BankCard({
+const BankCard = React.memo(function BankCard({
   bank,
   armed,
   busy,
@@ -818,4 +826,4 @@ function BankCard({
       </div>
     </div>
   );
-}
+});

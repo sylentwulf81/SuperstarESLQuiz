@@ -15,7 +15,7 @@ import { RulebookModal } from './components/RulebookModal';
 import { CustomizerModal } from './components/CustomizerModal';
 import { BlueShellSkipOverlay } from './components/BlueShellSkipOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
-import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team, QuestionType } from '@/shared/types';
+import { GameQuestion, RewardCard, GameTheme, RewardCardActionOptions, Team, QuestionType, BlockState } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from './data/rewards';
 import { loadPartyLessonGoal, persistPartyLessonGoal } from './data/lessonGoal';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';

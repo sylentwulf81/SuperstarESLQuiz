@@ -37,12 +37,18 @@ interface ExportPdfModalProps {
   onClose: () => void;
 }
 
-export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped ExportPdfModal in React.memo to prevent unnecessary re-renders during parent layout ticks.
+ * 2) Memoized cheatSheetItems via useMemo to avoid re-running regex prompt formatting, type display
+ *    allocations, and answer parsing for all 60 questions on every UI setting toggle.
+ */
+export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function ExportPdfModal({
   questions,
   deckName,
   lessonGoal = '',
   onClose,
-}) => {
+}) {
   useBodyScrollLock();
 
   const [exportMode, setExportMode] = useState<ExportPdfMode>('cheat_sheet');
@@ -66,6 +72,16 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
   const activeQuestions = filterMode === 'populated_only' && populatedQuestions.length > 0
     ? populatedQuestions
     : questions;
+
+  const cheatSheetItems = useMemo(() => {
+    return activeQuestions.map((q, idx) => ({
+      q,
+      ans: getQuestionAnswer(q),
+      qMeta: getQuestionTypeDisplay(q.type),
+      qNum: q.blockNumber || q.id || idx + 1,
+      prompt: formatPromptForPrint(q.title || '(Blank Question)'),
+    }));
+  }, [activeQuestions]);
 
   const currentPreviewQ = activeQuestions[previewIndex] || activeQuestions[0];
   const totalCount = activeQuestions.length;
@@ -521,12 +537,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
 
                 {/* Scrollable Questions List Preview */}
                 <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0">
-                  {activeQuestions.map((q, idx) => {
-                    const ans = getQuestionAnswer(q);
-                    const qMeta = getQuestionTypeDisplay(q.type);
-                    const qNum = q.blockNumber || q.id || idx + 1;
-                    const prompt = formatPromptForPrint(q.title || '(Blank Question)');
-
+                  {cheatSheetItems.map(({ q, ans, qMeta, qNum, prompt }, idx) => {
                     return (
                       <div
                         key={q.id || idx}
@@ -779,4 +790,4 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
