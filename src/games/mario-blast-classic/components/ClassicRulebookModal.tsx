@@ -34,7 +34,12 @@ const JA = {
   ],
 };
 
-export const ClassicRulebookModal: React.FC<ClassicRulebookModalProps> = ({ onClose }) => {
+/**
+ * Bolt Performance Optimization:
+ * Wrapped ClassicRulebookModal in React.memo to prevent unnecessary VDOM diffing and re-renders
+ * during ambient background particle animation or parent state updates.
+ */
+export const ClassicRulebookModal: React.FC<ClassicRulebookModalProps> = React.memo(function ClassicRulebookModal({ onClose }) {
   useBodyScrollLock();
   const [lang, setLang] = useState<'en' | 'ja'>('en');
   const t = lang === 'ja' ? JA : EN;
@@ -90,4 +95,4 @@ export const ClassicRulebookModal: React.FC<ClassicRulebookModalProps> = ({ onCl
       </motion.div>
     </div>
   );
-};
+});
