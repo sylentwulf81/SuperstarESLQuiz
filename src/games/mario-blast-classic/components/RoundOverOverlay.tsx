@@ -60,14 +60,19 @@ function ReasonMark({ reason }: { reason: RoundOverReason }) {
   return <Sparkles className="w-14 h-14 sm:w-20 sm:h-20 text-yellow-300" />;
 }
 
-export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped RoundOverOverlay in React.memo and memoized derived answerText to prevent redundant
+ * re-renders and re-computations during ambient particle/background ticks or parent state updates.
+ */
+export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = React.memo(function RoundOverOverlay({
   reason,
   cardCount,
   onContinue,
   question,
   lessonGoal,
   onReviewQuestion,
-}) => {
+}) {
   useBodyScrollLock();
   const [showAnswerPreview, setShowAnswerPreview] = useState(false);
   const copy = COPY[reason];
@@ -77,15 +82,15 @@ export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({
       ? `All ${cardCount} cards claimed`
       : copy.body;
 
-  const answerText = question
-    ? question.type === 'open_trivia'
-      ? question.answer
-      : question.type === 'unscramble'
-      ? question.targetWord
-      : question.type === 'true_false'
-      ? `${question.isTrue ? 'TRUE' : 'FALSE'}${question.explanation ? ` — ${question.explanation}` : ''}`
-      : undefined
-    : undefined;
+  const answerText = React.useMemo(() => {
+    if (!question) return undefined;
+    if (question.type === 'open_trivia') return question.answer;
+    if (question.type === 'unscramble') return question.targetWord;
+    if (question.type === 'true_false') {
+      return `${question.isTrue ? 'TRUE' : 'FALSE'}${question.explanation ? ` — ${question.explanation}` : ''}`;
+    }
+    return undefined;
+  }, [question]);
 
   useEffect(() => {
     if (reason === 'gold_star') sounds.playSuperstar();
@@ -216,4 +221,4 @@ export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = ({
       </motion.div>
     </div>
   );
-};
+});
