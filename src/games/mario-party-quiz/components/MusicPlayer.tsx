@@ -21,7 +21,7 @@ interface MusicPlayerProps {
   className?: string;
 }
 
-export const MusicPlayer: React.FC<MusicPlayerProps> = ({ className = '' }) => {
+export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: MusicPlayerProps) {
   const [bgmState, setBgmState] = useState<BgmState>(() => ({
     isPlaying: false,
     isMuted: false,
@@ -470,4 +470,4 @@ export const MusicPlayer: React.FC<MusicPlayerProps> = ({ className = '' }) => {
       )}
     </div>
   );
-};
+});
