@@ -62,13 +62,18 @@ interface LauncherScreenProps {
   onToggleSound: () => void;
 }
 
-export const LauncherScreen: React.FC<LauncherScreenProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped LauncherScreen in React.memo to prevent unnecessary VDOM re-renders when parent layout updates
+ * or when background sound / audio state changes occur without modifying launcher props.
+ */
+export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function LauncherScreen({
   onLaunchGame,
   onOpenRulebook,
   onOpenStudio,
   soundEnabled,
   onToggleSound,
-}) => {
+}) {
   const [selectedCategory, setSelectedCategory] = useState<LibraryFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
@@ -778,4 +783,4 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});
