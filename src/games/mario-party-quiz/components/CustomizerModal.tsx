@@ -82,7 +82,12 @@ interface CustomizerModalProps {
 type TabMode = 'deck' | 'library';
 type BlockFilter = 'all' | 'filled' | 'empty';
 
-export const CustomizerModal: React.FC<CustomizerModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped CustomizerModal in React.memo to prevent unnecessary modal re-renders during ambient backdrop updates,
+ * background timer ticks, or parent state updates while Question Studio is open.
+ */
+export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(function CustomizerModal({
   theme,
   blocks,
   onUpdateBlockQuestion,
@@ -104,7 +109,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   activeBankId,
   activeBankName,
   onActiveBankChange,
-}) => {
+}) {
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
 
@@ -1537,4 +1542,4 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});

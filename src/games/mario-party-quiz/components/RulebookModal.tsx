@@ -20,12 +20,17 @@ interface RulebookModalProps {
   initialTab?: 'guide' | 'rules' | 'mystery_cards';
 }
 
-export const RulebookModal: React.FC<RulebookModalProps> = ({ 
+/**
+ * Bolt Performance Optimization:
+ * Wrapped RulebookModal in React.memo to prevent unnecessary modal re-renders during ambient particle passes
+ * or background game timer ticks.
+ */
+export const RulebookModal: React.FC<RulebookModalProps> = React.memo(function RulebookModal({
   onClose,
   onTestCardInGame,
   activeTeamName,
   initialTab = 'guide'
-}) => {
+}) {
   useBodyScrollLock();
   const [activeTab, setActiveTab] = useState<'guide' | 'rules' | 'mystery_cards'>(initialTab);
   const [language, setLanguage] = useState<GuideLanguage>(() => {
@@ -573,4 +578,4 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});

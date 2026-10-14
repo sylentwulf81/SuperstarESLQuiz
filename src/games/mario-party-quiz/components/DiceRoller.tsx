@@ -12,14 +12,19 @@ interface DiceRollerProps {
   compact?: boolean;
 }
 
-export const DiceRoller: React.FC<DiceRollerProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped DiceRoller in React.memo to prevent unnecessary re-renders when parent modal state updates
+ * while the die is static or rolling.
+ */
+export const DiceRoller: React.FC<DiceRollerProps> = React.memo(function DiceRoller({
   onRollComplete,
   title = 'Roll the 6-Sided Die!',
   subtitle = 'Tap the die to roll and determine your steal amount',
   themeColor = 'purple',
   autoRoll = false,
   compact = false,
-}) => {
+}) {
   const [face, setFace] = useState<number>(1);
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [hasRolled, setHasRolled] = useState<boolean>(false);
@@ -203,4 +208,4 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
     </div>
   );
-};
+});
