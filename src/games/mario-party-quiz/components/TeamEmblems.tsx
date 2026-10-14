@@ -1,7 +1,14 @@
 import React from 'react';
 import { CharacterId } from '@/shared/types';
 
-export const YoshiEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => {
+/**
+ * Bolt Performance Optimization:
+ * Wrapped all static SVG character emblem leaf components and TeamEmblem dispatcher in React.memo
+ * to eliminate unnecessary VDOM re-renders and SVG tree re-evaluation during high-frequency parent updates
+ * (such as board state ticks, leaderboard updates, timer ticks, and score adjustments).
+ */
+
+export const YoshiEmblem = React.memo(function YoshiEmblem({ className = 'w-full h-full' }: { className?: string }) {
   const clipId = React.useId();
   return (
     <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -33,150 +40,167 @@ export const YoshiEmblem: React.FC<{ className?: string }> = ({ className = 'w-f
       </g>
     </svg>
   );
-};
+});
 
-export const MarioEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#E50014" />
-    <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
-    <path
-      d="M 42 140 L 68 46 L 100 106 L 132 46 L 158 140 L 132 140 L 120 86 L 100 118 L 80 86 L 68 140 Z"
-      fill="#E50014"
-      stroke="#E50014"
-      strokeWidth="4"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-  </svg>
-);
+export const MarioEmblem = React.memo(function MarioEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#E50014" />
+      <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
+      <path
+        d="M 42 140 L 68 46 L 100 106 L 132 46 L 158 140 L 132 140 L 120 86 L 100 118 L 80 86 L 68 140 Z"
+        fill="#E50014"
+        stroke="#E50014"
+        strokeWidth="4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+});
 
-export const PeachEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#EA629F" />
-    <circle cx="100" cy="100" r="78" fill="#FFFFFF" />
-    <g id="crown">
+export const PeachEmblem = React.memo(function PeachEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#EA629F" />
+      <circle cx="100" cy="100" r="78" fill="#FFFFFF" />
+      <g id="crown">
+        <polygon
+          points="56,152 144,152 144,136 158,64 121,105 100,37 79,105 42,64 56,136"
+          fill="#FFE600"
+          stroke="#E67300"
+          strokeWidth="7"
+          strokeLinejoin="round"
+        />
+        <line x1="56" y1="124" x2="144" y2="124" stroke="#E67300" strokeWidth="5" strokeLinecap="round" />
+        <ellipse cx="53" cy="120" rx="12" ry="16" fill="#00A2E8" stroke="#005B96" strokeWidth="4.5" />
+        <ellipse cx="147" cy="120" rx="12" ry="16" fill="#00A2E8" stroke="#005B96" strokeWidth="4.5" />
+        <ellipse cx="100" cy="120" rx="15" ry="18" fill="#D30B1C" stroke="#7A1322" strokeWidth="5" />
+      </g>
+    </svg>
+  );
+});
+
+export const DaisyEmblem = React.memo(function DaisyEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#F37B12" />
+      <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
+      <g stroke="#F37B12" strokeWidth="6" fill="#FFDE00" strokeLinejoin="round">
+        <circle cx="100" cy="62" r="23" />
+        <circle cx="133" cy="81" r="23" />
+        <circle cx="133" cy="119" r="23" />
+        <circle cx="100" cy="138" r="23" />
+        <circle cx="67" cy="119" r="23" />
+        <circle cx="67" cy="81" r="23" />
+        <circle cx="100" cy="100" r="28" stroke="none" fill="#FFDE00" />
+      </g>
+      <circle cx="100" cy="100" r="33" fill="#52C4AE" stroke="#0C8E77" strokeWidth="6" />
+    </svg>
+  );
+});
+
+export const DonkeyKongEmblem = React.memo(function DonkeyKongEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#FFD600" />
+      <circle cx="100" cy="100" r="76" fill="#D70014" />
+      <g transform="translate(100, 100) scale(0.85) translate(-100, -100)">
+        <path
+          d="M 46 62 L 90 58 C 108 58, 120 72, 120 98 C 120 126, 106 142, 86 142 L 46 142 Z"
+          fill="#FFEA00"
+          stroke="#D70014"
+          strokeWidth="9"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M 68 82 L 86 82 C 94 82, 98 90, 98 100 C 98 112, 92 118, 84 118 L 68 118 Z"
+          fill="#D70014"
+        />
+        <path
+          d="M 106 60 L 128 60 L 128 92 L 152 60 L 178 60 L 142 102 L 180 142 L 152 142 L 128 112 L 128 142 L 106 142 Z"
+          fill="#FFEA00"
+          stroke="#D70014"
+          strokeWidth="9"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M 46 62 L 90 58 C 108 58, 120 72, 120 98 C 120 126, 106 142, 86 142 L 46 142 Z"
+          fill="none"
+          stroke="#FFF275"
+          strokeWidth="3"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M 106 60 L 128 60 L 128 92 L 152 60 L 178 60 L 142 102 L 180 142 L 152 142 L 128 112 L 128 142 L 106 142 Z"
+          fill="none"
+          stroke="#FFF275"
+          strokeWidth="3"
+          strokeLinejoin="round"
+        />
+      </g>
+    </svg>
+  );
+});
+
+export const LuigiEmblem = React.memo(function LuigiEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#00A644" />
+      <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
+      <path
+        d="M 64 46 L 92 42 L 92 116 L 138 116 L 138 142 L 64 142 Z"
+        fill="#00A644"
+        stroke="#00A644"
+        strokeWidth="4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+});
+
+export const RosalinaEmblem = React.memo(function RosalinaEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#1AA7C4" />
+      <circle cx="100" cy="100" r="76" fill="#F4FBFF" />
       <polygon
-        points="56,152 144,152 144,136 158,64 121,105 100,37 79,105 42,64 56,136"
-        fill="#FFE600"
-        stroke="#E67300"
-        strokeWidth="7"
+        points="100,36 114,82 162,82 122,110 136,156 100,128 64,156 78,110 38,82 86,82"
+        fill="#7C3AED"
+        stroke="#5B21B6"
+        strokeWidth="6"
         strokeLinejoin="round"
       />
-      <line x1="56" y1="124" x2="144" y2="124" stroke="#E67300" strokeWidth="5" strokeLinecap="round" />
-      <ellipse cx="53" cy="120" rx="12" ry="16" fill="#00A2E8" stroke="#005B96" strokeWidth="4.5" />
-      <ellipse cx="147" cy="120" rx="12" ry="16" fill="#00A2E8" stroke="#005B96" strokeWidth="4.5" />
-      <ellipse cx="100" cy="120" rx="15" ry="18" fill="#D30B1C" stroke="#7A1322" strokeWidth="5" />
-    </g>
-  </svg>
-);
+      <circle cx="100" cy="104" r="16" fill="#FDE047" stroke="#CA8A04" strokeWidth="5" />
+    </svg>
+  );
+});
 
-export const DaisyEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#F37B12" />
-    <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
-    <g stroke="#F37B12" strokeWidth="6" fill="#FFDE00" strokeLinejoin="round">
-      <circle cx="100" cy="62" r="23" />
-      <circle cx="133" cy="81" r="23" />
-      <circle cx="133" cy="119" r="23" />
-      <circle cx="100" cy="138" r="23" />
-      <circle cx="67" cy="119" r="23" />
-      <circle cx="67" cy="81" r="23" />
-      <circle cx="100" cy="100" r="28" stroke="none" fill="#FFDE00" />
-    </g>
-    <circle cx="100" cy="100" r="33" fill="#52C4AE" stroke="#0C8E77" strokeWidth="6" />
-  </svg>
-);
-
-export const DonkeyKongEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#FFD600" />
-    <circle cx="100" cy="100" r="76" fill="#D70014" />
-    <g transform="translate(100, 100) scale(0.85) translate(-100, -100)">
+export const ToadEmblem = React.memo(function ToadEmblem({ className = 'w-full h-full' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
+      <rect width="200" height="200" fill="#E11D48" />
+      <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
+      <ellipse cx="100" cy="118" rx="42" ry="38" fill="#FFE4E6" />
       <path
-        d="M 46 62 L 90 58 C 108 58, 120 72, 120 98 C 120 126, 106 142, 86 142 L 46 142 Z"
-        fill="#FFEA00"
-        stroke="#D70014"
-        strokeWidth="9"
-        strokeLinejoin="round"
+        d="M 48 108 C 48 64, 152 64, 152 108 C 152 92, 48 92, 48 108 Z"
+        fill="#E11D48"
       />
-      <path
-        d="M 68 82 L 86 82 C 94 82, 98 90, 98 100 C 98 112, 92 118, 84 118 L 68 118 Z"
-        fill="#D70014"
-      />
-      <path
-        d="M 106 60 L 128 60 L 128 92 L 152 60 L 178 60 L 142 102 L 180 142 L 152 142 L 128 112 L 128 142 L 106 142 Z"
-        fill="#FFEA00"
-        stroke="#D70014"
-        strokeWidth="9"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M 46 62 L 90 58 C 108 58, 120 72, 120 98 C 120 126, 106 142, 86 142 L 46 142 Z"
-        fill="none"
-        stroke="#FFF275"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M 106 60 L 128 60 L 128 92 L 152 60 L 178 60 L 142 102 L 180 142 L 152 142 L 128 112 L 128 142 L 106 142 Z"
-        fill="none"
-        stroke="#FFF275"
-        strokeWidth="3"
-        strokeLinejoin="round"
-      />
-    </g>
-  </svg>
-);
+      <circle cx="72" cy="90" r="12" fill="#FFFFFF" />
+      <circle cx="100" cy="78" r="14" fill="#FFFFFF" />
+      <circle cx="128" cy="90" r="12" fill="#FFFFFF" />
+    </svg>
+  );
+});
 
-export const LuigiEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#00A644" />
-    <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
-    <path
-      d="M 64 46 L 92 42 L 92 116 L 138 116 L 138 142 L 64 142 Z"
-      fill="#00A644"
-      stroke="#00A644"
-      strokeWidth="4"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-  </svg>
-);
-
-export const RosalinaEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#1AA7C4" />
-    <circle cx="100" cy="100" r="76" fill="#F4FBFF" />
-    <polygon
-      points="100,36 114,82 162,82 122,110 136,156 100,128 64,156 78,110 38,82 86,82"
-      fill="#7C3AED"
-      stroke="#5B21B6"
-      strokeWidth="6"
-      strokeLinejoin="round"
-    />
-    <circle cx="100" cy="104" r="16" fill="#FDE047" stroke="#CA8A04" strokeWidth="5" />
-  </svg>
-);
-
-export const ToadEmblem: React.FC<{ className?: string }> = ({ className = 'w-full h-full' }) => (
-  <svg viewBox="0 0 200 200" className={className} xmlns="http://www.w3.org/2000/svg">
-    <rect width="200" height="200" fill="#E11D48" />
-    <circle cx="100" cy="100" r="76" fill="#FFFFFF" />
-    <ellipse cx="100" cy="118" rx="42" ry="38" fill="#FFE4E6" />
-    <path
-      d="M 48 108 C 48 64, 152 64, 152 108 C 152 92, 48 92, 48 108 Z"
-      fill="#E11D48"
-    />
-    <circle cx="72" cy="90" r="12" fill="#FFFFFF" />
-    <circle cx="100" cy="78" r="14" fill="#FFFFFF" />
-    <circle cx="128" cy="90" r="12" fill="#FFFFFF" />
-  </svg>
-);
-
-export const TeamEmblem: React.FC<{ characterId: CharacterId; className?: string }> = ({
+export const TeamEmblem = React.memo(function TeamEmblem({
   characterId,
   className = 'w-full h-full',
-}) => {
+}: {
+  characterId: CharacterId;
+  className?: string;
+}) {
   switch (characterId) {
     case 'yoshi':
       return <YoshiEmblem className={className} />;
@@ -197,4 +221,4 @@ export const TeamEmblem: React.FC<{ characterId: CharacterId; className?: string
     default:
       return <span className="select-none leading-none">🎮</span>;
   }
-};
+});
