@@ -188,7 +188,7 @@ export const LAUNCHER_GAMES: LauncherGame[] = [
     },
     features: [
       'Any team can answer — host clicks the winner, then a card',
-      'Six mystery cards per question; one draw per team',
+      '6 to 8 mystery cards per question (scales with teams); one draw per team',
       'Rare round-enders: Gold Star, Bowser Revolution, Bowser’s Fury, Piranha Plant',
       'Same items as Summer & Winter, remapped for live play',
     ],

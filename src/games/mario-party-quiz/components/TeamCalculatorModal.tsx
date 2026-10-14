@@ -10,7 +10,7 @@ const CLASS_SIZE_KEY = 'mp_class_size_v1';
 const MIN_STUDENTS = 1;
 const MAX_STUDENTS = 80;
 const MIN_GROUPS = 2;
-const MAX_GROUPS = 6;
+const MAX_GROUPS = 8;
 
 function loadClassSize(): number {
   try {
@@ -78,7 +78,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
         initial={{ scale: 0.94, opacity: 0, y: 12 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.94, opacity: 0 }}
-        className="relative w-[min(36rem,calc(100vw-1.5rem))] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden"
+        className="relative w-[min(38rem,calc(100vw-1.5rem))] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden"
       >
         <div className={`absolute top-0 inset-x-0 h-1.5 ${THEME_UI[theme].barClass}`} />
 
@@ -138,11 +138,11 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
               </div>
             </div>
 
-            <div className="rounded-2xl bg-slate-800/70 border border-white/12 p-3 text-center h-[7.75rem] flex flex-col justify-center">
+            <div className="rounded-2xl bg-slate-800/70 border border-white/12 p-2.5 sm:p-3 text-center h-[7.75rem] flex flex-col justify-center">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">
                 Teams
               </span>
-              <div className="flex items-center justify-center gap-1.5">
+              <div className="flex items-center justify-center gap-1 sm:gap-1.5 flex-wrap sm:flex-nowrap">
                 {Array.from({ length: MAX_GROUPS - MIN_GROUPS + 1 }, (_, i) => MIN_GROUPS + i).map(n => (
                   <button
                     key={n}
@@ -151,9 +151,9 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
                       sounds.playClick();
                       setGroups(n);
                     }}
-                    className={`w-10 h-11 rounded-xl font-mario text-xl border cursor-pointer ${
+                    className={`w-7 sm:w-8.5 h-9 sm:h-10 rounded-lg sm:rounded-xl font-mario text-base sm:text-lg border cursor-pointer transition-all ${
                       groups === n
-                        ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md'
+                        ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md scale-105'
                         : 'bg-slate-950/70 text-white border-white/15 hover:border-white/40'
                     }`}
                   >
@@ -165,7 +165,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
           </div>
 
           <div className="rounded-2xl bg-black/35 border border-white/10 px-3 py-4">
-            <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
               {Array.from({ length: MAX_GROUPS }, (_, idx) => {
                 const active = idx < groups;
                 const count = active ? sizes[idx] : 0;

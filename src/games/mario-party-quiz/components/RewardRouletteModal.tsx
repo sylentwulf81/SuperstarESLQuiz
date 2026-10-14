@@ -21,7 +21,7 @@ interface RewardRouletteModalProps {
   cards: RewardCard[];
   currentTeam: Team;
   teams: Team[];
-  theme?: 'summer' | 'christmas' | 'classic';
+  theme?: 'summer' | 'christmas' | 'classic' | 'halloween';
   onCardSelected: (card: RewardCard, options?: RewardCardActionOptions) => void;
   onClose: () => void;
   showCatchUpNote?: boolean;
@@ -29,6 +29,7 @@ interface RewardRouletteModalProps {
   startInReveal?: boolean;
   /** Host-only: close the reveal without applying the card effect. */
   onSkipAction?: () => void;
+  zIndexClass?: string;
 }
 
 type CardTheme = {
@@ -388,6 +389,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
   showCatchUpNote = false,
   startInReveal = false,
   onSkipAction,
+  zIndexClass,
 }: RewardRouletteModalProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(startInReveal ? 0 : null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>(startInReveal ? cards.map((_, i) => i) : []);
@@ -771,7 +773,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
     Boolean(selectedCard && (selectedCard.type === 'king_boo' || selectedCard.type === 'boo_steal_10'));
 
   return (
-    <GameModalShell barColor={charInfo.accentColor} instant={startInReveal}>
+    <GameModalShell barColor={charInfo.accentColor} instant={startInReveal} zIndexClass={zIndexClass ?? (startInReveal ? 'z-[60]' : 'z-50')}>
         <div className={`${charInfo.bgColor} px-3 sm:px-6 py-2.5 sm:py-3 border-b-2 ${charInfo.borderColor} flex items-center justify-between gap-3 shrink-0`}>
           <div className="flex items-center gap-2 bg-black/35 border border-white/30 rounded-2xl px-2.5 py-1.5">
             <TeamAvatar

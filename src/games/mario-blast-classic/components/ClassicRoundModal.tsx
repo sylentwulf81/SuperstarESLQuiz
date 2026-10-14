@@ -79,6 +79,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
       ? question.targetWord
       : question.type === 'true_false'
       ? `${question.isTrue ? 'TRUE' : 'FALSE'}${question.explanation ? ` — ${question.explanation}` : ''}`
+      : question.type === 'multiple_choice'
+      ? `${['A', 'B', 'C', 'D'][question.correctIndex]}: ${question.options[question.correctIndex]}`
       : undefined;
 
   const selectedTeam = selectedTeamId ? teamsMap.get(selectedTeamId) ?? null : null;
@@ -141,8 +143,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
       {/* Main 2-Column Classroom Layout */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* Left Column: Vertical Teams Rail with Giant Scores */}
-        <div className="w-full md:w-64 lg:w-72 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-3 flex flex-col shrink-0 overflow-y-auto">
-          <div className="flex items-center justify-between pb-1.5 border-b border-white/10 mb-2 shrink-0">
+        <div className="w-full md:w-64 lg:w-72 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-2.5 flex flex-col shrink-0 overflow-y-auto max-h-24 sm:max-h-28 md:max-h-none">
+          <div className="flex items-center justify-between pb-1 border-b border-white/10 mb-1.5 shrink-0">
             <span className="text-[11px] font-black uppercase tracking-wider text-yellow-300 font-mario">
               {isRoundOver ? 'SCORES' : '1. SELECT WINNER'}
             </span>
@@ -151,7 +153,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             </span>
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto px-1 py-1 [scrollbar-width:thin]">
+          <div className="flex-1 min-h-0 flex flex-row md:flex-col gap-1.5 sm:gap-2 overflow-x-auto md:overflow-y-auto px-1 py-1 [scrollbar-width:thin]">
             {teams.map(team => {
               const char = CHARACTERS[team.characterId];
               const alreadyDrew = drawnTeamSet.has(team.id);
@@ -167,7 +169,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     sounds.playPop();
                     onSelectTeam(team.id);
                   }}
-                  className={`relative flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-2xl border-2 transition-all text-left min-w-[9.5rem] md:min-w-0 ${
+                  className={`relative flex items-center justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 transition-all text-left min-w-[8.5rem] sm:min-w-[9.5rem] md:min-w-0 ${
                     alreadyDrew
                       ? 'bg-emerald-950/60 border-emerald-400/50 cursor-default opacity-85'
                       : isSelected
@@ -177,16 +179,16 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                       : 'bg-slate-800/80 hover:bg-slate-750 border-white/15 hover:border-amber-300/60 cursor-pointer'
                   }`}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                     <div className="relative shrink-0">
                       <TeamAvatar
                         characterId={team.characterId}
                         size="sm"
                         customUrl={team.customImageUrl}
-                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl"
+                        className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl"
                       />
                       {alreadyDrew && (
-                        <span className="absolute -top-1 -right-1 z-20 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-emerald-500 border-2 border-slate-900 shadow">
+                        <span className="absolute -top-1 -right-1 z-20 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-emerald-500 border-2 border-slate-900 shadow">
                           <Check className="w-2.5 h-2.5 text-white" strokeWidth={3.5} />
                         </span>
                       )}
@@ -195,21 +197,21 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                       <div className="font-mario text-xs sm:text-sm text-white truncate">
                         {team.name}
                       </div>
-                      <div className="text-[10px] text-slate-300 font-bold">
+                      <div className="text-[9.5px] sm:text-[10px] text-slate-300 font-bold">
                         {alreadyDrew ? 'Drew card' : isSelected ? 'Drawing now' : 'Can answer'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="flex items-center gap-1 bg-black/60 px-2 py-1 rounded-xl border border-white/15">
+                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 bg-black/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-xl border border-white/15">
                       <MarioCoin size="xs" />
-                      <span className="font-mario text-base sm:text-lg text-yellow-300 leading-none">
+                      <span className="font-mario text-sm sm:text-base md:text-lg text-yellow-300 leading-none">
                         {team.coins}
                       </span>
                     </div>
                     {alreadyDrew && (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/90 text-white border border-emerald-200 shadow-sm shrink-0">
+                      <span className="hidden sm:flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/90 text-white border border-emerald-200 shadow-sm shrink-0">
                         <Check className="w-3 h-3 text-white" strokeWidth={3.5} />
                       </span>
                     )}
@@ -269,7 +271,72 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             )}
 
             {/* Answer Box */}
-            {question.type === 'true_false' ? (
+            {question.type === 'multiple_choice' ? (
+              <div className="mt-2.5 sm:mt-3 mx-auto w-full max-w-2xl flex flex-col gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                  {question.options.map((opt, optIdx) => {
+                    const isCorrect = optIdx === question.correctIndex;
+                    const letter = ['A', 'B', 'C', 'D'][optIdx];
+                    return (
+                      <div
+                        key={optIdx}
+                        className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2 font-mario text-xs sm:text-sm md:text-base transition-all text-left ${
+                          answerRevealed
+                            ? isCorrect
+                              ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
+                              : 'bg-slate-900/50 border-white/10 text-slate-500 opacity-40'
+                            : 'bg-slate-800/90 text-white border-white/20'
+                        }`}
+                      >
+                        <span
+                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                            answerRevealed && isCorrect
+                              ? 'bg-white text-emerald-900'
+                              : 'bg-black/50 text-yellow-300 border border-white/20'
+                          }`}
+                        >
+                          {answerRevealed && isCorrect ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : letter}
+                        </span>
+                        <span className="truncate">{opt}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="flex justify-center mt-0.5">
+                  {!answerRevealed ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        sounds.playCardFlip();
+                        setAnswerRevealed(true);
+                      }}
+                      className="px-5 py-1.5 sm:py-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-mario text-xs sm:text-base border border-indigo-300/50 inline-flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
+                      <span>Reveal Answer</span>
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3 py-1.5 rounded-xl border border-white/15">
+                        Answer: {['A', 'B', 'C', 'D'][question.correctIndex]} — {question.options[question.correctIndex]}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setAnswerRevealed(false);
+                        }}
+                        className="p-1.5 rounded-xl bg-black/55 hover:bg-white/20 text-indigo-100 border border-white/20 cursor-pointer"
+                        title="Hide answer"
+                      >
+                        <EyeOff className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : question.type === 'true_false' ? (
               <div className="mt-3 mx-auto w-full max-w-xl flex flex-col gap-2">
                 <div className="grid grid-cols-2 gap-3 w-full">
                   <div
@@ -392,9 +459,17 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               )}
             </div>
 
-            {/* 6 Cards Grid */}
+            {/* Mystery Cards Grid (dynamic 6 to 8 cards) */}
             <div className="flex-1 min-h-0 flex items-center justify-center">
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3 w-full max-w-4xl">
+              <div
+                className={`grid gap-2 sm:gap-2.5 w-full ${
+                  slots.length >= 8
+                    ? 'grid-cols-4 sm:grid-cols-8 max-w-5xl'
+                    : slots.length === 7
+                    ? 'grid-cols-4 sm:grid-cols-7 max-w-5xl'
+                    : 'grid-cols-3 sm:grid-cols-6 max-w-4xl'
+                }`}
+              >
                 {slots.map((slot, idx) => {
                   const claimedTeam = slot.claimedByTeamId ? teamsMap.get(slot.claimedByTeamId) ?? null : null;
                   const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId && !isRoundOver;
@@ -415,25 +490,25 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                       }`}
                     >
                       {slot.claimedByTeamId && slot.card ? (
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-between p-2 text-center">
-                          <span className="font-mario text-[10px] sm:text-xs text-yellow-200 leading-tight">
+                        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center">
+                          <span className="font-mario text-[8.5px] sm:text-[10px] md:text-xs text-yellow-200 leading-tight line-clamp-2">
                             {slot.card.title}
                           </span>
                           {(slot.card.type === 'gold_star' ||
                             slot.card.type === 'bowser_revolution' ||
                             slot.card.type === 'bowser_fury') && (
-                            <span className="text-[8px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
+                            <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
                               Round Over
                             </span>
                           )}
                           {claimedTeam && (
-                            <div className="flex flex-col items-center gap-0.5 mt-auto">
+                            <div className="flex flex-col items-center gap-0.5 mt-auto min-w-0 max-w-full">
                               <TeamAvatar
                                 characterId={claimedTeam.characterId}
                                 size="xs"
                                 customUrl={claimedTeam.customImageUrl}
                               />
-                              <span className="text-[9px] font-bold text-white truncate max-w-full">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-white truncate max-w-full">
                                 {claimedTeam.name}
                               </span>
                             </div>

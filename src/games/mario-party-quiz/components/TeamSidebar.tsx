@@ -82,7 +82,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
           </span>
         </div>
 
-        <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto px-1 py-1 [scrollbar-width:thin]">
+        <div className={`flex-1 min-h-0 flex flex-col ${teams.length >= 7 ? 'gap-1.5' : 'gap-2.5'} overflow-y-auto px-1 py-1 [scrollbar-width:thin]`}>
           {teams.map((team, idx) => {
             const globalIndex = startIndex + idx;
             const char = CHARACTERS[team.characterId];
@@ -102,7 +102,9 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                     onSelectTeamTurn(globalIndex);
                   }
                 }}
-                className={`relative rounded-2xl border-2 transition-all cursor-pointer flex flex-col p-2.5 shadow-md ${
+                className={`relative rounded-2xl border-2 transition-all cursor-pointer flex flex-col ${
+                  teams.length >= 7 ? 'p-1.5 xl:p-2' : 'p-2.5'
+                } shadow-md ${
                   isActive
                     ? `${char.bgColor} bg-opacity-40 border-yellow-300 ring-2 ring-yellow-400/90 shadow-[0_0_15px_rgba(250,204,21,0.35)] z-10`
                     : isLeader
@@ -124,7 +126,9 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                       characterId={team.characterId}
                       size="md"
                       customUrl={team.customImageUrl}
-                      className={`w-11 h-11 xl:w-12 xl:h-12 rounded-xl shadow-md border ${
+                      className={`${
+                        teams.length >= 7 ? 'w-9 h-9 xl:w-11 xl:h-11' : 'w-11 h-11 xl:w-12 xl:h-12'
+                      } rounded-xl shadow-md border ${
                         isActive ? 'ring-2 ring-yellow-300 border-yellow-100' : 'border-white/20'
                       }`}
                     />
@@ -138,7 +142,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                   </div>
 
                   <div className="flex-1 min-w-0 leading-tight">
-                    <h4 className="font-mario text-sm xl:text-base text-white text-shadow-mario truncate">
+                    <h4 className={`font-mario ${teams.length >= 7 ? 'text-xs xl:text-sm' : 'text-sm xl:text-base'} text-white text-shadow-mario truncate`}>
                       {team.name}
                     </h4>
                     {/* Status badges */}
@@ -174,11 +178,11 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                 </div>
 
                 {/* Bottom: Huge Coin Display & Teacher Adjust Buttons */}
-                <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between gap-1">
+                <div className={`${teams.length >= 7 ? 'mt-1 pt-1' : 'mt-2 pt-1.5'} border-t border-white/10 flex items-center justify-between gap-1`}>
                   <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl bg-black/60 border border-white/15 shadow-inner">
                     <MarioCoin size="sm" />
                     <span
-                      className={`font-mario text-2xl xl:text-3xl leading-none ${
+                      className={`font-mario ${teams.length >= 7 ? 'text-xl xl:text-2xl' : 'text-2xl xl:text-3xl'} leading-none ${
                         team.coins < 0
                           ? 'text-red-400 font-black'
                           : 'text-yellow-300 text-shadow-gold drop-shadow-[0_0_10px_rgba(250,204,21,0.55)]'

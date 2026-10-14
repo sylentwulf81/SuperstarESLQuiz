@@ -485,11 +485,13 @@ export function MarioBlastClassic({
       <AnimatePresence>
         {pendingCard && answeringTeam && (
           <RewardRouletteModal
+            key={pendingCard.id}
             cards={[pendingCard]}
             currentTeam={answeringTeam}
             teams={teams}
             theme="classic"
             startInReveal
+            zIndexClass="z-[60]"
             onCardSelected={handleRewardResolved}
             onClose={() => {}}
             onSkipAction={handleSkipCardAction}

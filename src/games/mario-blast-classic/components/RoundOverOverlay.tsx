@@ -89,6 +89,9 @@ export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = React.memo(func
     if (question.type === 'true_false') {
       return `${question.isTrue ? 'TRUE' : 'FALSE'}${question.explanation ? ` — ${question.explanation}` : ''}`;
     }
+    if (question.type === 'multiple_choice') {
+      return `${['A', 'B', 'C', 'D'][question.correctIndex]}: ${question.options[question.correctIndex]}`;
+    }
     return undefined;
   }, [question]);
 

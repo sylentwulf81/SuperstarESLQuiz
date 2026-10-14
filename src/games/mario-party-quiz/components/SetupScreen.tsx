@@ -133,76 +133,76 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
   }, [teamCount, activeRoster, startingCoins, onStartGame]);
 
   return (
-    <div className="w-full flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col items-center justify-start sm:justify-center">
-      <div className="w-full max-w-4xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0">
+    <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center justify-start sm:justify-center">
+      <div className="w-full max-w-4xl max-h-[min(98dvh,54rem)] flex flex-col bg-slate-900 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0 sm:shrink">
         <div
-          className={`absolute top-0 inset-x-0 h-1.5 transition-colors duration-500 ${THEME_UI[theme].barClass} opacity-90`}
+          className={`absolute top-0 inset-x-0 h-1.5 transition-colors duration-500 ${THEME_UI[theme].barClass} opacity-90 shrink-0`}
         />
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex flex-col"
+          className="flex flex-col flex-1 min-h-0"
         >
           {/* Header Bar */}
-          <div className="bg-slate-800/90 p-4 sm:p-5 text-white border-b border-white/15 space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              {onBackToLauncher ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    onBackToLauncher();
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all shadow-md cursor-pointer group whitespace-nowrap shrink-0"
-                  title="Return to the activity library"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-300" />
-                  Activity Library
-                </button>
-              ) : (
-                <span />
-              )}
-              <AccountMenu />
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h1 className="font-mario text-2xl sm:text-3xl text-white text-shadow-mario tracking-wider">
-                  {THEME_UI[theme].gameTitle.toUpperCase()}
-                </h1>
-                <div className={`inline-flex items-center gap-1.5 mt-2 px-3 py-1 rounded-full text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
-                  {theme === 'summer' ? (
-                    <>
-                      <Sun className="w-3.5 h-3.5 fill-current" />
-                      <span>Summer Edition (60 ESL)</span>
-                    </>
-                  ) : theme === 'classic' ? (
-                    <>
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <span>Classic Edition</span>
-                    </>
-                  ) : theme === 'halloween' ? (
-                    <>
-                      <span className="text-sm">🎃</span>
-                      <span>Halloween Edition (60 Spooky ESL)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Snowflake className="w-3.5 h-3.5" />
-                      <span>Winter Edition (60 Holiday)</span>
-                    </>
+          <div className="shrink-0 bg-slate-800/90 px-3.5 py-2 sm:px-5 sm:py-2.5 text-white border-b border-white/15">
+            <div className="flex items-center justify-between gap-2.5 flex-wrap">
+              {/* Left: Activity library button + Title + Badges */}
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                {onBackToLauncher && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onBackToLauncher();
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all shadow-md cursor-pointer group whitespace-nowrap shrink-0"
+                    title="Return to the activity library"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform text-amber-300" />
+                    <span>Activity Library</span>
+                  </button>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="font-mario text-lg sm:text-2xl text-white text-shadow-mario tracking-wider truncate">
+                      {THEME_UI[theme].gameTitle.toUpperCase()}
+                    </h1>
+                    <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
+                      {theme === 'summer' ? (
+                        <>
+                          <Sun className="w-3 h-3 fill-current" />
+                          <span>Summer Edition (60 ESL)</span>
+                        </>
+                      ) : theme === 'classic' ? (
+                        <>
+                          <Star className="w-3 h-3 fill-current" />
+                          <span>Classic Edition</span>
+                        </>
+                      ) : theme === 'halloween' ? (
+                        <>
+                          <span className="text-xs">🎃</span>
+                          <span>Halloween Edition (60 Spooky ESL)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Snowflake className="w-3 h-3" />
+                          <span>Winter Edition (60 Holiday)</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  {theme === 'classic' && lessonGoal && (
+                    <p className="text-[11px] sm:text-xs font-bold text-rose-100/90 truncate max-w-md sm:max-w-xl">
+                      {lessonGoal}
+                    </p>
                   )}
                 </div>
-                {theme === 'classic' && lessonGoal && (
-                  <p className="mt-2 text-xs sm:text-sm font-bold text-rose-100/90 max-w-xl">
-                    {lessonGoal}
-                  </p>
-                )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {/* Right: Actions + AccountMenu */}
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   id="setup-open-guide-btn"
                   type="button"
@@ -210,10 +210,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     sounds.playClick();
                     onOpenRules();
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer hover:scale-102 active:scale-97 border border-indigo-300/40"
+                  className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer hover:scale-102 active:scale-97 border border-indigo-300/40"
                 >
-                  <BookOpen className="w-4 h-4 text-yellow-300" />
-                  <span>VIEW RULES & GUIDE</span>
+                  <BookOpen className="w-3.5 h-3.5 text-yellow-300" />
+                  <span>RULES & GUIDE</span>
                 </button>
                 <button
                   id="setup-open-studio-btn"
@@ -222,25 +222,26 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     sounds.playClick();
                     onOpenStudio();
                   }}
-                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-yellow-300 font-bold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 shrink-0 transition-all cursor-pointer hover:scale-102 active:scale-97 border border-yellow-400/40"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-yellow-300 font-bold text-xs shadow-md flex items-center justify-center gap-1.5 shrink-0 transition-all cursor-pointer hover:scale-102 active:scale-97 border border-yellow-400/40"
                   title={`Edit this ${THEME_UI[theme].deckLabel} question deck`}
                 >
-                  <Settings2 className="w-4 h-4 text-yellow-300" />
-                  <span>QUESTION STUDIO</span>
+                  <Settings2 className="w-3.5 h-3.5 text-yellow-300" />
+                  <span>STUDIO</span>
                 </button>
+                <AccountMenu />
               </div>
             </div>
           </div>
 
-          <div className="p-4 sm:p-6 lg:py-5 lg:px-6 space-y-4 sm:space-y-5">
+          <div className="p-2.5 sm:p-3.5 md:p-4 lg:px-6 flex-1 min-h-0 flex flex-col justify-between space-y-[clamp(0.4rem,1.2vh,0.85rem)] overflow-y-auto sm:overflow-hidden">
             {/* Team Count Picker Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-800/60 p-3 sm:p-4 rounded-2xl border border-white/10">
+            <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-800/60 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 rounded-xl sm:rounded-2xl border border-white/10">
               <div>
-                <h3 className="font-mario text-base sm:text-lg text-yellow-300 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-indigo-400" />
-                  NUMBER OF TEAMS
+                <h3 className="font-mario text-xs sm:text-sm md:text-base text-yellow-300 flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-indigo-400 shrink-0" />
+                  <span>NUMBER OF TEAMS</span>
                 </h3>
-                <p className="text-xs text-indigo-200 mt-0.5">
+                <p className="text-[10px] sm:text-xs text-indigo-200 mt-0.5">
                   Select how many teams are playing in today's class:
                 </p>
               </div>
@@ -251,7 +252,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     key={count}
                     type="button"
                     onClick={() => handleSelectCount(count)}
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl font-mario text-base sm:text-lg transition-all border cursor-pointer flex items-center justify-center ${
+                    className={`w-[clamp(1.85rem,3.8vh,2.35rem)] h-[clamp(1.85rem,3.8vh,2.35rem)] rounded-xl font-mario text-xs sm:text-sm md:text-base transition-all border cursor-pointer flex items-center justify-center ${
                       teamCount === count
                         ? 'bg-gradient-to-br from-amber-400 to-yellow-500 text-slate-950 border-yellow-200 shadow-md scale-105 glass-glow-gold font-black'
                         : 'bg-slate-700/80 hover:bg-slate-650 text-slate-200 border-white/15'
@@ -264,42 +265,42 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
             </div>
 
             {/* Mystery Randomization Board */}
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex-1 min-h-0 flex flex-col justify-center">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 mb-1.5 sm:mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="font-mario text-base sm:text-lg text-white text-shadow-mario flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-300" />
-                    MYSTERY CHARACTER DRAW
+                  <span className="font-mario text-xs sm:text-sm md:text-base text-white text-shadow-mario flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
+                    <span>MYSTERY CHARACTER DRAW</span>
                   </span>
-                  <span className="text-xs text-amber-200/90 font-semibold bg-amber-950/60 border border-amber-400/40 px-2.5 py-0.5 rounded-full">
+                  <span className="text-[10px] sm:text-xs text-amber-200/90 font-semibold bg-amber-950/60 border border-amber-400/40 px-2 py-0.5 rounded-full">
                     {revealedIndices.size} / {teamCount} Revealed
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button
                     type="button"
                     onClick={handleReshuffle}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/20 text-xs font-bold text-amber-300 cursor-pointer transition-all active:scale-95 shadow"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 border border-white/20 text-xs font-bold text-amber-300 cursor-pointer transition-all active:scale-95 shadow"
                     title="Reshuffle characters behind the ? blocks"
                   >
-                    <Shuffle className="w-3.5 h-3.5 text-amber-400" />
+                    <Shuffle className="w-3 h-3 text-amber-400" />
                     <span>Reshuffle</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleRevealAll}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-700/80 hover:bg-indigo-600 border border-indigo-400/50 text-xs font-bold text-white cursor-pointer transition-all active:scale-95 shadow"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-700/80 hover:bg-indigo-600 border border-indigo-400/50 text-xs font-bold text-white cursor-pointer transition-all active:scale-95 shadow"
                     title="Reveal all teams instantly"
                   >
-                    <Eye className="w-3.5 h-3.5 text-yellow-300" />
+                    <Eye className="w-3 h-3 text-yellow-300" />
                     <span>Reveal All</span>
                   </button>
                 </div>
               </div>
 
-              {/* Mystery Cards Grid - Always exactly 8 slots in fixed 2x4 grid to preserve modal dimensions */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              {/* Mystery Cards Grid - Exactly 8 slots in 2x4 grid with fluid viewport-adaptive height */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                 {shuffledChars.map((char, idx) => {
                   const isActiveTeam = idx < teamCount;
                   const isRevealed = isActiveTeam && revealedIndices.has(idx);
@@ -309,16 +310,16 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                       <div
                         key={char.id}
                         onClick={() => handleSelectCount(idx + 1)}
-                        className="relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl border-2 border-dashed border-white/10 bg-slate-950/40 select-none flex flex-col items-center justify-center p-3 text-center cursor-pointer hover:border-white/30 hover:bg-slate-900/40 transition-all group opacity-40 hover:opacity-75"
+                        className="relative h-[clamp(5rem,13.5vh,8.75rem)] rounded-xl sm:rounded-2xl border-2 border-dashed border-white/10 bg-slate-950/40 select-none flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-white/30 hover:bg-slate-900/40 transition-all group opacity-40 hover:opacity-75"
                         title={`Click to set team count to ${idx + 1}`}
                       >
-                        <div className="w-10 h-10 rounded-full border border-white/15 bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-yellow-300 group-hover:border-yellow-400/50 transition-colors">
-                          <span className="font-mario text-sm font-bold">#{idx + 1}</span>
+                        <div className="w-[clamp(1.5rem,3.4vh,2.25rem)] h-[clamp(1.5rem,3.4vh,2.25rem)] rounded-full border border-white/15 bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-yellow-300 group-hover:border-yellow-400/50 transition-colors">
+                          <span className="font-mario text-[clamp(10px,1.3vh,13px)] font-bold">#{idx + 1}</span>
                         </div>
-                        <span className="font-mario text-xs text-slate-400 mt-2 group-hover:text-slate-200">
+                        <span className="font-mario text-[clamp(9.5px,1.2vh,11px)] text-slate-400 mt-1 group-hover:text-slate-200">
                           Inactive
                         </span>
-                        <span className="text-[10px] text-slate-500 group-hover:text-amber-300/80 font-bold mt-1">
+                        <span className="text-[clamp(8px,1.1vh,10px)] text-slate-500 group-hover:text-amber-300/80 font-bold mt-0.5">
                           + Add Team
                         </span>
                       </div>
@@ -330,7 +331,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                       key={char.id}
                       onClick={() => handleRevealSlot(idx)}
                       style={{ perspective: '1000px' }}
-                      className="relative aspect-[3/4] sm:aspect-[4/5] rounded-2xl cursor-pointer select-none group"
+                      className="relative h-[clamp(5rem,13.5vh,8.75rem)] rounded-xl sm:rounded-2xl cursor-pointer select-none group"
                     >
                       <motion.div
                         animate={{ rotateY: isRevealed ? 180 : 0 }}
@@ -341,24 +342,24 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                         {/* Front: Mystery ? Card */}
                         <div
                           style={{ backfaceVisibility: 'hidden' }}
-                          className="absolute inset-0 rounded-2xl border-2 sm:border-3 border-amber-300 bg-gradient-to-b from-amber-500 via-yellow-600 to-amber-700 shadow-xl overflow-hidden flex flex-col items-center justify-between p-3 transition-transform group-hover:scale-[1.02] group-hover:brightness-110"
+                          className="absolute inset-0 rounded-xl sm:rounded-2xl border-2 sm:border-3 border-amber-300 bg-gradient-to-b from-amber-500 via-yellow-600 to-amber-700 shadow-xl overflow-hidden flex flex-col items-center justify-between p-2 transition-transform group-hover:scale-[1.02] group-hover:brightness-110"
                         >
                           {/* Inner Bevel */}
-                          <div className="absolute inset-1 rounded-xl border border-yellow-200/50 pointer-events-none" />
+                          <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-yellow-200/50 pointer-events-none" />
 
-                          {/* Slot Badge (Pure number, no 'Team' prefix) */}
-                          <span className="font-mario text-xs sm:text-sm text-yellow-100 bg-black/50 px-2.5 py-0.5 rounded-full border border-white/20 shadow">
+                          {/* Slot Badge */}
+                          <span className="font-mario text-[clamp(9px,1.2vh,11px)] text-yellow-100 bg-black/50 px-2 py-0.5 rounded-full border border-white/20 shadow leading-none">
                             #{idx + 1}
                           </span>
 
                           {/* Big Glowing Question Mark */}
                           <div className="flex flex-col items-center justify-center my-auto">
-                            <span className="font-mario text-5xl sm:text-6xl text-white text-shadow-mario drop-shadow-[0_0_16px_rgba(255,255,255,0.7)] animate-pulse">
+                            <span className="font-mario text-[clamp(1.75rem,4.2vh,3rem)] text-white text-shadow-mario drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] animate-pulse leading-none">
                               ?
                             </span>
                           </div>
 
-                          <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-amber-950 bg-yellow-200/95 px-2.5 py-0.5 rounded-full shadow">
+                          <span className="text-[clamp(8px,1.1vh,10px)] font-black uppercase tracking-wider text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full shadow leading-none">
                             Tap to Reveal
                           </span>
                         </div>
@@ -366,32 +367,32 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                         {/* Back: Revealed Character Card */}
                         <div
                           style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                          className={`absolute inset-0 rounded-2xl border-2 sm:border-3 border-yellow-300 ${char.bgColor} bg-opacity-95 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-3 text-center`}
+                          className={`absolute inset-0 rounded-xl sm:rounded-2xl border-2 sm:border-3 border-yellow-300 ${char.bgColor} bg-opacity-95 shadow-2xl overflow-hidden flex flex-col items-center justify-between p-1.5 sm:p-2 text-center`}
                         >
-                          <div className="absolute inset-1 rounded-xl border border-white/30 pointer-events-none" />
+                          <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-white/30 pointer-events-none" />
 
-                          <div className="w-full flex items-center justify-between z-10">
-                            <span className="font-mario text-[10px] sm:text-xs text-yellow-200 bg-black/55 px-2 py-0.5 rounded-full border border-white/20">
+                          <div className="w-full flex items-center justify-between z-10 px-0.5">
+                            <span className="font-mario text-[clamp(9px,1.1vh,11px)] text-yellow-200 bg-black/55 px-1.5 py-0.5 rounded-full border border-white/20 leading-none">
                               #{idx + 1}
                             </span>
-                            <div className="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shadow">
-                              <Check className="w-3.5 h-3.5 stroke-[3.5]" />
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shadow">
+                              <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3.5]" />
                             </div>
                           </div>
 
                           {/* Avatar */}
-                          <div className="my-auto flex flex-col items-center gap-1 z-10">
+                          <div className="my-auto flex flex-col items-center gap-0.5 z-10 min-w-0">
                             <TeamAvatar
                               characterId={char.id}
-                              size="lg"
-                              className="w-16 h-16 sm:w-20 sm:h-20 shadow-2xl ring-2 ring-white/80"
+                              size="sm"
+                              className="w-[clamp(2rem,5vh,3.25rem)] h-[clamp(2rem,5vh,3.25rem)] shadow-lg ring-2 ring-white/80 shrink-0"
                             />
-                            <h4 className="font-mario text-base sm:text-xl text-white text-shadow-mario leading-tight mt-1">
+                            <h4 className="font-mario text-[clamp(0.7rem,1.6vh,0.95rem)] text-white text-shadow-mario leading-tight mt-0.5 truncate max-w-full">
                               {char.name}
                             </h4>
                           </div>
 
-                          <span className="text-[9px] sm:text-[10px] font-bold text-white/90 bg-black/40 px-2 py-0.5 rounded-full truncate max-w-full z-10">
+                          <span className="text-[clamp(7.5px,1.1vh,9.5px)] font-bold text-white/90 bg-black/40 px-1.5 py-0.5 rounded-full truncate max-w-full z-10 leading-none">
                             {char.catchphrase}
                           </span>
                         </div>
@@ -403,13 +404,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
             </div>
 
             {/* Starting Coins and Calculator Row */}
-            <div className="flex flex-col lg:flex-row gap-2.5">
-              <div className="flex-1 p-3 bg-slate-800/60 rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="shrink-0 flex flex-col lg:flex-row gap-2">
+              <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
-                  <span className="font-mario text-sm sm:text-base text-yellow-300 block">
+                  <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
                     STARTING COINS PER TEAM
                   </span>
-                  <span className="text-xs text-indigo-200">
+                  <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
                     Starting with 5 or 10 coins enables exciting Boo steal & Bowser cards immediately!
                   </span>
                 </div>
@@ -429,7 +430,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                         }
                         setStartingCoins(amt);
                       }}
-                      className={`px-3 py-1.5 rounded-xl font-mario text-sm sm:text-base transition-all border cursor-pointer flex items-center gap-1.5 ${
+                      className={`px-[clamp(0.45rem,0.9vw,0.7rem)] py-[clamp(0.2rem,0.5vh,0.35rem)] rounded-xl font-mario text-xs sm:text-sm transition-all border cursor-pointer flex items-center gap-1 ${
                         startingCoins === amt
                           ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md scale-105 glass-glow-gold'
                           : 'bg-slate-700/80 hover:bg-slate-650 text-slate-200 border-white/20'
@@ -448,35 +449,35 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                   sounds.playClick();
                   setCalculatorOpen(true);
                 }}
-                className="lg:w-[11.5rem] shrink-0 p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all"
+                className="lg:w-[10.5rem] shrink-0 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] rounded-xl sm:rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all flex lg:flex-col justify-between items-center lg:items-start"
               >
-                <span className="font-mario text-sm sm:text-base text-yellow-300 flex items-center gap-2">
-                  <Calculator className="w-4 h-4 text-amber-300" />
+                <span className="font-mario text-xs sm:text-sm text-yellow-300 flex items-center gap-1.5">
+                  <Calculator className="w-3.5 h-3.5 text-amber-300" />
                   Team size
                 </span>
-                <span className="text-xs text-indigo-200 mt-1 block">Class → groups</span>
+                <span className="text-[10px] sm:text-[11px] text-indigo-200">Class → groups</span>
               </button>
             </div>
 
             {/* Launch Button */}
-            <div className="flex flex-col items-center gap-2 pt-2">
+            <div className="shrink-0 flex flex-col items-center gap-1 pt-0.5">
               <button
                 disabled={!isStartReady}
                 onClick={handleStart}
-                className={`w-full sm:w-auto px-10 py-3.5 font-mario text-lg sm:text-2xl rounded-2xl shadow-xl border flex items-center justify-center gap-2.5 transition-all ${
+                className={`w-full sm:w-auto px-8 sm:px-10 py-[clamp(0.45rem,1.1vh,0.75rem)] font-mario text-sm sm:text-lg md:text-xl rounded-xl sm:rounded-2xl shadow-xl border flex items-center justify-center gap-2 transition-all ${
                   isStartReady
                     ? 'bg-gradient-to-r from-emerald-600 via-green-500 to-emerald-600 hover:from-emerald-500 hover:to-green-400 text-white border-emerald-300/80 hover:scale-102 active:scale-97 cursor-pointer shadow-emerald-950/50 font-black'
                     : 'bg-white/10 text-slate-400 border-white/15 cursor-not-allowed opacity-50'
                 }`}
               >
-                <Play className={`w-5 h-5 ${isStartReady ? 'fill-current text-white' : 'text-slate-500'}`} />
+                <Play className={`w-4 h-4 sm:w-5 sm:h-5 ${isStartReady ? 'fill-current text-white' : 'text-slate-500'}`} />
                 {isStartReady
                   ? `START ${THEME_UI[theme].startParty} PARTY! (${teamCount} TEAMS)`
                   : 'CHOOSE TEAMS TO START'}
               </button>
 
-              <div className="flex items-center gap-1.5 text-xs text-amber-300/80 font-medium">
-                <Shuffle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <div className="flex items-center gap-1 text-[9.5px] sm:text-[11px] text-amber-300/80 font-medium text-center">
+                <Shuffle className="w-3 h-3 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
                     ? 'All 60 prompts shuffle at the start. Any team can answer!'
