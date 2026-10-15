@@ -54,37 +54,44 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-interface LauncherScreenProps {
-  onLaunchGame: (game: LauncherGame) => void;
-  onOpenRulebook: () => void;
-  onOpenStudio?: () => void;
-  soundEnabled: boolean;
-  onToggleSound: () => void;
+function getCategoryIcon(cat: LibraryFilter) {
+  switch (cat) {
+    case 'board_turn_based': return <Compass className="w-3.5 h-3.5" />;
+    case 'board_classic': return <Zap className="w-3.5 h-3.5" />;
+    case 'map_takeover': return <Rocket className="w-3.5 h-3.5" />;
+    case 'quiz_show': return <Tv className="w-3.5 h-3.5" />;
+    case 'action': return <Flame className="w-3.5 h-3.5" />;
+    case 'seasonal': return <Snowflake className="w-3.5 h-3.5" />;
+    case 'strategy': return <Building2 className="w-3.5 h-3.5" />;
+    default: return <GraduationCap className="w-3.5 h-3.5" />;
+  }
 }
 
-export const LauncherScreen: React.FC<LauncherScreenProps> = ({
+interface SpotlightHeroProps {
+  spotlightGames: LauncherGame[];
+  onLaunchGame: (game: LauncherGame) => void;
+  onOpenRulebook: () => void;
+  onPreviewGame: (game: LauncherGame) => void;
+}
+
+/**
+ * Bolt Performance Optimization:
+ * Isolated the 50ms progress tick state into SpotlightHero.
+ * Prevents 20 re-renders/sec across the top-level LauncherScreen, category filter buttons,
+ * search input, and all 12+ activity cards in the library grid during carousel idle state.
+ */
+const SpotlightHero = React.memo(function SpotlightHero({
+  spotlightGames,
   onLaunchGame,
   onOpenRulebook,
-  onOpenStudio,
-  soundEnabled,
-  onToggleSound,
-}) => {
-  const [selectedCategory, setSelectedCategory] = useState<LibraryFilter>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
-  useBodyScrollLock(Boolean(previewGame));
-
-  const spotlightGames = useMemo(() => LAUNCHER_GAMES.filter(g => g.isPlayable), []);
+  onPreviewGame,
+}: SpotlightHeroProps) {
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [progress, setProgress] = useState(0);
-  const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
 
-  // Stop any lingering background music when entering launcher
-  useEffect(() => {
-    bgm.pause();
-  }, []);
+  const spotlightGame = spotlightGames[spotlightIndex] || spotlightGames[0];
 
   // Featured game auto-rotation & progress bar tick
   useEffect(() => {
@@ -120,6 +127,246 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
 
   const countdownSeconds = Math.max(1, Math.ceil(((100 - progress) / 100) * (SPOTLIGHT_ROTATE_MS / 1000)));
 
+  return (
+    <section
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="relative rounded-3xl overflow-hidden border-2 border-white/15 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black group/hero"
+    >
+      {/* Top Edge Glowing Auto-Rotation Progress Bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-white/10 overflow-hidden z-30 pointer-events-none">
+        <div
+          className="h-full transition-[width] duration-100 ease-linear"
+          style={{
+            width: `${progress}%`,
+            backgroundColor: spotlightGame.cover.accentColor,
+            boxShadow: `0 0 10px ${spotlightGame.cover.accentColor}`
+          }}
+        />
+      </div>
+
+      {/* Ambient Spotlight Background Graphic */}
+      <div
+        key={spotlightGame.id}
+        className="absolute inset-0 opacity-40 mix-blend-screen bg-cover bg-center pointer-events-none transition-[background-image] duration-500"
+        style={{
+          backgroundImage: `radial-gradient(circle at 70% 30%, ${hexToRgba(spotlightGame.cover.accentColor, 0.45)} 0%, transparent 60%)`
+        }}
+      />
+
+      {/* Slide Indicator Counter Badge (Top Right) */}
+      <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/15 text-xs text-white/75 backdrop-blur-md shadow-md">
+        <span className="font-bold text-yellow-300">{spotlightIndex + 1}</span>
+        <span className="text-white/40">/</span>
+        <span>{spotlightGames.length}</span>
+      </div>
+
+      <div className="relative z-10 p-6 sm:p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[380px]">
+        {/* Left Info Column */}
+        <div className="flex-1 space-y-4 max-w-3xl">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className={`text-[11px] font-black uppercase px-3 py-1 rounded-full ${spotlightGame.badgeColor} tracking-wider shadow-lg flex items-center gap-1`}>
+              <Sparkles className="w-3.5 h-3.5" />
+              {spotlightGame.badge}
+            </span>
+            <span className="text-xs uppercase font-bold px-3 py-1 rounded-full bg-slate-800/90 border border-white/15 text-slate-300">
+              {spotlightGame.activityStyle
+                ? ACTIVITY_STYLE_LABELS[spotlightGame.activityStyle]
+                : spotlightGame.category.replace('_', ' ')}
+            </span>
+            <span className="text-xs font-semibold text-white/50 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              {spotlightGame.stats.duration}
+            </span>
+          </div>
+
+          <h2 className="font-mario text-3xl sm:text-4xl lg:text-5xl text-yellow-300 leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+            {spotlightGame.title}
+          </h2>
+
+          <p className="text-base sm:text-lg text-indigo-100 font-medium leading-relaxed">
+            {spotlightGame.tagline}
+          </p>
+
+          <p className="text-sm text-slate-300/80 leading-relaxed max-w-2xl line-clamp-2 min-h-[2.6rem]">
+            {spotlightGame.description}
+          </p>
+
+          {/* Stat Badges */}
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
+              <Users className="w-3.5 h-3.5 text-amber-300" />
+              <span>{spotlightGame.stats.players}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
+              <Star className="w-3.5 h-3.5 text-yellow-300" />
+              <span>{spotlightGame.stats.questions}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{spotlightGame.stats.grades}</span>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-3 pt-4">
+            <button
+              onClick={() => {
+                sounds.playGameStart();
+                onLaunchGame(spotlightGame);
+              }}
+              className="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-lg shadow-[0_10px_25px_rgba(245,158,11,0.4)] border-2 border-yellow-200 flex items-center gap-2.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
+            >
+              <Play className="w-5 h-5 fill-current" />
+              START ACTIVITY
+            </button>
+
+            {spotlightGame.hasTeacherGuide && (
+              <button
+                onClick={() => {
+                  sounds.playClick();
+                  onOpenRulebook();
+                }}
+                className="px-5 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-indigo-200 hover:text-white border border-indigo-400/40 text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all hover:scale-105 shadow-md"
+              >
+                <BookOpen className="w-4 h-4 text-indigo-300" />
+                Super Blast Rules & Guide
+              </button>
+            )}
+
+            <button
+              onClick={() => {
+                sounds.playCardFlip();
+                onPreviewGame(spotlightGame);
+              }}
+              className="px-4 py-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/15 text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
+            >
+              <Info className="w-4 h-4" />
+              Activity Details
+            </button>
+          </div>
+        </div>
+
+        {/* Right Interactive Box Art Showcase Card */}
+        <div className="w-full sm:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
+          <SnesBoxArt game={spotlightGame} size="hero" />
+
+          {/* Redesigned Carousel Navigation & Timer HUD */}
+          <div className="w-full flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-2xl bg-slate-950/80 border border-white/15 backdrop-blur-md px-3 shadow-xl">
+            {/* Back / Prev Button */}
+            <button
+              onClick={goToPrevSpotlight}
+              title="Previous featured activity"
+              aria-label="Previous featured activity"
+              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            {/* Progress Indicators for all slides */}
+            <div className="flex items-center gap-2">
+              {spotlightGames.map((game, idx) => {
+                const isActive = idx === spotlightIndex;
+                return (
+                  <button
+                    key={game.id}
+                    onClick={() => goToSpotlight(idx)}
+                    title={game.shortTitle}
+                    aria-label={`Show ${game.shortTitle}`}
+                    aria-current={isActive}
+                    className="p-1 cursor-pointer group flex items-center"
+                  >
+                    <span
+                      className={`block rounded-full transition-all duration-300 overflow-hidden ${
+                        isActive
+                          ? 'w-7 sm:w-9 h-2 bg-white/20 ring-1 ring-white/20'
+                          : 'w-2 sm:w-2.5 h-2 bg-white/30 group-hover:bg-white/60'
+                      }`}
+                    >
+                      {isActive ? (
+                        <span
+                          className="block h-full rounded-full transition-[width] duration-100 ease-linear"
+                          style={{
+                            width: `${progress}%`,
+                            backgroundColor: game.cover.accentColor,
+                            boxShadow: `0 0 6px ${game.cover.accentColor}`
+                          }}
+                        />
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={goToNextSpotlight}
+              title="Next featured activity"
+              aria-label="Next featured activity"
+              className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+
+            {/* Countdown & Pause/Play Control Badge */}
+            <button
+              onClick={togglePause}
+              aria-label={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
+              title={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-all cursor-pointer text-xs"
+            >
+              {isPaused ? (
+                <>
+                  <Play className="w-3 h-3 text-amber-300 fill-current" />
+                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Play</span>
+                </>
+              ) : isHovered ? (
+                <>
+                  <Pause className="w-3 h-3 text-amber-300" />
+                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Hover</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-3 h-3 text-amber-400" />
+                  <span className="text-[11px] font-mono font-bold text-slate-200">{countdownSeconds}s</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+});
+
+interface LauncherScreenProps {
+  onLaunchGame: (game: LauncherGame) => void;
+  onOpenRulebook: () => void;
+  onOpenStudio?: () => void;
+  soundEnabled: boolean;
+  onToggleSound: () => void;
+}
+
+export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function LauncherScreen({
+  onLaunchGame,
+  onOpenRulebook,
+  onOpenStudio,
+  soundEnabled,
+  onToggleSound,
+}) {
+  const [selectedCategory, setSelectedCategory] = useState<LibraryFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [previewGame, setPreviewGame] = useState<LauncherGame | null>(null);
+  useBodyScrollLock(Boolean(previewGame));
+
+  const spotlightGames = useMemo(() => LAUNCHER_GAMES.filter(g => g.isPlayable), []);
+
+  // Stop any lingering background music when entering launcher
+  useEffect(() => {
+    bgm.pause();
+  }, []);
+
   const filteredGames = useMemo(() => {
     return LAUNCHER_GAMES.filter(game => {
       const matchesCategory =
@@ -139,38 +386,6 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       return matchesCategory && matchesSearch;
     });
   }, [selectedCategory, searchQuery]);
-
-  const getCategoryIcon = (cat: LibraryFilter) => {
-    switch (cat) {
-      case 'board_turn_based': return <Compass className="w-3.5 h-3.5" />;
-      case 'board_classic': return <Zap className="w-3.5 h-3.5" />;
-      case 'map_takeover': return <Rocket className="w-3.5 h-3.5" />;
-      case 'quiz_show': return <Tv className="w-3.5 h-3.5" />;
-      case 'action': return <Flame className="w-3.5 h-3.5" />;
-      case 'seasonal': return <Snowflake className="w-3.5 h-3.5" />;
-      case 'strategy': return <Building2 className="w-3.5 h-3.5" />;
-      default: return <GraduationCap className="w-3.5 h-3.5" />;
-    }
-  };
-
-  const renderGameIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Sun': return <Sun className="w-6 h-6 text-amber-300" />;
-      case 'Snowflake': return <Snowflake className="w-6 h-6 text-cyan-300" />;
-      case 'Tv': return <Tv className="w-6 h-6 text-indigo-300" />;
-      case 'Flame': return <Flame className="w-6 h-6 text-red-400" />;
-      case 'Swords': return <Swords className="w-6 h-6 text-emerald-300" />;
-      case 'Gift': return <Gift className="w-6 h-6 text-purple-300" />;
-      case 'Compass': return <Compass className="w-6 h-6 text-yellow-300" />;
-      case 'Building2': return <Building2 className="w-6 h-6 text-blue-300" />;
-      case 'Rocket': return <Rocket className="w-6 h-6 text-fuchsia-300" />;
-      case 'Shield': return <Shield className="w-6 h-6 text-amber-400" />;
-      case 'Zap': return <Zap className="w-6 h-6 text-lime-300" />;
-      case 'Gavel': return <Gavel className="w-6 h-6 text-yellow-400" />;
-      case 'Star': return <Star className="w-6 h-6 text-rose-300" />;
-      default: return <GraduationCap className="w-6 h-6 text-yellow-300" />;
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
@@ -239,215 +454,12 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       {/* Main Launcher Body */}
       <main className="flex-1 max-w-[1750px] w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
         {/* Spotlight Hero Banner (Epic Games / Steam Featured Carousel) */}
-        <section
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
-          className="relative rounded-3xl overflow-hidden border-2 border-white/15 shadow-2xl bg-gradient-to-br from-slate-900 via-slate-950 to-black group/hero"
-        >
-          {/* Top Edge Glowing Auto-Rotation Progress Bar */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-white/10 overflow-hidden z-30 pointer-events-none">
-            <div
-              className="h-full transition-[width] duration-100 ease-linear"
-              style={{
-                width: `${progress}%`,
-                backgroundColor: spotlightGame.cover.accentColor,
-                boxShadow: `0 0 10px ${spotlightGame.cover.accentColor}`
-              }}
-            />
-          </div>
-
-          {/* Ambient Spotlight Background Graphic */}
-          <div
-            key={spotlightGame.id}
-            className="absolute inset-0 opacity-40 mix-blend-screen bg-cover bg-center pointer-events-none transition-[background-image] duration-500"
-            style={{
-              backgroundImage: `radial-gradient(circle at 70% 30%, ${hexToRgba(spotlightGame.cover.accentColor, 0.45)} 0%, transparent 60%)`
-            }}
-          />
-
-          {/* Slide Indicator Counter Badge (Top Right) */}
-          <div className="absolute top-4 right-4 z-20 hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/15 text-xs text-white/75 backdrop-blur-md shadow-md">
-            <span className="font-bold text-yellow-300">{spotlightIndex + 1}</span>
-            <span className="text-white/40">/</span>
-            <span>{spotlightGames.length}</span>
-          </div>
-
-          <div className="relative z-10 p-6 sm:p-8 lg:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[380px]">
-            {/* Left Info Column */}
-            <div className="flex-1 space-y-4 max-w-3xl">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className={`text-[11px] font-black uppercase px-3 py-1 rounded-full ${spotlightGame.badgeColor} tracking-wider shadow-lg flex items-center gap-1`}>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {spotlightGame.badge}
-                </span>
-                <span className="text-xs uppercase font-bold px-3 py-1 rounded-full bg-slate-800/90 border border-white/15 text-slate-300">
-                  {spotlightGame.activityStyle
-                    ? ACTIVITY_STYLE_LABELS[spotlightGame.activityStyle]
-                    : spotlightGame.category.replace('_', ' ')}
-                </span>
-                <span className="text-xs font-semibold text-white/50 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {spotlightGame.stats.duration}
-                </span>
-              </div>
-
-              <h2 className="font-mario text-3xl sm:text-4xl lg:text-5xl text-yellow-300 leading-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
-                {spotlightGame.title}
-              </h2>
-
-              <p className="text-base sm:text-lg text-indigo-100 font-medium leading-relaxed">
-                {spotlightGame.tagline}
-              </p>
-
-              <p className="text-sm text-slate-300/80 leading-relaxed max-w-2xl line-clamp-2 min-h-[2.6rem]">
-                {spotlightGame.description}
-              </p>
-
-              {/* Stat Badges */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
-                  <Users className="w-3.5 h-3.5 text-amber-300" />
-                  <span>{spotlightGame.stats.players}</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
-                  <Star className="w-3.5 h-3.5 text-yellow-300" />
-                  <span>{spotlightGame.stats.questions}</span>
-                </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-white/15 text-xs text-slate-200">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{spotlightGame.stats.grades}</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-3 pt-4">
-                <button
-                  onClick={() => {
-                    sounds.playGameStart();
-                    onLaunchGame(spotlightGame);
-                  }}
-                  className="px-7 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-mario text-lg shadow-[0_10px_25px_rgba(245,158,11,0.4)] border-2 border-yellow-200 flex items-center gap-2.5 cursor-pointer transition-all hover:scale-105 active:scale-95"
-                >
-                  <Play className="w-5 h-5 fill-current" />
-                  START ACTIVITY
-                </button>
-
-                {spotlightGame.hasTeacherGuide && (
-                  <button
-                    onClick={() => {
-                      sounds.playClick();
-                      onOpenRulebook();
-                    }}
-                    className="px-5 py-3.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-indigo-200 hover:text-white border border-indigo-400/40 text-sm font-semibold flex items-center gap-2 cursor-pointer transition-all hover:scale-105 shadow-md"
-                  >
-                    <BookOpen className="w-4 h-4 text-indigo-300" />
-                    Super Blast Rules & Guide
-                  </button>
-                )}
-
-                <button
-                  onClick={() => {
-                    sounds.playCardFlip();
-                    setPreviewGame(spotlightGame);
-                  }}
-                  className="px-4 py-3.5 rounded-2xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/15 text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-all"
-                >
-                  <Info className="w-4 h-4" />
-                  Activity Details
-                </button>
-              </div>
-            </div>
-
-            {/* Right Interactive Box Art Showcase Card */}
-            <div className="w-full sm:w-80 lg:w-96 shrink-0 flex flex-col gap-3">
-              <SnesBoxArt game={spotlightGame} size="hero" />
-
-              {/* Redesigned Carousel Navigation & Timer HUD */}
-              <div className="w-full flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-2xl bg-slate-950/80 border border-white/15 backdrop-blur-md px-3 shadow-xl">
-                {/* Back / Prev Button */}
-                <button
-                  onClick={goToPrevSpotlight}
-                  title="Previous featured activity"
-                  aria-label="Previous featured activity"
-                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {/* Progress Indicators for all slides */}
-                <div className="flex items-center gap-2">
-                  {spotlightGames.map((game, idx) => {
-                    const isActive = idx === spotlightIndex;
-                    return (
-                      <button
-                        key={game.id}
-                        onClick={() => goToSpotlight(idx)}
-                        title={game.shortTitle}
-                        aria-label={`Show ${game.shortTitle}`}
-                        aria-current={isActive}
-                        className="p-1 cursor-pointer group flex items-center"
-                      >
-                        <span
-                          className={`block rounded-full transition-all duration-300 overflow-hidden ${
-                            isActive
-                              ? 'w-7 sm:w-9 h-2 bg-white/20 ring-1 ring-white/20'
-                              : 'w-2 sm:w-2.5 h-2 bg-white/30 group-hover:bg-white/60'
-                          }`}
-                        >
-                          {isActive ? (
-                            <span
-                              className="block h-full rounded-full transition-[width] duration-100 ease-linear"
-                              style={{
-                                width: `${progress}%`,
-                                backgroundColor: game.cover.accentColor,
-                                boxShadow: `0 0 6px ${game.cover.accentColor}`
-                              }}
-                            />
-                          ) : null}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Next Button */}
-                <button
-                  onClick={goToNextSpotlight}
-                  title="Next featured activity"
-                  aria-label="Next featured activity"
-                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white border border-white/10 flex items-center justify-center cursor-pointer transition-all active:scale-95 hover:scale-105"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-
-                {/* Countdown & Pause/Play Control Badge */}
-                <button
-                  onClick={togglePause}
-                  aria-label={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
-                  title={isPaused ? 'Resume auto-rotation' : 'Pause auto-rotation'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/15 text-slate-300 hover:text-white border border-white/10 transition-all cursor-pointer text-xs"
-                >
-                  {isPaused ? (
-                    <>
-                      <Play className="w-3 h-3 text-amber-300 fill-current" />
-                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Play</span>
-                    </>
-                  ) : isHovered ? (
-                    <>
-                      <Pause className="w-3 h-3 text-amber-300" />
-                      <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Hover</span>
-                    </>
-                  ) : (
-                    <>
-                      <Clock className="w-3 h-3 text-amber-400" />
-                      <span className="text-[11px] font-mono font-bold text-slate-200">{countdownSeconds}s</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <SpotlightHero
+          spotlightGames={spotlightGames}
+          onLaunchGame={onLaunchGame}
+          onOpenRulebook={onOpenRulebook}
+          onPreviewGame={setPreviewGame}
+        />
 
         {/* Filter & Search Bar */}
         <section className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
@@ -778,4 +790,4 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});

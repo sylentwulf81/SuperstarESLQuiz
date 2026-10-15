@@ -41,3 +41,7 @@
 ## 2025-05-28 - Memoization of Question Library Cards and PDF Export Previews
 **Learning:** `ExportPdfModal` was executing string regex formatting (`formatPromptForPrint`), type styling resolution (`getQuestionTypeDisplay`), and answer extraction (`getQuestionAnswer`) for all 60 questions on every UI setting toggle (hints, fold line, page format). `QuestionLibraryPanel` was re-rendering all starter and cloud deck cards (`BankCard`) and re-parsing sample text on every single text input keystroke.
 **Action:** Wrap `ExportPdfModal`, `QuestionLibraryPanel`, and `BankCard` in `React.memo`, memoize processed cheat sheet question items (`cheatSheetItems`) in `useMemo`, and memoize array option calculations (`uniqueCountOptions`) to eliminate redundant O(N) string transformations and VDOM re-renders during modal interactions.
+
+## 2025-05-29 - Isolation of High-Frequency Carousel Timer State to Sub-Components
+**Learning:** Holding auto-rotating carousel timer progress in top-level screen state (e.g., `LauncherScreen`) causes high-frequency state updates (20 updates/second at 50ms ticks) that trigger top-level component re-renders, causing full VDOM tree diffing across all child components (filters, search inputs, activity cards).
+**Action:** Extract high-frequency carousel animation state and timer interval into a dedicated `SpotlightHero` sub-component isolated with `React.memo`. This stops timer updates from re-rendering sibling components and parent pages while keeping smooth progress bar animations.
