@@ -45,3 +45,7 @@
 ## 2025-05-29 - Isolation of High-Frequency Carousel Timer State to Sub-Components
 **Learning:** Holding auto-rotating carousel timer progress in top-level screen state (e.g., `LauncherScreen`) causes high-frequency state updates (20 updates/second at 50ms ticks) that trigger top-level component re-renders, causing full VDOM tree diffing across all child components (filters, search inputs, activity cards).
 **Action:** Extract high-frequency carousel animation state and timer interval into a dedicated `SpotlightHero` sub-component isolated with `React.memo`. This stops timer updates from re-rendering sibling components and parent pages while keeping smooth progress bar animations.
+
+## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
+**Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
+**Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.

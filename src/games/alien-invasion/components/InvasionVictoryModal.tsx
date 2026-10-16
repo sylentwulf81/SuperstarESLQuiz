@@ -15,13 +15,17 @@ interface InvasionVictoryModalProps {
   onExitToLauncher: () => void;
 }
 
-export const InvasionVictoryModal: React.FC<InvasionVictoryModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped in React.memo to prevent unnecessary VDOM re-renders during background animations.
+ */
+export const InvasionVictoryModal: React.FC<InvasionVictoryModalProps> = React.memo(function InvasionVictoryModal({
   teams,
   counts,
   onRestart,
   onClose,
   onExitToLauncher,
-}) => {
+}) {
   useBodyScrollLock();
   const sorted = [...teams].sort((a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0));
   const winner = sorted[0] ?? teams[0];
@@ -152,4 +156,4 @@ export const InvasionVictoryModal: React.FC<InvasionVictoryModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});

@@ -82,7 +82,13 @@ interface CustomizerModalProps {
 type TabMode = 'deck' | 'library';
 type BlockFilter = 'all' | 'filled' | 'empty';
 
-export const CustomizerModal: React.FC<CustomizerModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to prevent unnecessary VDOM re-renders during parent timer / particle state ticks.
+ * 2) Memoized isBlockFilled, filledBlocksCount, and filteredBlocks via useCallback and useMemo
+ *    to avoid re-evaluating linear block array scans on every render pass.
+ */
+export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(function CustomizerModal({
   theme,
   blocks,
   onUpdateBlockQuestion,
@@ -104,7 +110,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   activeBankId,
   activeBankName,
   onActiveBankChange,
-}) => {
+}) {
   useBodyScrollLock();
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
 
@@ -542,20 +548,20 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
   };
 
   // Block metrics for navigator
-  const isBlockFilled = (b: BlockState) => {
+  const isBlockFilled = useCallback((b: BlockState) => {
     const q = b.id === currentBlock.id ? editingQuestion : b.question;
     return Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question');
-  };
+  }, [currentBlock.id, editingQuestion]);
 
   const filledBlocksCount = useMemo(() => {
     return blocks.filter(isBlockFilled).length;
-  }, [blocks, editingQuestion, currentBlock.id]);
+  }, [blocks, isBlockFilled]);
 
   const filteredBlocks = useMemo(() => {
     if (blockFilter === 'filled') return blocks.filter(isBlockFilled);
     if (blockFilter === 'empty') return blocks.filter(b => !isBlockFilled(b));
     return blocks;
-  }, [blocks, blockFilter, editingQuestion, currentBlock.id]);
+  }, [blocks, blockFilter, isBlockFilled]);
 
   const renderTypeSpecificFields = () => {
     if (editingQuestion.type === 'mystery_card') {
@@ -1537,4 +1543,4 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = ({
       </AnimatePresence>
     </div>
   );
-};
+});

@@ -34,7 +34,11 @@ const JA = {
   ],
 };
 
-export const InvasionRulebookModal: React.FC<InvasionRulebookModalProps> = ({ onClose }) => {
+/**
+ * Bolt Performance Optimization:
+ * Wrapped in React.memo to prevent unnecessary VDOM re-renders during background state changes.
+ */
+export const InvasionRulebookModal: React.FC<InvasionRulebookModalProps> = React.memo(function InvasionRulebookModal({ onClose }) {
   useBodyScrollLock();
   const [lang, setLang] = useState<'en' | 'ja'>('en');
   const t = lang === 'ja' ? JA : EN;
@@ -88,4 +92,4 @@ export const InvasionRulebookModal: React.FC<InvasionRulebookModalProps> = ({ on
       </motion.div>
     </div>
   );
-};
+});
