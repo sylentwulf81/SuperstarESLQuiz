@@ -9,12 +9,16 @@ interface InvasionCinematicProps {
   onDone: () => void;
 }
 
-export const InvasionCinematic: React.FC<InvasionCinematicProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrapped in React.memo to avoid wasteful VDOM re-evaluations during active cinematic scene playback or sound state updates.
+ */
+export const InvasionCinematic: React.FC<InvasionCinematicProps> = React.memo(function InvasionCinematic({
   scenes,
   soundEnabled,
   skipLabel = 'SKIP',
   onDone,
-}) => {
+}) {
   const [index, setIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const onDoneRef = useRef(onDone);
@@ -126,4 +130,4 @@ export const InvasionCinematic: React.FC<InvasionCinematicProps> = ({
       </button>
     </div>
   );
-};
+});
