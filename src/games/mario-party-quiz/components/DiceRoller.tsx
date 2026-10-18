@@ -12,14 +12,37 @@ interface DiceRollerProps {
   compact?: boolean;
 }
 
-export const DiceRoller: React.FC<DiceRollerProps> = ({
+const PIPS_BY_NUM: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+const GRID_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+
+const BG_STYLES = {
+  purple: 'bg-gradient-to-b from-purple-950/90 to-indigo-950/90 border-purple-400/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]',
+  red: 'bg-gradient-to-b from-red-950/90 to-amber-950/90 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]',
+  gold: 'bg-gradient-to-b from-amber-950/90 to-yellow-950/90 border-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.3)]',
+};
+
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped in React.memo to prevent unnecessary VDOM re-renders from parent modals or timer ticks.
+ * 2) Hoisted static pips mapping (PIPS_BY_NUM), grid positions (GRID_POSITIONS), and BG_STYLES
+ *    outside render scope to avoid array and object re-allocations on high-frequency interval ticks (65ms).
+ */
+export const DiceRoller: React.FC<DiceRollerProps> = React.memo(function DiceRoller({
   onRollComplete,
   title = 'Roll the 6-Sided Die!',
   subtitle = 'Tap the die to roll and determine your steal amount',
   themeColor = 'purple',
   autoRoll = false,
   compact = false,
-}) => {
+}) {
   const [face, setFace] = useState<number>(1);
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [hasRolled, setHasRolled] = useState<boolean>(false);
@@ -63,28 +86,14 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     };
   }, [autoRoll]);
 
-  // Pip coordinates for faces 1-6 in a 3x3 grid
   const renderPips = (num: number) => {
-    // 3x3 grid positions:
-    // [0, 1, 2]
-    // [3, 4, 5]
-    // [6, 7, 8]
-    const pipsForNum: Record<number, number[]> = {
-      1: [4],
-      2: [0, 8],
-      3: [0, 4, 8],
-      4: [0, 2, 6, 8],
-      5: [0, 2, 4, 6, 8],
-      6: [0, 2, 3, 5, 6, 8],
-    };
-
-    const activePips = pipsForNum[num] || [4];
+    const activePips = PIPS_BY_NUM[num] || PIPS_BY_NUM[1];
 
     return (
       <div className={`grid grid-cols-3 grid-rows-3 pointer-events-none ${
         compact ? 'w-12 h-12 p-1.5' : 'w-16 h-16 sm:w-20 sm:h-20 p-2.5 sm:p-3'
       }`}>
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(pos => {
+        {GRID_POSITIONS.map(pos => {
           const isPip = activePips.includes(pos);
           const isCenter = pos === 4;
           return (
@@ -109,14 +118,10 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     );
   };
 
-  const bgStyles = {
-    purple: 'bg-gradient-to-b from-purple-950/90 to-indigo-950/90 border-purple-400/50 shadow-[0_0_30px_rgba(168,85,247,0.3)]',
-    red: 'bg-gradient-to-b from-red-950/90 to-amber-950/90 border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.3)]',
-    gold: 'bg-gradient-to-b from-amber-950/90 to-yellow-950/90 border-amber-400/50 shadow-[0_0_30px_rgba(245,158,11,0.3)]',
-  }[themeColor];
+  const bgStyle = BG_STYLES[themeColor];
 
   return (
-    <div className={`rounded-3xl border ${bgStyles} flex flex-col items-center text-center ${
+    <div className={`rounded-3xl border ${bgStyle} flex flex-col items-center text-center ${
       compact ? 'p-2.5 gap-2 w-full' : 'p-4 sm:p-5 gap-3.5'
     }`}>
       <div>
@@ -203,4 +208,4 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
     </div>
   );
-};
+});

@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Hoisting Static Data Structures in High-Frequency Animation Components
+**Learning:** Components with active timers like `DiceRoller` (updating `face` state every 65ms) re-created inline pip dictionaries, 9-element grid arrays, and background style maps on every animation tick, causing CPU overhead and garbage collection pressure during rolls.
+**Action:** Wrap animation overlay components (`DiceRoller`, `BlueShellSkipOverlay`, `InvasionCinematic`) in `React.memo` and hoist static mapping dictionaries (`PIPS_BY_NUM`, `GRID_POSITIONS`, `BG_STYLES`) outside render functions to eliminate object re-allocations on every tick.
