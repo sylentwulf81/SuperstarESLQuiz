@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Hoisting Static SVG Ray, Star, and Pine Arrays Outside Render Scope
+**Learning:** Decorative top-level SVG background components like `ThemedBackdrop` were executing 19–22 dynamic array instantiations per render pass (such as `Array.from({ length: 18 })`, inner `colors` arrays inside map callbacks, and star/pine tuple arrays) when themes updated or backdrop parent containers re-rendered.
+**Action:** Hoist static arrays (`CLASSIC_RAYS`, `SUMMER_RAYS`, `WINTER_STARS`, `WINTER_PINES`) to module scope outside component render scope, converting repeated inline array allocations into O(1) constant references and reducing GC pressure.
