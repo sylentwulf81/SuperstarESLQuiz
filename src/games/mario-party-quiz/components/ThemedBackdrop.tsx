@@ -5,6 +5,39 @@ interface ThemedBackdropProps {
   theme: GameTheme;
 }
 
+/**
+ * Bolt Performance Optimization:
+ * Static ray, star, and tree data are hoisted outside component render scope.
+ * This eliminates inline array allocations (`Array.from`, `colors` arrays, star/pine tuple arrays)
+ * on every backdrop render pass, reducing CPU overhead and garbage collection pressure.
+ */
+const CLASSIC_COLORS = ['#fb7185', '#38bdf8', '#facc15', '#4ade80', '#c084fc', '#f97316'];
+const CLASSIC_RAYS = Array.from({ length: 18 }, (_, i) => ({
+  id: i,
+  color: CLASSIC_COLORS[i % CLASSIC_COLORS.length],
+  transform: `rotate(${i * 20})`,
+}));
+
+const SUMMER_RAYS = Array.from({ length: 12 }, (_, i) => ({
+  id: i,
+  transform: `rotate(${i * 30})`,
+}));
+
+const WINTER_STARS = [
+  [120, 80, 5], [260, 140, 3], [420, 60, 4], [580, 160, 3],
+  [750, 90, 6], [900, 150, 4], [1080, 70, 5], [1240, 130, 3],
+  [1420, 80, 5], [1680, 110, 4], [1820, 60, 6], [1740, 190, 3],
+  [320, 220, 3], [850, 230, 4], [1350, 210, 3],
+] as const;
+
+const WINTER_PINES = [
+  [180, 720, 0.85],
+  [260, 740, 1.05],
+  [350, 715, 0.75],
+  [1360, 725, 0.9],
+  [1450, 710, 0.75],
+] as const;
+
 export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: ThemedBackdropProps) {
   if (theme === 'classic') {
     return (
@@ -29,18 +62,15 @@ export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: Them
           </defs>
           <rect width="1920" height="1080" fill="url(#classicSky)" />
           <g transform="translate(960, 540)" opacity="0.85">
-            {Array.from({ length: 18 }).map((_, i) => {
-              const colors = ['#fb7185', '#38bdf8', '#facc15', '#4ade80', '#c084fc', '#f97316'];
-              return (
-                <polygon
-                  key={i}
-                  points="0,0 -90,-720 90,-720"
-                  fill={colors[i % colors.length]}
-                  opacity="0.22"
-                  transform={`rotate(${i * 20})`}
-                />
-              );
-            })}
+            {CLASSIC_RAYS.map(ray => (
+              <polygon
+                key={ray.id}
+                points="0,0 -90,-720 90,-720"
+                fill={ray.color}
+                opacity="0.22"
+                transform={ray.transform}
+              />
+            ))}
             <circle cx="0" cy="0" r="280" fill="url(#classicBurst)" />
           </g>
         </svg>
@@ -268,12 +298,12 @@ export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: Them
 
           {/* Sun Rays */}
           <g opacity="0.3" transform="translate(1550, 180)">
-            {Array.from({ length: 12 }).map((_, i) => (
+            {SUMMER_RAYS.map(ray => (
               <polygon
-                key={i}
+                key={ray.id}
                 points="0,0 -80,-800 80,-800"
                 fill="#fff9c4"
-                transform={`rotate(${i * 30})`}
+                transform={ray.transform}
               />
             ))}
           </g>
@@ -526,12 +556,7 @@ export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: Them
         {/* Twinkling Nintendo Stars */}
         <g fill="#ffffff" opacity="0.85">
           {/* Classic 4-point stars */}
-          {[
-            [120, 80, 5], [260, 140, 3], [420, 60, 4], [580, 160, 3],
-            [750, 90, 6], [900, 150, 4], [1080, 70, 5], [1240, 130, 3],
-            [1420, 80, 5], [1680, 110, 4], [1820, 60, 6], [1740, 190, 3],
-            [320, 220, 3], [850, 230, 4], [1350, 210, 3],
-          ].map(([x, y, r], idx) => (
+          {WINTER_STARS.map(([x, y, r], idx) => (
             <g key={idx} transform={`translate(${x}, ${y})`}>
               <circle cx="0" cy="0" r={r} />
               <line x1={-r * 2} y1="0" x2={r * 2} y2="0" stroke="#ffffff" strokeWidth="1" />
@@ -588,13 +613,7 @@ export const ThemedBackdrop = React.memo(function ThemedBackdrop({ theme }: Them
         </g>
 
         {/* Midground Snow-dusted Pine Forest Grouping (Left) */}
-        {[
-          [180, 720, 0.85],
-          [260, 740, 1.05],
-          [350, 715, 0.75],
-          [1360, 725, 0.9],
-          [1450, 710, 0.75],
-        ].map(([x, y, s], idx) => (
+        {WINTER_PINES.map(([x, y, s], idx) => (
           <g key={idx} transform={`translate(${x}, ${y}) scale(${s})`}>
             {/* Trunk */}
             <rect x="-8" y="20" width="16" height="50" fill="url(#pineWood)" rx="4" />
