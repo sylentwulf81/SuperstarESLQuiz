@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import { promptWords, toggleMarkedWord, legacySlashesToMarks } from '@/shared/markedPrompt';
 import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 import { sounds } from '@/shared/utils/sound';
@@ -8,9 +9,14 @@ interface PromptMarkFieldProps {
   onEnter?: () => void;
 }
 
-export function PromptMarkField({ value, onChange, onEnter }: PromptMarkFieldProps) {
-  const shown = legacySlashesToMarks(value);
-  const words = promptWords(shown);
+/**
+ * Bolt Performance Optimization:
+ * Wrap PromptMarkField in React.memo and memoize legacySlashesToMarks / promptWords parsing
+ * using useMemo to eliminate redundant string transformations during modal state passes.
+ */
+export const PromptMarkField = React.memo(function PromptMarkField({ value, onChange, onEnter }: PromptMarkFieldProps) {
+  const shown = useMemo(() => legacySlashesToMarks(value), [value]);
+  const words = useMemo(() => promptWords(shown), [shown]);
 
   return (
     <div>
@@ -58,4 +64,4 @@ export function PromptMarkField({ value, onChange, onEnter }: PromptMarkFieldPro
       </div>
     </div>
   );
-}
+});
