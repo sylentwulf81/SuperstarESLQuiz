@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of Interactive Leaf Components & Prompt Parsing
+**Learning:** Interactive leaf components (`DiceRoller`, `InkedPayoutReveal`, `BlueShellSkipOverlay`, `InvasionCinematic`, `PromptMarkField`) with internal interval/timer animation states or string parsing functions were re-evaluating on every parent state tick, causing cascading VDOM diffs and redundant string/word array parsing.
+**Action:** Wrap `DiceRoller`, `InkedPayoutReveal`, `BlueShellSkipOverlay`, `InvasionCinematic`, and `PromptMarkField` in `React.memo`, and memoize prompt text and word transformations (`legacySlashesToMarks`, `promptWords`) in `PromptMarkField` using `useMemo` to eliminate unnecessary VDOM re-evaluations and string parsing overhead.

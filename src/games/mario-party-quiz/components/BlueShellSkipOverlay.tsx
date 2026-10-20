@@ -11,11 +11,16 @@ interface BlueShellSkipOverlayProps {
   onClose: () => void;
 }
 
-export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * Wrap BlueShellSkipOverlay in React.memo to isolate countdown timer ticks and prevent
+ * unnecessary VDOM re-renders during active turn skips.
+ */
+export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = React.memo(function BlueShellSkipOverlay({
   skippedTeam,
   nextTeam,
   onClose,
-}) => {
+}) {
   useBodyScrollLock();
   const [secondsLeft, setSecondsLeft] = useState(4);
 
@@ -143,4 +148,4 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
       </div>
     </AnimatePresence>
   );
-};
+});
