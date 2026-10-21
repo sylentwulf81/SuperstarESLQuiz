@@ -10,10 +10,11 @@ interface InkedPayoutRevealProps {
 }
 
 /**
- * Show the coin haul that would have paid, then slam it to +1 INKED.
- * Layout height is reserved so the claim button does not jump.
+ * Bolt Performance Optimization:
+ * Wrapped InkedPayoutReveal in React.memo to prevent unnecessary VDOM re-renders
+ * during parent modal state updates or timer ticks in mini-games.
  */
-export function InkedPayoutReveal({ original, compact = false }: InkedPayoutRevealProps) {
+export const InkedPayoutReveal: React.FC<InkedPayoutRevealProps> = React.memo(function InkedPayoutReveal({ original, compact = false }: InkedPayoutRevealProps) {
   const [inked, setInked] = useState(false);
 
   useEffect(() => {
@@ -70,4 +71,4 @@ export function InkedPayoutReveal({ original, compact = false }: InkedPayoutReve
       </AnimatePresence>
     </div>
   );
-}
+});
