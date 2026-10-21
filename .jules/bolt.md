@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of Unmemoized Shared Header & Mini-Game Subcomponents
+**Learning:** Shared header and mini-game subcomponents (`AccountMenu`, `DiceRoller`, `InkedPayoutReveal`) rendered across top-level screens and reward modals were unmemoized, causing full component VDOM re-evaluations on every timer tick, state update, or search input keystroke.
+**Action:** Wrap `AccountMenu`, `DiceRoller`, and `InkedPayoutReveal` in `React.memo` to prevent wasteful VDOM re-evaluations during parent state updates across `LauncherScreen`, `HeaderNav`, `InvasionHeader`, and mini-game modals.
