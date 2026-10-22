@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Calculator, Minus, Plus, Users, X } from 'lucide-react';
 import { GameTheme } from '@/shared/types';
@@ -49,11 +49,19 @@ interface TeamCalculatorModalProps {
   onClose: () => void;
 }
 
-export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped TeamCalculatorModal in React.memo to prevent unnecessary modal VDOM re-renders
+ *    when parent theme/ambient particles or timer ticks occur while open.
+ * 2) Memoized `sizes` and `groupSummaryText` using useMemo to convert repetitive array filtering,
+ *    sorting, and set operations on every render into O(1) cached computation updates.
+ * 3) Wrapped event callbacks in useCallback to maintain reference stability.
+ */
+export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = React.memo(function TeamCalculatorModal({
   theme,
   suggestedGroups,
   onClose,
-}) => {
+}) {
   useBodyScrollLock();
   const [students, setStudents] = useState(loadClassSize);
   const [groups, setGroups] = useState(() =>
@@ -64,13 +72,24 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
     persistClassSize(students);
   }, [students]);
 
-  const sizes = splitGroups(students, groups);
-  const unique = [...new Set(sizes)];
+  const sizes = useMemo(() => splitGroups(students, groups), [students, groups]);
 
-  const bumpStudents = (delta: number) => {
+  const groupSummaryText = useMemo(() => {
+    const unique = Array.from(new Set(sizes)).sort((a: number, b: number) => b - a);
+    return unique
+      .map(n => `${sizes.filter(s => s === n).length}×${n}`)
+      .join('  ·  ');
+  }, [sizes]);
+
+  const bumpStudents = useCallback((delta: number) => {
     sounds.playPop();
     setStudents(n => clamp(n + delta, MIN_STUDENTS, MAX_STUDENTS));
-  };
+  }, []);
+
+  const handleClose = useCallback(() => {
+    sounds.playClick();
+    onClose();
+  }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 bg-slate-950/82">
@@ -89,10 +108,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
           </h2>
           <button
             type="button"
-            onClick={() => {
-              sounds.playClick();
-              onClose();
-            }}
+            onClick={handleClose}
             className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
             aria-label="Close"
           >
@@ -192,15 +208,11 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
               })}
             </div>
             <p className="mt-3 h-7 text-center font-mario text-lg text-amber-200 leading-7">
-              {unique
-                .slice()
-                .sort((a, b) => b - a)
-                .map(n => `${sizes.filter(s => s === n).length}×${n}`)
-                .join('  ·  ')}
+              {groupSummaryText}
             </p>
           </div>
         </div>
       </motion.div>
     </div>
   );
-};
+});
