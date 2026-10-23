@@ -131,7 +131,35 @@ export function MarioPartyQuiz({
   const openedBlocksCount = openedBlockCount(state);
   const boardCleared = isBoardCleared(state);
 
-  const persistQuestions = (updatedBlocks: typeof blocks) => {
+  const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_id_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const [activeBankName, setActiveBankName] = useState<string | undefined>(() => {
+    try {
+      return localStorage.getItem(`mp_active_bank_name_${theme}`) || undefined;
+    } catch {
+      return undefined;
+    }
+  });
+
+  const handleActiveBankChange = useCallback((bankId?: string, bankName?: string) => {
+    setActiveBankId(bankId);
+    setActiveBankName(bankName);
+    try {
+      if (bankId) localStorage.setItem(`mp_active_bank_id_${theme}`, bankId);
+      else localStorage.removeItem(`mp_active_bank_id_${theme}`);
+      if (bankName) localStorage.setItem(`mp_active_bank_name_${theme}`, bankName);
+      else localStorage.removeItem(`mp_active_bank_name_${theme}`);
+    } catch {
+      // storage unavailable
+    }
+  }, [theme]);
+
+  const persistQuestions = useCallback((updatedBlocks: typeof blocks) => {
     const rawQuestions = updatedBlocks.map(b => b.question);
     try {
       localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(rawQuestions));
@@ -141,31 +169,31 @@ export function MarioPartyQuiz({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, rawQuestions).catch(() => {});
     }
-  };
+  }, [theme, isLoggedIn, user, saveQuestionsCloud]);
 
-  const handleStartGame = (configuredTeams: Team[]) => {
+  const handleStartGame = useCallback((configuredTeams: Team[]) => {
     dispatch({
       type: 'START',
       teams: configuredTeams,
       blocks: createGameBlocks(theme, undefined, true),
     });
-  };
+  }, [dispatch, theme]);
 
-  const handleUpdateBlockQuestion = (blockId: number, updatedQuestion: GameQuestion) => {
+  const handleUpdateBlockQuestion = useCallback((blockId: number, updatedQuestion: GameQuestion) => {
     dispatch({ type: 'UPDATE_QUESTION', blockId, question: updatedQuestion });
     const sanitized: GameQuestion = {
       ...updatedQuestion,
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(1, Number(updatedQuestion.rewardCoins) || 1),
     };
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
-  };
+  }, [dispatch, persistQuestions, blocks]);
 
-  const handleReorderBlocks = (newBlocks: BlockState[]) => {
+  const handleReorderBlocks = useCallback((newBlocks: BlockState[]) => {
     dispatch({ type: 'SET_BLOCKS', blocks: newBlocks });
     persistQuestions(newBlocks);
-  };
+  }, [dispatch, persistQuestions]);
 
-  const handleResetAllQuestions = () => {
+  const handleResetAllQuestions = useCallback(() => {
     handleActiveBankChange(undefined, undefined);
     try {
       localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
@@ -181,9 +209,9 @@ export function MarioPartyQuiz({
     });
     setLessonGoal('');
     persistPartyLessonGoal(theme, '');
-  };
+  }, [handleActiveBankChange, theme, dispatch]);
 
-  const handleResizeBlocks = (newCount: number) => {
+  const handleResizeBlocks = useCallback((newCount: number) => {
     const rawQuestions = blocks.map(b => b.question);
     const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
     dispatch({
@@ -192,9 +220,9 @@ export function MarioPartyQuiz({
       toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
     });
     persistQuestions(resizedBlocks);
-  };
+  }, [blocks, theme, dispatch, persistQuestions]);
 
-  const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
+  const handleCreateBlankDeck = useCallback((count?: number, defaultType: QuestionType = 'open_trivia') => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
     const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => {
@@ -244,50 +272,22 @@ export function MarioPartyQuiz({
     setLessonGoal('');
     persistPartyLessonGoal(theme, '');
     persistQuestions(newBlocks);
-  };
+  }, [handleActiveBankChange, blocks.length, theme, dispatch, persistQuestions]);
 
-  const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
-    try {
-      return localStorage.getItem(`mp_active_bank_id_${theme}`) || undefined;
-    } catch {
-      return undefined;
-    }
-  });
-  const [activeBankName, setActiveBankName] = useState<string | undefined>(() => {
-    try {
-      return localStorage.getItem(`mp_active_bank_name_${theme}`) || undefined;
-    } catch {
-      return undefined;
-    }
-  });
-
-  const handleActiveBankChange = useCallback((bankId?: string, bankName?: string) => {
-    setActiveBankId(bankId);
-    setActiveBankName(bankName);
-    try {
-      if (bankId) localStorage.setItem(`mp_active_bank_id_${theme}`, bankId);
-      else localStorage.removeItem(`mp_active_bank_id_${theme}`);
-      if (bankName) localStorage.setItem(`mp_active_bank_name_${theme}`, bankName);
-      else localStorage.removeItem(`mp_active_bank_name_${theme}`);
-    } catch {
-      // storage unavailable
-    }
-  }, [theme]);
-
-  const handleLessonGoalChange = (goal: string) => {
+  const handleLessonGoalChange = useCallback((goal: string) => {
     setLessonGoal(goal);
     persistPartyLessonGoal(theme, goal);
-  };
+  }, [theme]);
 
-  const commitLessonGoal = (goal: string) => {
+  const commitLessonGoal = useCallback((goal: string) => {
     setLessonGoal(goal);
     persistPartyLessonGoal(theme, goal);
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal: goal }).catch(() => {});
     }
-  };
+  }, [theme, isLoggedIn, user, saveQuestionsCloud, blocks]);
 
-  const handleApplyQuestionBank = (questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
+  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
     const nextGoal = goal.trim();
     const next = createGameBlocks(theme, questions);
@@ -302,9 +302,9 @@ export function MarioPartyQuiz({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
     }
-  };
+  }, [handleActiveBankChange, theme, dispatch, isLoggedIn, saveQuestionsCloud, user]);
 
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
       return;
@@ -314,9 +314,9 @@ export function MarioPartyQuiz({
     showToast(success
       ? `☁️ All ${rawQuestions.length} questions successfully backed up to Firestore!`
       : '⚠️ Could not sync to Firestore. Check connection.');
-  };
+  }, [isLoggedIn, blocks, saveQuestionsCloud, theme, lessonGoal, showToast]);
 
-  const handleManualLoad = async () => {
+  const handleManualLoad = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to load your cloud questions.');
       return;
@@ -333,9 +333,9 @@ export function MarioPartyQuiz({
     } else {
       showToast(`ℹ️ No custom questions found in Firestore for ${theme} theme.`);
     }
-  };
+  }, [isLoggedIn, loadQuestionsCloud, theme, dispatch, persistQuestions, showToast]);
 
-  const handleRewardCardSelected = (
+  const handleRewardCardSelected = useCallback((
     card: RewardCard,
     targetTeamIdOrOptions?: string | RewardCardActionOptions,
     shouldAdvanceTurn: boolean = true
@@ -344,7 +344,7 @@ export function MarioPartyQuiz({
       ? { targetTeamId: targetTeamIdOrOptions }
       : (targetTeamIdOrOptions || {});
     dispatch({ type: 'RESOLVE_CARD', card, options, shouldAdvanceTurn });
-  };
+  }, [dispatch]);
 
   // Bolt Performance Optimization: Memoize selected block lookup to avoid executing
   // linear Array.find() scans over blocks (60 items) on every unrelated render pass or tick.
