@@ -159,7 +159,7 @@ export function MarioBlastClassic({
 
   const selectedQuestion = selectedBlock?.question;
 
-  const persistQuestions = (updatedBlocks: typeof blocks) => {
+  const persistQuestions = useCallback((updatedBlocks: typeof blocks) => {
     const rawQuestions = updatedBlocks.map(b => b.question);
     try {
       localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(rawQuestions));
@@ -169,11 +169,11 @@ export function MarioBlastClassic({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, rawQuestions, { lessonGoal }).catch(() => {});
     }
-  };
+  }, [isLoggedIn, user, theme, lessonGoal, saveQuestionsCloud]);
 
-  const handleStartGame = (configuredTeams: Team[]) => {
+  const handleStartGame = useCallback((configuredTeams: Team[]) => {
     dispatch({ type: 'START', teams: configuredTeams, blocks: createGameBlocks(theme, undefined, true) });
-  };
+  }, [dispatch, theme]);
 
   const handleToggleTestGame = useCallback(() => {
     const next = !testMode;
@@ -181,28 +181,28 @@ export function MarioBlastClassic({
     dispatch({ type: 'SET_TEST_MODE', on: next });
   }, [dispatch, testMode]);
 
-  const handleLessonGoalChange = (goal: string) => {
+  const handleLessonGoalChange = useCallback((goal: string) => {
     setLessonGoal(goal);
     persistClassicLessonGoal(goal);
-  };
+  }, []);
 
-  const commitLessonGoal = (goal: string) => {
+  const commitLessonGoal = useCallback((goal: string) => {
     const next = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
     setLessonGoal(next);
     persistClassicLessonGoal(next);
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal: next }).catch(() => {});
     }
-  };
+  }, [isLoggedIn, user, saveQuestionsCloud, theme, blocks]);
 
-  const handleUpdateBlockQuestion = (blockId: number, updatedQuestion: GameQuestion) => {
+  const handleUpdateBlockQuestion = useCallback((blockId: number, updatedQuestion: GameQuestion) => {
     dispatch({ type: 'UPDATE_QUESTION', blockId, question: updatedQuestion });
     const sanitized: GameQuestion = {
       ...updatedQuestion,
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(0, Number(updatedQuestion.rewardCoins) || 0),
     };
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
-  };
+  }, [dispatch, persistQuestions, blocks]);
 
   const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
     try {
@@ -232,7 +232,7 @@ export function MarioBlastClassic({
     }
   }, [theme]);
 
-  const handleResetAllQuestions = () => {
+  const handleResetAllQuestions = useCallback(() => {
     handleActiveBankChange(undefined, undefined);
     try {
       localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
@@ -246,9 +246,9 @@ export function MarioBlastClassic({
       toast: `🔄 Restored the default Have You Ever lesson (${defaultBlocks.length} prompts)!`,
     });
     setLessonGoal(resetClassicLessonGoal());
-  };
+  }, [handleActiveBankChange, theme, dispatch]);
 
-  const handleResizeBlocks = (newCount: number) => {
+  const handleResizeBlocks = useCallback((newCount: number) => {
     const rawQuestions = blocks.map(b => b.question);
     const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
     dispatch({
@@ -257,9 +257,9 @@ export function MarioBlastClassic({
       toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
     });
     persistQuestions(resizedBlocks);
-  };
+  }, [blocks, theme, dispatch, persistQuestions]);
 
-  const handleCreateBlankDeck = (count?: number) => {
+  const handleCreateBlankDeck = useCallback((count?: number) => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
     const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
@@ -281,7 +281,7 @@ export function MarioBlastClassic({
     setLessonGoal('');
     persistClassicLessonGoal('');
     persistQuestions(newBlocks);
-  };
+  }, [handleActiveBankChange, blocks.length, theme, dispatch, persistQuestions]);
 
   const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
