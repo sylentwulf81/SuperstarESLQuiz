@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of AccountMenu & Module Hoisting of Backdrop SVG Rays
+**Learning:** `AccountMenu` was re-rendering and re-evaluating avatar initials logic whenever parent headers (`HeaderNav`, `LauncherScreen`, `CustomizerModal`) updated. Simultaneously, `ThemedBackdrop` was instantiating inline `Array.from()` array objects on every backdrop render pass for SVG background sunbursts and star fields.
+**Action:** Wrap `AccountMenu` in `React.memo` and hoist backdrop ray and star array definitions (`CLASSIC_RAYS`, `CLASSIC_COLORS`, `SUMMER_RAYS`, `WINTER_STARS`, `WINTER_PINES`) outside render scope to eliminate redundant heap allocations and prevent header VDOM re-renders.

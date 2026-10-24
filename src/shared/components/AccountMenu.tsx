@@ -9,7 +9,12 @@ interface AccountMenuProps {
   onManualLoad?: () => void;
 }
 
-export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManualLoad }) => {
+/**
+ * Bolt Performance Optimization:
+ * Wrapped AccountMenu in React.memo to prevent unnecessary VDOM re-renders
+ * when parent headers (LauncherScreen, HeaderNav, CustomizerModal) update on timer ticks or state changes.
+ */
+export const AccountMenu: React.FC<AccountMenuProps> = React.memo(function AccountMenu({ onManualSync, onManualLoad }) {
   const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -262,4 +267,4 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
       )}
     </div>
   );
-};
+});
