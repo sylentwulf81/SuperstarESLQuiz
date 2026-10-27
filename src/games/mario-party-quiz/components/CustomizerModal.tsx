@@ -753,7 +753,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="relative w-full max-w-5xl h-[94vh] md:h-[88vh] min-h-[580px] max-h-[880px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
+        className="relative w-full max-w-7xl xl:max-w-[1700px] h-[92vh] max-h-[920px] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
       >
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-500 opacity-90 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />

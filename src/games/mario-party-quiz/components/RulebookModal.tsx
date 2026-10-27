@@ -182,7 +182,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }}
-        className="relative w-full max-w-5xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh]"
+        className="relative w-full max-w-6xl xl:max-w-7xl bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[94vh]"
       >
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-orange-500 opacity-90 shadow-[0_0_15px_rgba(250,204,21,0.5)]" />

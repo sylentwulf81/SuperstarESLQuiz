@@ -73,7 +73,7 @@ export const SuperstarModal = React.memo(function SuperstarModal({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.8, opacity: 0 }}
-        className="relative w-full max-w-4xl max-h-[94vh] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-y-auto my-auto text-center"
+        className="relative w-full max-w-6xl xl:max-w-7xl max-h-[94vh] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-y-auto my-auto text-center"
       >
         {/* Ambient Top Glow Line */}
         <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 opacity-90 shadow-[0_0_20px_rgba(250,204,21,0.6)] z-20" />

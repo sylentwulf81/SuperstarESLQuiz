@@ -45,7 +45,7 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0 }}
           transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-          className="relative max-w-lg w-full bg-gradient-to-b from-sky-950 via-slate-900 to-indigo-950 border-3 border-sky-400/90 rounded-3xl p-5 sm:p-7 shadow-[0_0_60px_rgba(56,189,248,0.5)] overflow-hidden text-center text-white"
+          className="relative max-w-2xl sm:max-w-3xl w-full bg-gradient-to-b from-sky-950 via-slate-900 to-indigo-950 border-3 border-sky-400/90 rounded-3xl p-5 sm:p-7 shadow-[0_0_60px_rgba(56,189,248,0.5)] overflow-hidden text-center text-white"
         >
           {/* Frost & Snowflake Ambient Ornaments */}
           <div className="absolute top-2 left-3 text-sky-400/30">

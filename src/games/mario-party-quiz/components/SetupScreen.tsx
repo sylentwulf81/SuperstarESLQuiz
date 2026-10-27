@@ -134,7 +134,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
 
   return (
     <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center justify-start sm:justify-center">
-      <div className="w-full max-w-4xl max-h-[min(98dvh,54rem)] flex flex-col bg-slate-900 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0 sm:shrink">
+      <div className="w-full max-w-6xl xl:max-w-7xl 2xl:max-w-[1700px] max-h-[min(96dvh,58rem)] flex flex-col bg-slate-900 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0 sm:shrink">
         <div
           className={`absolute top-0 inset-x-0 h-1.5 transition-colors duration-500 ${THEME_UI[theme].barClass} opacity-90 shrink-0`}
         />

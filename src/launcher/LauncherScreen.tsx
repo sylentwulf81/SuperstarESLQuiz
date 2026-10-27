@@ -521,7 +521,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-5 sm:gap-6">
             {filteredGames.map(game => (
               <div
                 key={game.id}
@@ -644,7 +644,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-2xl bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-4xl xl:max-w-5xl bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col max-h-[90vh]"
             >
               {/* Header Box Art Banner */}
               <div className={`p-6 bg-gradient-to-r ${previewGame.cover.heroGradient} flex items-start justify-between gap-4`}>
@@ -683,7 +683,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
               {/* Scrollable Body */}
               <div className="p-6 overflow-y-auto space-y-5 flex-1 text-sm text-slate-300">
                 {/* 16-Bit SNES Box Art Showcase */}
-                <div className="w-full max-w-sm mx-auto">
+                <div className="w-full max-w-md mx-auto">
                   <SnesBoxArt game={previewGame} size="modal" />
                 </div>
 

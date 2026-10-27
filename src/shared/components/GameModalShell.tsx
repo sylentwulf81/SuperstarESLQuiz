@@ -13,7 +13,7 @@ interface GameModalShellProps {
 
 /** One classroom overlay size so card reveals don't jump when inner content changes. */
 export const GAME_MODAL_FRAME =
-  'relative w-[min(96vw,86rem)] h-[min(92dvh,54rem)] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden flex flex-col';
+  'relative w-[min(96vw,104rem)] h-[min(94dvh,60rem)] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden flex flex-col';
 
 export const GameModalShell: React.FC<GameModalShellProps> = ({
   children,
