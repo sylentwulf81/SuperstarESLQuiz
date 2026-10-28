@@ -4,14 +4,16 @@ Classroom arcade launcher plus a siloed **Super Mario Party Quiz** game (Summer 
 
 ## Run locally
 
+This project uses **pnpm** (the version is pinned in `package.json`). Vercel deploys install from `pnpm-lock.yaml`, so add or remove dependencies with pnpm, not npm.
+
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open http://localhost:43123. The front page is the game launcher. Playable box arts: Summer Blast and Winter/Holiday Blast.
 
-`npm run lint` runs `tsc --noEmit`. `npm run build` produces a production bundle.
+`pnpm lint` runs `tsc --noEmit`. `pnpm test` runs the Vitest suite. `pnpm build` produces a production bundle.
 
 ## Layout
 
