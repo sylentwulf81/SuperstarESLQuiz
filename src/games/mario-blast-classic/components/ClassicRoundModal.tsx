@@ -54,11 +54,18 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   const [answerRevealed, setAnswerRevealed] = useState(isRoundOver);
   const [showScrambledClue, setShowScrambledClue] = useState(false);
 
+  const scrambledKey = question.type === 'unscramble'
+    ? `${question.targetWord}_${Array.isArray(question.scrambledLetters) ? question.scrambledLetters.join('') : ''}`
+    : '';
+
+  // Bolt Performance Optimization: Depend on explicit primitive scrambledKey string rather than
+  // the entire question object reference to prevent re-shuffling word letters on unrelated
+  // state updates and avoid redundant array shuffling & allocations.
   const scrambledChars = useMemo(() => {
     if (question.type !== 'unscramble') return [];
     const targetStr = question.targetWord || (Array.isArray(question.scrambledLetters) ? question.scrambledLetters.join('') : '') || '';
     return shuffleWordLetters(targetStr);
-  }, [question]);
+  }, [scrambledKey, question.type]);
 
   const teamsMap = useMemo(() => {
     const map = new Map<string, Team>();
