@@ -125,13 +125,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
           }
           setAnswerRevealed(prev => !prev);
         }}
-        className={`px-4 py-2 rounded-xl font-mario text-sm sm:text-base border inline-flex items-center gap-2 cursor-pointer shadow transition-colors ${
+        className={`px-8 py-3.5 rounded-2xl font-mario text-xl sm:text-2xl border inline-flex items-center gap-2 cursor-pointer shadow transition-colors ${
           answerRevealed
             ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-white/20'
             : 'bg-indigo-700/80 hover:bg-indigo-600 text-white border-indigo-400/40'
         }`}
       >
-        {answerRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-yellow-300" />}
+        {answerRevealed ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6 text-yellow-300" />}
         {answerRevealed ? 'Hide Answer' : 'Reveal Answer'}
       </button>
     </div>
@@ -409,15 +409,15 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 
             {/* Answer Display Section */}
             {question.type === 'multiple_choice' ? (
-              <div className="mt-2.5 sm:mt-3 mx-auto w-full max-w-2xl flex flex-col gap-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full">
+              <div className="mt-4 mx-auto w-full max-w-6xl flex flex-col gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full">
                   {question.options.map((opt, optIdx) => {
                     const isCorrect = optIdx === question.correctIndex;
                     const letter = ['A', 'B', 'C', 'D'][optIdx];
                     return (
                       <div
                         key={optIdx}
-                        className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2.5 font-mario text-xs sm:text-sm md:text-base transition-all text-left min-h-[3.25rem] ${
+                        className={`p-3 sm:p-5 rounded-2xl border-2 flex items-center gap-4 font-mario text-xl sm:text-3xl transition-all text-left min-h-[5rem] sm:min-h-[7rem] ${
                           answerRevealed
                             ? isCorrect
                               ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
@@ -426,13 +426,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         }`}
                       >
                         <span
-                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                          className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center font-black text-xl sm:text-3xl shrink-0 ${
                             answerRevealed && isCorrect
                               ? 'bg-white text-emerald-900 shadow-md'
                               : 'bg-black/50 text-yellow-300 border border-white/20'
                           }`}
                         >
-                          {answerRevealed && isCorrect ? <Check className="w-4 h-4 stroke-[3]" /> : letter}
+                          {answerRevealed && isCorrect ? <Check className="w-6 h-6 sm:w-8 sm:h-8 stroke-[3]" /> : letter}
                         </span>
                         <span className="break-words leading-snug flex-1">{opt}</span>
                       </div>
@@ -442,7 +442,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 
                 {answerRevealed && (
                   <div className="flex justify-center mt-1 animate-in fade-in duration-200">
-                    <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3.5 py-1.5 rounded-xl border border-white/15 shadow">
+                    <span className="text-base sm:text-2xl text-yellow-200 font-bold bg-black/60 px-5 py-2 rounded-xl border border-white/15 shadow">
                       Correct Answer: {['A', 'B', 'C', 'D'][question.correctIndex]} — {question.options[question.correctIndex]}
                     </span>
                   </div>
@@ -450,10 +450,10 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                 {choiceRevealToggle}
               </div>
             ) : question.type === 'true_false' ? (
-              <div className="mt-3 mx-auto w-full max-w-xl flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full">
+              <div className="mt-4 mx-auto w-full max-w-5xl flex flex-col gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:gap-6 w-full">
                   <div
-                    className={`p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-lg sm:text-2xl transition-all shadow-md ${
+                    className={`p-5 sm:p-8 rounded-3xl border-2 flex items-center justify-center gap-4 font-mario text-3xl sm:text-5xl transition-all shadow-md ${
                       answerRevealed
                         ? question.isTrue
                           ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black scale-102'
@@ -461,11 +461,11 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         : 'bg-slate-800/90 text-white border-white/20'
                     }`}
                   >
-                    <Check className={`w-7 h-7 ${answerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} strokeWidth={3} />
+                    <Check className={`w-10 h-10 sm:w-14 sm:h-14 ${answerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} strokeWidth={3} />
                     <span>TRUE</span>
                   </div>
                   <div
-                    className={`p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-lg sm:text-2xl transition-all shadow-md ${
+                    className={`p-5 sm:p-8 rounded-3xl border-2 flex items-center justify-center gap-4 font-mario text-3xl sm:text-5xl transition-all shadow-md ${
                       answerRevealed
                         ? !question.isTrue
                           ? 'bg-rose-600 border-rose-300 text-white ring-4 ring-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.5)] font-black scale-102'
@@ -473,14 +473,14 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         : 'bg-slate-800/90 text-white border-white/20'
                     }`}
                   >
-                    <X className={`w-7 h-7 ${answerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} strokeWidth={3} />
+                    <X className={`w-10 h-10 sm:w-14 sm:h-14 ${answerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} strokeWidth={3} />
                     <span>FALSE</span>
                   </div>
                 </div>
 
                 {answerRevealed && question.explanation && (
                   <div className="flex justify-center mt-1 animate-in fade-in duration-200">
-                    <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3.5 py-1.5 rounded-xl border border-white/15 shadow">
+                    <span className="text-base sm:text-2xl text-yellow-200 font-bold bg-black/60 px-5 py-2 rounded-xl border border-white/15 shadow">
                       {question.explanation}
                     </span>
                   </div>
@@ -489,16 +489,16 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               </div>
             ) : answerText && (
               <div
-                className={`relative mt-3 mx-auto w-full max-w-xl min-h-[3.5rem] px-5 rounded-2xl border-2 flex items-center justify-center transition-all ${
+                className={`relative mt-4 mx-auto w-full max-w-4xl min-h-[5rem] px-6 rounded-2xl border-2 flex items-center justify-center transition-all ${
                   answerRevealed
                     ? 'bg-black/85 border-emerald-400/50 py-3 pr-14 shadow-lg'
-                    : 'h-[3.5rem] bg-indigo-700/80 hover:bg-indigo-650 border-indigo-300/50 cursor-pointer shadow-md'
+                    : 'h-[5rem] bg-indigo-700/80 hover:bg-indigo-650 border-indigo-300/50 cursor-pointer shadow-md'
                 }`}
                 onClick={!answerRevealed ? () => { sounds.playCardFlip(); setAnswerRevealed(true); } : undefined}
               >
                 {answerRevealed ? (
                   <>
-                    <p className="font-mario text-xl sm:text-3xl text-emerald-300 leading-snug text-center text-balance break-words w-full">
+                    <p className="font-mario text-3xl sm:text-5xl text-emerald-300 leading-snug text-center text-balance break-words w-full">
                       {answerText}
                     </p>
                     <button
@@ -515,8 +515,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     </button>
                   </>
                 ) : (
-                  <div className="flex items-center justify-center gap-2.5 text-white font-mario text-lg sm:text-xl">
-                    <Eye className="w-5 h-5 text-yellow-300" />
+                  <div className="flex items-center justify-center gap-2.5 text-white font-mario text-2xl sm:text-3xl">
+                    <Eye className="w-7 h-7 text-yellow-300" />
                     <span>Click to Reveal Answer</span>
                   </div>
                 )}
