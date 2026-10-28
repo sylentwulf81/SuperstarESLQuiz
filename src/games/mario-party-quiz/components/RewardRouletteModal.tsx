@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Sparkles, Zap, Ghost, Crown, Flame, Gift, Coins, ShieldAlert,
@@ -404,6 +404,36 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
   // King Boo: Party Quiz steals from each rival; Classic shuffles rival totals
   const [kingBooDieRoll, setKingBooDieRoll] = useState<number | null>(null);
   const [kingBooShuffle, setKingBooShuffle] = useState<Record<string, number> | null>(null);
+  const [kingBooSpin, setKingBooSpin] = useState<Record<string, number> | null>(null);
+  const kingBooSpinRef = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (kingBooSpinRef.current) window.clearInterval(kingBooSpinRef.current);
+  }, []);
+
+  const startKingBooShuffle = () => {
+    if (kingBooSpin) return;
+    const result = shuffleRivalCoinTotals(teams, currentTeam.id);
+    const pool = teams.map(t => t.coins);
+    const spinNumbers = () =>
+      Object.fromEntries(eligibleOpponents.map(o => [o.id, pool[Math.floor(Math.random() * pool.length)] ?? 0]));
+    setKingBooSpin(spinNumbers());
+    sounds.playBoo();
+    let ticks = 0;
+    kingBooSpinRef.current = window.setInterval(() => {
+      ticks++;
+      if (ticks >= 14) {
+        if (kingBooSpinRef.current) window.clearInterval(kingBooSpinRef.current);
+        kingBooSpinRef.current = null;
+        setKingBooSpin(null);
+        setKingBooShuffle(result);
+        sounds.playBoo();
+        return;
+      }
+      setKingBooSpin(spinNumbers());
+      sounds.playShuffle();
+    }, 90);
+  };
 
   // Bowser's Revolution: choose a rival team to swap coin totals with
   const [swapTargetTeamId, setSwapTargetTeamId] = useState<string | null>(null);
@@ -1057,7 +1087,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                           >
                             {eligibleOpponents.map(opp => {
                               const oppChar = CHARACTERS[opp.characterId];
-                              const shown = kingBooShuffle?.[opp.id] ?? opp.coins;
+                              const shown = kingBooSpin?.[opp.id] ?? kingBooShuffle?.[opp.id] ?? opp.coins;
                               const shuffled = kingBooShuffle != null;
                               return (
                                 <div
@@ -1091,14 +1121,12 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                           {kingBooShuffle == null ? (
                             <button
                               type="button"
-                              onClick={() => {
-                                setKingBooShuffle(shuffleRivalCoinTotals(teams, currentTeam.id));
-                                sounds.playBoo();
-                              }}
-                              className="w-full shrink-0 px-4 py-2 sm:py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-base sm:text-lg rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
+                              disabled={kingBooSpin != null}
+                              onClick={startKingBooShuffle}
+                              className="w-full shrink-0 disabled:opacity-60 disabled:cursor-wait px-4 py-2 sm:py-2.5 bg-gradient-to-r from-fuchsia-600 to-purple-600 hover:from-fuchsia-500 hover:to-purple-500 text-white font-mario text-base sm:text-lg rounded-2xl shadow-xl border-2 border-fuchsia-300 flex items-center justify-center gap-2 cursor-pointer hover:brightness-110 active:brightness-95"
                             >
-                              <Shuffle className="w-5 h-5" />
-                              SHUFFLE
+                              <Shuffle className={`w-5 h-5 ${kingBooSpin ? 'animate-spin' : ''}`} />
+                              {kingBooSpin ? 'SHUFFLING...' : 'SHUFFLE'}
                             </button>
                           ) : (
                             <button
