@@ -222,7 +222,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
               <div className="bg-slate-800/80 p-2.5 rounded-xl border border-white/10 text-[11px] text-indigo-200 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Sync all 60 custom questions across any classroom device</span>
+                  <span>Sync your custom questions across any classroom device</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-emerald-400" />

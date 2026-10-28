@@ -351,11 +351,12 @@ export function MarioBlastClassic({
   const handleDeclareWinner = useCallback(() => dispatch({ type: 'DECLARE_SUPERSTAR' }), [dispatch]);
   const handleResetGame = useCallback(() => dispatch({ type: 'RESTART_SETUP' }), [dispatch]);
   const handleShuffleBoard = useCallback(() => {
+    const shuffled = createGameBlocks(theme, undefined, true);
     dispatch({
       type: 'SET_BLOCKS',
-      blocks: createGameBlocks(theme, undefined, true),
+      blocks: shuffled,
       playShuffle: true,
-      toast: '🎲 All 60 prompts reshuffled!',
+      toast: `🎲 All ${shuffled.length} prompts reshuffled!`,
     });
   }, [dispatch]);
   const handleNextTurn = useCallback(() => dispatch({ type: 'PASS_TURN' }), [dispatch]);

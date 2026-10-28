@@ -120,7 +120,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           points: [
             'Open Question Studio from the team setup screen, or tap Studio in the top header / hamburger menu during an activity.',
             'In Question Studio, you can show a 1st-place catch-up note on mystery draws. It stays hidden by default so those draws remain a surprise. Blue Shell and Bowser cards are still banned for the leader.',
-            'You can modify question prompts, answers, images, and coin values for all 60 blocks.',
+            'You can modify question prompts, answers, images, and coin values for every block in the deck.',
             'Log into Google via the top-right Account menu to save your customized questions to the Cloud, making them instantly accessible from any classroom device!',
           ],
           tip: 'Tip: Use the "Shuffle" button to randomize the locations of questions and mystery cards for a fresh experience!',
@@ -130,7 +130,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
           title: '6. Crown the Superstar & Finish',
           icon: 'Trophy',
           points: [
-            'You can click "Superstar!" in the header at ANY time or once all 60 blocks are opened.',
+            'You can click "Superstar!" in the header at ANY time or once every block is opened.',
             'This opens the grand victory ceremony: celebration fanfare music, animated podium rankings, confetti, and complete coin statistics!',
             'You can return to the board at any time or start a new activity.',
           ],
@@ -193,7 +193,7 @@ export const GUIDE_TRANSLATIONS: Record<GuideLanguage, GuideContent> = {
       ],
       winningTitle: 'How to Win',
       winningDesc:
-        'The team with the most coins when the activity concludes (or when all 60 blocks are opened) wins the Superstar Trophy! Click the Superstar button at any time to check final standings.',
+        'The team with the most coins when the activity concludes (or when every block is opened) wins the Superstar Trophy! Click the Superstar button at any time to check final standings.',
     },
     mysteryCards: {
       title: 'Interactive Mystery Cards Deck',

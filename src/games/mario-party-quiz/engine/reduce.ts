@@ -13,7 +13,7 @@ export function reduceTurnBased(state: TurnBasedState, event: TurnBasedEvent): T
       const first = event.teams[0];
       effects.push({
         kind: 'toast',
-        message: `🎲 All 60 questions & mystery blocks shuffled! ${first?.name}'s turn!`,
+        message: `🎲 All ${event.blocks.length} questions & mystery blocks shuffled! ${first?.name}'s turn!`,
       });
       return {
         state: {

@@ -106,6 +106,10 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
       }
       effects.push({ kind: 'sound', sound: 'blockHit' });
       let next = resetClassicRound({ ...state, selectedBlockId: event.blockId });
+      // Mystery Card block: no question, so the picking team is ready to draw (host can still switch)
+      if (block.question.type === 'mystery_card') {
+        next = { ...next, selectedAnsweringTeamId: classicActiveTeam(state)?.id ?? null };
+      }
       const opened = classicOpenedCount(state);
       const slotShell = emptyClassicSlots(classicSlotCount(state.teams.length));
       if (state.testMode) {

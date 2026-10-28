@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star } from 'lucide-react';
 import { GameQuestion, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
@@ -84,6 +84,32 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
       : undefined;
 
   const selectedTeam = selectedTeamId ? teamsMap.get(selectedTeamId) ?? null : null;
+  const isMysteryBlock = question.type === 'mystery_card';
+
+  // One reveal control per question, placed with the answer (choice questions only)
+  const choiceRevealToggle = (
+    <div className="flex justify-center mt-1">
+      <button
+        type="button"
+        onClick={() => {
+          if (answerRevealed) {
+            sounds.playClick();
+          } else {
+            sounds.playCardFlip();
+          }
+          setAnswerRevealed(prev => !prev);
+        }}
+        className={`px-4 py-2 rounded-xl font-mario text-sm sm:text-base border inline-flex items-center gap-2 cursor-pointer shadow transition-colors ${
+          answerRevealed
+            ? 'bg-slate-800 hover:bg-slate-700 text-slate-300 border-white/20'
+            : 'bg-indigo-700/80 hover:bg-indigo-600 text-white border-indigo-400/40'
+        }`}
+      >
+        {answerRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-yellow-300" />}
+        {answerRevealed ? 'Hide Answer' : 'Reveal Answer'}
+      </button>
+    </div>
+  );
 
   return (
     <GameModalShell barColor={pickChar.accentColor} instant>
@@ -226,12 +252,27 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
         <div className="flex-1 min-h-0 flex flex-col p-3 sm:p-5 overflow-y-auto">
           {/* Question Header & Prompt */}
           <div className="text-center px-1 sm:px-4 pb-2 shrink-0">
-            <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
-              {lessonGoal}
-            </p>
-            <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
-              <MarkedPrompt text={question.title} />
-            </h2>
+            {isMysteryBlock ? (
+              <div className="mx-auto max-w-2xl flex flex-col items-center gap-2 py-2">
+                <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario flex items-center gap-3">
+                  <Star className="w-[1em] h-[1em] fill-yellow-300 text-yellow-300" />
+                  MYSTERY CARD BLOCK
+                  <Star className="w-[1em] h-[1em] fill-yellow-300 text-yellow-300" />
+                </h2>
+                <p className="text-sm sm:text-lg text-amber-100 font-semibold">
+                  {question.description?.trim() || `No question this time: ${pickingTeam.name} draws a Mystery Card!`}
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
+                  {lessonGoal}
+                </p>
+                <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
+                  <MarkedPrompt text={question.title} />
+                </h2>
+              </>
+            )}
 
             {/* Unscramble Clue Toggle & Banner */}
             {question.type === 'unscramble' && scrambledChars.length > 0 && (
@@ -322,6 +363,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     </span>
                   </div>
                 )}
+                {choiceRevealToggle}
               </div>
             ) : question.type === 'true_false' ? (
               <div className="mt-3 mx-auto w-full max-w-xl flex flex-col gap-2">
@@ -359,6 +401,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     </span>
                   </div>
                 )}
+                {choiceRevealToggle}
               </div>
             ) : answerText && (
               <div
@@ -484,35 +527,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/10 shrink-0">
-              <div className="flex items-center gap-2">
-                {!answerRevealed ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playCardFlip();
-                      setAnswerRevealed(true);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-700/80 hover:bg-indigo-600 text-white font-mario text-xs sm:text-sm border border-indigo-400/40 inline-flex items-center gap-1.5 cursor-pointer shadow"
-                  >
-                    <Eye className="w-4 h-4 text-yellow-300" />
-                    Reveal Answer
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      setAnswerRevealed(false);
-                    }}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-mario text-xs sm:text-sm border border-white/20 inline-flex items-center gap-1.5 cursor-pointer shadow"
-                  >
-                    <EyeOff className="w-4 h-4" />
-                    Hide Answer
-                  </button>
-                )}
-              </div>
-
+            <div className="flex items-center justify-end mt-3 pt-2 border-t border-white/10 shrink-0">
               {isRoundOver ? (
                 <button
                   type="button"

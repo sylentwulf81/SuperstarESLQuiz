@@ -364,12 +364,15 @@ export function MarioPartyQuiz({
               onDeclareWinner={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
               onResetGame={() => dispatch({ type: 'RESTART_SETUP' })}
               onExitToLauncher={onExitToLauncher}
-              onShuffleBoard={() => dispatch({
-                type: 'SET_BLOCKS',
-                blocks: createGameBlocks(theme, undefined, true),
-                playShuffle: true,
-                toast: '🎲 All 60 board questions & mystery blocks reshuffled!',
-              })}
+              onShuffleBoard={() => {
+                const shuffled = createGameBlocks(theme, undefined, true);
+                dispatch({
+                  type: 'SET_BLOCKS',
+                  blocks: shuffled,
+                  playShuffle: true,
+                  toast: `🎲 All ${shuffled.length} board questions & mystery blocks reshuffled!`,
+                });
+              }}
               onNextTurn={() => dispatch({ type: 'PASS_TURN' })}
               openedCount={openedBlocksCount}
               totalBlocks={blocks.length}
