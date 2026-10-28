@@ -29,7 +29,7 @@ import {
   isBoardCleared,
   TurnBasedEvent,
 } from './engine';
-import { createGameBlocks, TOTAL_BLOCKS } from './createBlocks';
+import { createGameBlocks, getDeckLength, makeBlankQuestion, TOTAL_BLOCKS } from './createBlocks';
 
 export { TOTAL_BLOCKS };
 
@@ -130,6 +130,8 @@ export function MarioPartyQuiz({
   const activeTeam = activeTeamOf(state);
   const openedBlocksCount = openedBlockCount(state);
   const boardCleared = isBoardCleared(state);
+  // Re-read whenever the working deck changes (blocks are persisted alongside)
+  const deckLength = useMemo(() => getDeckLength(theme), [theme, blocks]);
 
   const persistQuestions = (updatedBlocks: typeof blocks) => {
     const rawQuestions = updatedBlocks.map(b => b.question);
@@ -197,44 +199,7 @@ export function MarioPartyQuiz({
   const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
-    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => {
-      const base = {
-        id: i + 1,
-        blockNumber: i + 1,
-        title: '',
-        category: 'grammar' as const,
-        rewardCoins: 1,
-      };
-      if (defaultType === 'multiple_choice') {
-        return {
-          ...base,
-          type: 'multiple_choice' as const,
-          options: ['', '', '', ''],
-          correctIndex: 0,
-        };
-      }
-      if (defaultType === 'true_false') {
-        return {
-          ...base,
-          type: 'true_false' as const,
-          isTrue: true,
-          explanation: '',
-        };
-      }
-      if (defaultType === 'unscramble') {
-        return {
-          ...base,
-          type: 'unscramble' as const,
-          targetWord: '',
-          scrambledLetters: [],
-        };
-      }
-      return {
-        ...base,
-        type: 'open_trivia' as const,
-        answer: '',
-      };
-    });
+    const blankQuestions = Array.from({ length: target }, (_, i) => makeBlankQuestion(i, defaultType));
     const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
     dispatch({
       type: 'SET_BLOCKS',
@@ -381,6 +346,7 @@ export function MarioPartyQuiz({
             onOpenRules={() => setIsRulesModalOpen(true)}
             onOpenStudio={() => setIsCustomizerOpen(true)}
             onBackToLauncher={onExitToLauncher}
+            deckLength={deckLength}
           />
         )}
 

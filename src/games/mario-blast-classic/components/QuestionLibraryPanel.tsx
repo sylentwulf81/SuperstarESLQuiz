@@ -11,6 +11,7 @@ import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { optimizeDataUrl } from '@/shared/utils/imageUtils';
 import { sounds } from '@/shared/utils/sound';
 import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
+import { countTrailingDefaultFiller } from '@/games/mario-party-quiz/createBlocks';
 
 interface QuestionLibraryPanelProps {
   questions: Question[];
@@ -24,7 +25,7 @@ interface QuestionLibraryPanelProps {
   onActiveBankChange?: (bankId?: string, bankName?: string) => void;
 }
 
-type Armed = { id: string; mode: 'load' | 'delete' | 'update' } | null;
+type Armed = { id: string; mode: 'load' | 'delete' | 'update' | 'trim' } | null;
 
 const LOCAL_CUSTOM_BANKS_KEY = 'superstar_local_custom_banks_v1';
 
@@ -39,10 +40,14 @@ export function loadLocalCustomBanks(): CloudQuestionBank[] {
   return [];
 }
 
-export function saveLocalCustomBanks(banks: CloudQuestionBank[]) {
+/** Returns false when the browser refused the write (usually storage quota). */
+export function saveLocalCustomBanks(banks: CloudQuestionBank[]): boolean {
   try {
-    localStorage.setItem(LOCAL_CUSTOM_BANKS_KEY, JSON.stringify(banks.slice(0, 25)));
-  } catch {}
+    localStorage.setItem(LOCAL_CUSTOM_BANKS_KEY, JSON.stringify(banks));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -114,16 +119,32 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
+  // Only decks in "Yours" can be updated in place; starter examples are saved as new decks
+  const activeIsMine = Boolean(activeBankId && mine.some(b => b.id === activeBankId));
+
+  // Another deck (not the open one) that already uses the typed name
   const existingMatch = useMemo(() => {
     const trimmed = name.trim().toLowerCase();
     if (!trimmed) return null;
-    return mine.find(b => b.name.trim().toLowerCase() === trimmed) || null;
-  }, [name, mine]);
+    return mine.find(b => b.id !== activeBankId && b.name.trim().toLowerCase() === trimmed) || null;
+  }, [name, mine, activeBankId]);
 
-  const isEditingLoadedBank = Boolean(
-    activeBankId &&
-    (activeBankName?.trim().toLowerCase() === name.trim().toLowerCase() || !name.trim())
+  const isEditingLoadedBank = activeIsMine && (
+    activeBankName?.trim().toLowerCase() === name.trim().toLowerCase() || !name.trim()
   );
+
+  // Typed a new name while a saved deck is open: offer rename instead of only "save as new"
+  const isRenamingLoadedBank = activeIsMine && !isEditingLoadedBank && !existingMatch;
+
+  const handlePrimarySave = () => {
+    if (isEditingLoadedBank || isRenamingLoadedBank) {
+      void handleSave(activeBankId);
+    } else if (existingMatch) {
+      void handleSave(existingMatch.id);
+    } else {
+      void handleSave();
+    }
+  };
 
   const handleSave = async (targetBankId?: string, overrideName?: string) => {
     const rawName = overrideName ?? (name.trim() || activeBankName || '');
@@ -166,48 +187,111 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
       updatedAt: new Date().toISOString(),
     };
 
-    // Always persist to local custom library immediately
+    // Always persist to local custom library immediately. Banks are matched by id only:
+    // two decks may share a name, and saving one must never replace the other.
     const existingLocal = loadLocalCustomBanks();
     const updatedLocal = [
       localBank,
-      ...existingLocal.filter(b => b.id !== localBank.id && b.name.toLowerCase() !== trimmed.toLowerCase()),
-    ].slice(0, 25);
-    saveLocalCustomBanks(updatedLocal);
+      ...existingLocal.filter(b => b.id !== localBank.id),
+    ];
+    const savedLocally = saveLocalCustomBanks(updatedLocal);
 
     let cloudResultBank: CloudQuestionBank | undefined;
+    let cloudError: string | undefined;
     if (isLoggedIn) {
       try {
+        // Same id locally and in the cloud, so the two copies stay one deck
         const result = await saveQuestionBank({
-          id: targetBankId,
+          id: bankId,
           name: trimmed,
           lessonGoal: targetGoal.trim(),
           questions: selectedQuestions,
         });
         if (result.success && result.bank) {
           cloudResultBank = result.bank;
+        } else {
+          cloudError = result.error;
         }
       } catch {
-        // Cloud failed; local copy succeeded
+        cloudError = 'Could not reach the cloud library.';
       }
     }
 
     setBusy(false);
+
+    if (!savedLocally && !cloudResultBank) {
+      toast.error(`Could not save “${trimmed}”`, {
+        description: isLoggedIn
+          ? cloudError || 'Browser storage is full and the cloud save failed.'
+          : 'Browser storage is full (large question images use it up). Sign in to save to the cloud, or remove images.',
+      });
+      return;
+    }
+
     sounds.playSaveCloud();
 
     const activeSaved = cloudResultBank || localBank;
     setMine(prev => [
       activeSaved,
-      ...prev.filter(b => b.id !== activeSaved.id && b.name.toLowerCase() !== activeSaved.name.toLowerCase()),
+      ...prev.filter(b => b.id !== activeSaved.id),
     ]);
     setName(activeSaved.name);
     onActiveBankChange?.(activeSaved.id, activeSaved.name);
     setArmed(null);
 
-    toast.success(
-      isLoggedIn && cloudResultBank
-        ? `Saved “${activeSaved.name}” to Cloud & Local Library!`
-        : `Saved “${activeSaved.name}” to Local Library (${selectedQuestions.length} Qs)!`
-    );
+    if (isLoggedIn && !cloudResultBank) {
+      toast.warning(`Saved “${activeSaved.name}” on this computer only`, {
+        description: cloudError || 'The cloud save failed.',
+      });
+    } else if (!savedLocally) {
+      toast.warning(`Saved “${activeSaved.name}” to the cloud only`, {
+        description: 'Browser storage is full, so this computer has no offline copy.',
+      });
+    } else {
+      toast.success(
+        cloudResultBank
+          ? `Saved “${activeSaved.name}” to Cloud & Local Library!`
+          : `Saved “${activeSaved.name}” to Local Library (${selectedQuestions.length} Qs)!`
+      );
+    }
+  };
+
+  // Remove built-in questions that older builds padded onto the end of a saved deck
+  const handleTrimFiller = async (bank: CloudQuestionBank, fillerCount: number) => {
+    const trimmedBank: CloudQuestionBank = {
+      ...bank,
+      questions: bank.questions.slice(0, bank.questions.length - fillerCount),
+      updatedAt: new Date().toISOString(),
+    };
+    setBusy(true);
+    const savedLocally = saveLocalCustomBanks([
+      trimmedBank,
+      ...loadLocalCustomBanks().filter(b => b.id !== bank.id),
+    ]);
+    let savedToCloud = false;
+    if (isLoggedIn) {
+      try {
+        const result = await saveQuestionBank({
+          id: trimmedBank.id,
+          name: trimmedBank.name,
+          lessonGoal: trimmedBank.lessonGoal,
+          questions: trimmedBank.questions,
+        });
+        savedToCloud = result.success;
+      } catch {}
+    }
+    setBusy(false);
+    setArmed(null);
+    if (!savedLocally && !savedToCloud) {
+      toast.error(`Could not update “${bank.name}”`);
+      return;
+    }
+    setMine(prev => prev.map(b => (b.id === bank.id ? trimmedBank : b)));
+    toast.success(`Removed ${fillerCount} filler questions from “${bank.name}”`, {
+      description: activeBankId === bank.id
+        ? `It now has ${trimmedBank.questions.length} questions. Load it again to refresh the open deck.`
+        : `It now has ${trimmedBank.questions.length} questions.`,
+    });
   };
 
   const handleDelete = async (bankId: string) => {
@@ -417,13 +501,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault();
-                if (isEditingLoadedBank && activeBankId) {
-                  void handleSave(activeBankId);
-                } else if (existingMatch) {
-                  void handleSave(existingMatch.id);
-                } else {
-                  void handleSave();
-                }
+                handlePrimarySave();
               }
             }}
             className="flex-1 min-w-[14rem] bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-400/50"
@@ -459,6 +537,31 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
                 onClick={() => void handleSave(undefined, name.trim() ? (name.trim() === activeBankName ? `${name.trim()} (New)` : name.trim()) : undefined)}
                 className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold border border-indigo-400 cursor-pointer disabled:opacity-60 transition-all shadow flex items-center gap-1.5"
                 title="Save as a brand new deck in your library (does NOT overwrite)"
+              >
+                <PlusCircle className="w-3.5 h-3.5 text-yellow-300" />
+                <span>Save as New Deck</span>
+              </button>
+            </div>
+          ) : isRenamingLoadedBank ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                id="library-rename-set"
+                type="button"
+                disabled={busy}
+                onClick={() => void handleSave(activeBankId)}
+                className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black border border-emerald-200 cursor-pointer disabled:opacity-60 transition-all shadow-sm flex items-center gap-1.5"
+                title={`Rename "${activeBankName}" to "${name.trim()}" and save the open questions into it`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Rename & Update “{activeBankName}”</span>
+              </button>
+              <button
+                id="library-save-new"
+                type="button"
+                disabled={busy}
+                onClick={() => void handleSave()}
+                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold border border-indigo-400 cursor-pointer disabled:opacity-60 transition-all shadow flex items-center gap-1.5"
+                title={`Save as a brand new deck named "${name.trim()}" (does NOT change "${activeBankName}")`}
               >
                 <PlusCircle className="w-3.5 h-3.5 text-yellow-300" />
                 <span>Save as New Deck</span>
@@ -675,6 +778,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
                   onUpdate={(targetId, targetName) => {
                     void handleSave(targetId, targetName);
                   }}
+                  onTrimFiller={(fillerCount) => void handleTrimFiller(bank, fillerCount)}
                   onDelete={handleDelete}
                   onExportPdf={(targetBank) => {
                     setExportPdfDeck({
@@ -716,6 +820,7 @@ const BankCard = React.memo(function BankCard({
   onApply,
   onDelete,
   onUpdate,
+  onTrimFiller,
   onExportPdf,
 }: {
   key?: React.Key;
@@ -729,12 +834,18 @@ const BankCard = React.memo(function BankCard({
   onApply: (bank: QuestionBank) => void;
   onDelete?: (id: string) => void;
   onUpdate?: (id: string, name: string) => void;
+  onTrimFiller?: (fillerCount: number) => void;
   onExportPdf?: (bank: QuestionBank) => void;
 }) {
   const sample = bank.questions[0]?.title ?? '';
   const loadArmed = armed?.id === bank.id && armed.mode === 'load';
   const deleteArmed = armed?.id === bank.id && armed.mode === 'delete';
   const updateArmed = armed?.id === bank.id && armed.mode === 'update';
+  const trimArmed = armed?.id === bank.id && armed.mode === 'trim';
+  const fillerCount = useMemo(
+    () => (onTrimFiller ? countTrailingDefaultFiller(bank.questions) : 0),
+    [bank.questions, Boolean(onTrimFiller)]
+  );
 
   return (
     <div
@@ -785,6 +896,34 @@ const BankCard = React.memo(function BankCard({
         </p>
       </button>
 
+      {fillerCount > 0 && (
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-[11px] text-amber-100">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="flex-1 leading-snug">
+            Questions {bank.questions.length - fillerCount + 1}–{bank.questions.length} are built-in examples added by an older version.
+          </span>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              if (!trimArmed) {
+                sounds.playClick();
+                onArm({ id: bank.id, mode: 'trim' });
+                return;
+              }
+              onTrimFiller?.(fillerCount);
+            }}
+            className={`px-2.5 py-1 rounded-lg font-bold border shrink-0 cursor-pointer disabled:opacity-60 ${
+              trimArmed
+                ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200'
+                : 'bg-slate-800 hover:bg-slate-700 text-amber-200 border-white/15'
+            }`}
+          >
+            {trimArmed ? `Remove ${fillerCount}?` : 'Remove'}
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-1.5 mt-auto pt-1">
         {/* Load Button */}
         <button
@@ -829,9 +968,11 @@ const BankCard = React.memo(function BankCard({
                 ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border-amber-200 ring-2 ring-amber-400 font-black'
                 : 'bg-slate-800 hover:bg-slate-700 text-amber-200 border-white/15'
             }`}
-            title="Update this set with your currently open Question Studio questions"
+            title={isActive
+              ? 'Save your open Question Studio questions into this deck'
+              : `Replace this deck's questions with the deck currently open in the Studio`}
           >
-            {updateArmed ? 'Overwrite?' : 'Update'}
+            {updateArmed ? (isActive ? 'Overwrite?' : 'Replace with open deck?') : 'Update'}
           </button>
         )}
 

@@ -53,6 +53,7 @@ import { PromptMarkField } from './PromptMarkField';
 import { QuestionLibraryPanel } from '@/games/mario-blast-classic/components/QuestionLibraryPanel';
 import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
+import { makeBlankQuestion } from '../createBlocks';
 import { DEFAULT_QUESTIONS } from '../data/questions';
 import { SUMMER_QUESTIONS } from '../data/summerQuestions';
 import { HALLOWEEN_QUESTIONS } from '../data/halloweenQuestions';
@@ -143,17 +144,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   const [typeFilter, setTypeFilter] = useState<'all' | QuestionType>('all');
   const [sortByType, setSortByType] = useState<boolean>(false);
 
-  // Deck size & shuffle state synced with localStorage
-  const [totalCount, setTotalCount] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(`mp_block_count_${theme}`);
-      if (saved) {
-        const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= 10 && val <= 60) return val;
-      }
-    } catch {}
-    return blocks.length || 60;
-  });
+  // The open deck owns its size; shuffle preference is synced with localStorage
+  const totalCount = blocks.length;
 
   const [isShuffleEnabled, setIsShuffleEnabled] = useState<boolean>(() => {
     try {
@@ -178,17 +170,6 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
       return next;
     });
   }, [theme]);
-
-  const handleTotalCountChange = useCallback((newCount: number) => {
-    const clamped = Math.max(10, Math.min(60, newCount));
-    setTotalCount(clamped);
-    try {
-      localStorage.setItem(`mp_block_count_${theme}`, String(clamped));
-    } catch {}
-    if (onResizeBlocks) {
-      onResizeBlocks(clamped);
-    }
-  }, [theme, onResizeBlocks]);
 
   const currentBlock = useMemo(() => {
     return blocks.find(b => b.id === selectedBlockId) || blocks[0];
@@ -239,6 +220,55 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
       setSaveStatus('saved');
     }
   }, [onUpdateBlockQuestion, sanitizeQuestion]);
+
+  // When the deck is replaced from outside (library load, new deck), show the new
+  // block's question instead of keeping the previous deck's draft in the editor.
+  useEffect(() => {
+    if (selectedBlockId > blocks.length) {
+      activeBlockIdRef.current = 1;
+      setSelectedBlockId(1);
+      return;
+    }
+    if (isDirtyRef.current) return;
+    const latest = currentBlock.question;
+    if (latest === editingQuestionRef.current) return;
+    const q = { ...latest };
+    setEditingQuestion(q);
+    editingQuestionRef.current = latest;
+  }, [blocks, currentBlock, selectedBlockId]);
+
+  // Grow with blank blocks; shrinking only removes trailing blocks that are still empty
+  const handleTotalCountChange = useCallback((newCount: number) => {
+    const clamped = Math.max(10, Math.min(60, newCount));
+    if (clamped === blocks.length) return;
+    flushSave();
+    const currentQuestions = blocks.map(b => (b.id === selectedBlockId ? sanitizeQuestion(editingQuestionRef.current) : b.question));
+    const dropped = currentQuestions.slice(clamped);
+    if (dropped.some(q => q.type === 'mystery_card' || (q.title && q.title.trim().length > 0))) {
+      toast.error('Those blocks have questions', {
+        description: 'Delete blocks individually to shrink past questions you have written.',
+      });
+      return;
+    }
+    const resizedQuestions = currentQuestions.length > clamped
+      ? currentQuestions.slice(0, clamped)
+      : [...currentQuestions, ...Array.from({ length: clamped - currentQuestions.length }, (_, i) => makeBlankQuestion(currentQuestions.length + i))];
+    const resizedBlocks: BlockState[] = resizedQuestions.map((q, idx) => ({
+      id: idx + 1,
+      isOpened: false,
+      isIncorrectCleared: false,
+      question: { ...q, id: idx + 1, blockNumber: idx + 1 },
+    }));
+    if (onReorderBlocks) {
+      onReorderBlocks(resizedBlocks);
+    } else if (onResizeBlocks) {
+      onResizeBlocks(clamped);
+    }
+    if (selectedBlockId > clamped) {
+      activeBlockIdRef.current = clamped;
+      setSelectedBlockId(clamped);
+    }
+  }, [blocks, selectedBlockId, flushSave, sanitizeQuestion, onReorderBlocks, onResizeBlocks]);
 
   // Push updates with 350ms debounce
   const updateDraftQuestion = useCallback((updater: (prev: GameQuestion) => GameQuestion) => {
@@ -359,15 +389,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
     const targetIdx = blocks.findIndex(b => b.id === afterId);
     const insertIdx = targetIdx !== -1 ? targetIdx + 1 : currentQuestions.length;
 
-    const newBlankQ: GameQuestion = {
-      id: insertIdx + 1,
-      blockNumber: insertIdx + 1,
-      type: 'open_trivia',
-      title: '',
-      answer: '',
-      rewardCoins: 1,
-      category: 'grammar',
-    };
+    const newBlankQ = makeBlankQuestion(insertIdx);
 
     const updatedQuestions = [...currentQuestions];
     updatedQuestions.splice(insertIdx, 0, newBlankQ);
@@ -384,11 +406,9 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
 
     if (onReorderBlocks) {
       onReorderBlocks(reindexedBlocks);
-    } else {
-      reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
-    }
-    if (onResizeBlocks && reindexedBlocks.length !== blocks.length) {
+    } else if (onResizeBlocks) {
       onResizeBlocks(reindexedBlocks.length);
+      reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
     }
 
     const newTargetId = insertIdx + 1;
@@ -429,10 +449,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
 
     if (onReorderBlocks) {
       onReorderBlocks(reindexedBlocks);
-    } else {
+    } else if (onResizeBlocks) {
       reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
-    }
-    if (onResizeBlocks && reindexedBlocks.length !== blocks.length) {
       onResizeBlocks(reindexedBlocks.length);
     }
 
@@ -1220,6 +1238,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
             activeBankName={currentActiveBankName}
             onActiveBankChange={handleActiveBankChange}
             onApply={(bank) => {
+              flushSave();
               handleActiveBankChange(bank.id, bank.name);
               onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name, bank.id);
               setActiveTab('deck');

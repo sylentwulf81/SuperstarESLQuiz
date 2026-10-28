@@ -21,6 +21,8 @@ interface SetupScreenProps {
   onOpenRules: () => void;
   onOpenStudio: () => void;
   onBackToLauncher?: () => void;
+  /** Questions in the loaded deck; the board never has more blocks than this. */
+  deckLength?: number;
 }
 
 const AVAILABLE_COUNTS = [2, 3, 4, 5, 6, 7, 8] as const;
@@ -46,6 +48,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
   onOpenRules,
   onOpenStudio,
   onBackToLauncher,
+  deckLength,
 }) {
   const [teamCount, setTeamCount] = useState<number>(4);
   const [shuffledChars, setShuffledChars] = useState<CharacterInfo[]>(() => shuffleArray(CHARACTER_LIST));
@@ -82,6 +85,15 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
       localStorage.setItem(`mp_block_count_${theme}`, String(count));
     } catch {}
   }, [theme]);
+
+  const playableCount = deckLength ? Math.min(deckSize, deckLength) : deckSize;
+  const deckCountOptions = useMemo(() => {
+    if (!deckLength) return DECK_COUNT_OPTIONS.map(count => ({ count, label: String(count) }));
+    return [
+      ...DECK_COUNT_OPTIONS.filter(count => count < deckLength).map(count => ({ count, label: String(count) })),
+      { count: 60, label: `All ${deckLength}` },
+    ];
+  }, [deckLength]);
 
   const handleToggleShuffle = useCallback(() => {
     sounds.playClick();
@@ -527,7 +539,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex items-center justify-between gap-2">
                   <div>
                     <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
-                      DECK SIZE ({deckSize} Qs)
+                      DECK SIZE ({playableCount} Qs)
                     </span>
                     <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
                       Number of blocks on the board
@@ -535,18 +547,18 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                   </div>
 
                   <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                    {DECK_COUNT_OPTIONS.map((count) => (
+                    {deckCountOptions.map(({ count, label }) => (
                       <button
                         key={count}
                         type="button"
                         onClick={() => handleUpdateDeckSize(count)}
                         className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl font-mario text-xs transition-all border cursor-pointer ${
-                          deckSize === count
+                          (deckLength ? Math.min(count, deckLength) : count) === playableCount
                             ? 'bg-indigo-600 text-white border-indigo-300 shadow font-black'
                             : 'bg-slate-700/80 hover:bg-slate-650 text-slate-300 border-white/15'
                         }`}
                       >
-                        {count}
+                        {label}
                       </button>
                     ))}
                     <button
@@ -604,8 +616,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 <Shuffle className="w-3 h-3 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
-                    ? `${deckSize} questions configured (${isShuffleEnabled ? 'shuffled' : 'in order'}). Any team can answer!`
-                    : `All ${deckSize} question & mystery card locations ready (${isShuffleEnabled ? 'randomized' : 'in order'})!`}
+                    ? `${playableCount} questions configured (${isShuffleEnabled ? 'shuffled' : 'in order'}). Any team can answer!`
+                    : `All ${playableCount} question & mystery card locations ready (${isShuffleEnabled ? 'randomized' : 'in order'})!`}
                 </span>
               </div>
             </div>

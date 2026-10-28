@@ -39,7 +39,7 @@ import {
   ClassicEvent,
 } from './engine';
 import type { MysteryBlockOutcome, SuperMushroomOffer } from './engine';
-import { createGameBlocks, TOTAL_BLOCKS } from '@/games/mario-party-quiz/createBlocks';
+import { createGameBlocks, getDeckLength, makeBlankQuestion, TOTAL_BLOCKS } from '@/games/mario-party-quiz/createBlocks';
 
 export const MARIO_BLAST_CLASSIC_MODULE = 'mario-blast-classic' as const;
 
@@ -142,6 +142,8 @@ export function MarioBlastClassic({
   const activeTeam = classicActiveTeam(state);
   const openedBlocksCount = classicOpenedCount(state);
   const boardCleared = classicBoardCleared(state);
+  // Re-read whenever the working deck changes (blocks are persisted alongside)
+  const deckLength = useMemo(() => getDeckLength(theme), [theme, blocks]);
   // Bolt Performance Optimization: Memoize answering team, remaining cards, and selected block
   // lookups to eliminate linear array scans (.find and .filter) on every render tick or UI state update.
   const answeringTeam = useMemo(() => {
@@ -262,18 +264,7 @@ export function MarioBlastClassic({
   const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
-    const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
-      id: i + 1,
-      blockNumber: i + 1,
-      category: 'grammar',
-      title: '',
-      rewardCoins: 1,
-      ...(defaultType === 'multiple_choice'
-        ? { type: 'multiple_choice' as const, options: ['', '', '', ''], correctIndex: 0 }
-        : defaultType === 'true_false'
-        ? { type: 'true_false' as const, isTrue: true, explanation: '' }
-        : { type: 'open_trivia' as const, answer: '' }),
-    }));
+    const blankQuestions = Array.from({ length: target }, (_, i) => makeBlankQuestion(i, defaultType));
     const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
     dispatch({
       type: 'SET_BLOCKS',
@@ -422,6 +413,7 @@ export function MarioBlastClassic({
             onOpenRules={() => setIsRulesModalOpen(true)}
             onOpenStudio={() => setIsCustomizerOpen(true)}
             onBackToLauncher={onExitToLauncher}
+            deckLength={deckLength}
           />
         )}
 
