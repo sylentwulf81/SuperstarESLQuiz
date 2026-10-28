@@ -114,11 +114,11 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
     await bgm.deleteCustomTrack(trackId);
   };
 
-  const synthTracks = useMemo(
+  const bundledTracks = useMemo(
     () =>
       bgmState.tracks
         .map((track, idx) => ({ track, idx }))
-        .filter(({ track }) => track.category === 'synth'),
+        .filter(({ track }) => track.category === 'static'),
     [bgmState.tracks]
   );
 
@@ -317,14 +317,14 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
 
           {/* Tracklist Body */}
           <div className="max-h-72 overflow-y-auto p-2.5 space-y-3 divide-y divide-white/5">
-            {/* Section: 8-Bit Retro Chiptunes */}
+            {/* Section: Bundled Tracks */}
             <div>
               <div className="px-2 py-1 text-[0.625rem] font-bold uppercase tracking-wider text-amber-300 flex items-center justify-between">
-                <span>Retro Chiptunes (Zero-Lag Synthesizer)</span>
-                <span className="text-[0.5625rem] text-slate-400 font-normal">Looping 8-Bit</span>
+                <span>Game Music</span>
+                
               </div>
               <div className="space-y-1 mt-1">
-                {synthTracks.map(({ track, idx }) => {
+                {bundledTracks.map(({ track, idx }) => {
                   const isCurrent = bgmState.currentTrackIndex === idx;
                   const isCurrentlyPlaying = isCurrent && bgmState.isPlaying;
 

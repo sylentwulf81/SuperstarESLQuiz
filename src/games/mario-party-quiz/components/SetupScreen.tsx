@@ -517,14 +517,22 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 </span>
               </div>
 
-              <div className="mt-6 relative">
-                <div className="absolute inset-0 rounded-full bg-white/20 blur-xl scale-125" />
-                <TeamAvatar
-                  characterId={celebrationChar.char.id}
-                  size="xl"
-                  className="w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-4 ring-yellow-300 border-4 border-white"
+              {celebrationChar.char.teamArtUrl ? (
+                <img
+                  src={celebrationChar.char.teamArtUrl}
+                  alt={celebrationChar.char.name}
+                  className="mt-8 w-full aspect-[4/3] object-cover rounded-2xl border-4 border-white shadow-2xl ring-4 ring-yellow-300"
                 />
-              </div>
+              ) : (
+                <div className="mt-6 relative">
+                  <div className="absolute inset-0 rounded-full bg-white/20 blur-xl scale-125" />
+                  <TeamAvatar
+                    characterId={celebrationChar.char.id}
+                    size="xl"
+                    className="w-28 h-28 sm:w-36 sm:h-36 shadow-2xl ring-4 ring-yellow-300 border-4 border-white"
+                  />
+                </div>
+              )}
 
               <motion.h2
                 initial={{ scale: 0.8 }}

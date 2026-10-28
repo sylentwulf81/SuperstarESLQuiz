@@ -20,6 +20,8 @@ export interface CharacterInfo {
   imageUrl?: string;
   /** Full-bleed celebration art for the Superstar victory screen. */
   victoryImageUrl?: string;
+  /** Artwork shown in the team reveal popup. */
+  teamArtUrl?: string;
   imagePromptDescription: string;
   catchphrase: string;
   superstarTitle: string;

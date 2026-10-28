@@ -67,6 +67,7 @@ const ALL_REVEAL_URLS: readonly string[] = [
   ...TREASURE_BLOCK_BACKS,
   ...Object.values(CHARACTERS).map(c => c.imageUrl).filter(Boolean),
   ...Object.values(CHARACTERS).map(c => c.victoryImageUrl).filter(Boolean),
+  ...Object.values(CHARACTERS).map(c => c.teamArtUrl).filter(Boolean),
 ];
 
 const preloadedArt = new Map<string, HTMLImageElement>();
