@@ -1008,18 +1008,19 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                             })}
                           </div>
                         </div>
-                        <div className="flex-1 min-h-[9rem] flex flex-col items-center justify-center gap-2">
+                        <div className="flex-1 min-h-[12rem] flex flex-col items-center justify-center gap-2">
                           {booTargetTeamId ? (
                             <DiceRoller
                               key={booTargetTeamId}
                               compact={true}
+                              fill
                               title="Roll the steal die!"
                               subtitle={`How many coins from ${targetOpponent?.name}?`}
                               themeColor="purple"
                               onRollComplete={val => setBooDieRoll(val)}
                             />
                           ) : (
-                            <div className="w-full h-full min-h-[9rem] rounded-2xl border border-dashed border-purple-400/40 bg-purple-950/40 flex items-center justify-center px-4">
+                            <div className="w-full h-full min-h-[12rem] rounded-2xl border border-dashed border-purple-400/40 bg-purple-950/40 flex items-center justify-center px-4">
                               <p className="font-mario text-base sm:text-lg text-purple-100/80 text-center">Pick a team</p>
                             </div>
                           )}

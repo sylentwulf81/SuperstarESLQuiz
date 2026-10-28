@@ -10,6 +10,8 @@ interface DiceRollerProps {
   themeColor?: 'purple' | 'red' | 'gold';
   autoRoll?: boolean;
   compact?: boolean;
+  /** Stretch to the parent's height so the box doesn't resize between states. */
+  fill?: boolean;
 }
 
 export const DiceRoller: React.FC<DiceRollerProps> = ({
@@ -19,6 +21,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   themeColor = 'purple',
   autoRoll = false,
   compact = false,
+  fill = false,
 }) => {
   const [face, setFace] = useState<number>(1);
   const [isRolling, setIsRolling] = useState<boolean>(false);
@@ -127,7 +130,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   return (
     <div className={`rounded-3xl border ${bgStyles} flex flex-col items-center text-center ${
       compact ? 'p-2.5 gap-2 w-full' : 'p-4 sm:p-5 gap-3.5'
-    }`}>
+    } ${fill ? 'h-full justify-center' : ''}`}>
       <div>
         <h4 className={`font-mario text-white text-shadow-mario flex items-center justify-center gap-2 ${
           compact ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl'
