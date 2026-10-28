@@ -17,18 +17,6 @@ export function makeBlankQuestion(index: number, type: QuestionType = 'open_triv
   return { ...base, type: 'open_trivia', answer: '' };
 }
 
-/** Setup-screen "Deck size": how many blocks to play from the deck this game. */
-function readSavedPlayCount(theme: GameTheme): number | undefined {
-  try {
-    const savedCount = localStorage.getItem(`mp_block_count_${theme}`);
-    if (savedCount) {
-      const parsed = parseInt(savedCount, 10);
-      if (!isNaN(parsed) && parsed >= 10 && parsed <= 60) return parsed;
-    }
-  } catch {}
-  return undefined;
-}
-
 const ALL_DEFAULT_QUESTIONS: Question[] = [
   ...DEFAULT_QUESTIONS,
   ...SUMMER_QUESTIONS,
@@ -97,11 +85,10 @@ function defaultSourceFor(theme: GameTheme): Question[] {
 
 /**
  * Builds board blocks for a theme.
- * A custom deck (passed in, or the saved working deck) keeps its own length; it is
- * only resized when targetCount is given, and grows with blank questions.
- * The built-in curriculum is used only when there is no custom deck.
- * If shouldShuffle is true (game start), the setup screen's deck size limits how many
- * blocks are played, then question locations and multiple choice answers are shuffled.
+ * A deck (passed in, the saved working deck, or else the built-in curriculum) plays in
+ * full; it is only resized when targetCount is given, and grows with blank questions.
+ * If shouldShuffle is true (game start), question locations and multiple choice answers
+ * are shuffled when the Studio's order setting is Auto-Shuffle.
  */
 export function createGameBlocks(
   theme: GameTheme,
@@ -140,17 +127,11 @@ export function createGameBlocks(
     }
   }
 
-  const isCustomDeck = rawDeck.length > 0;
-  if (!isCustomDeck) {
+  if (rawDeck.length === 0) {
     rawDeck = defaultSource.map(q => ({ ...q }));
   }
 
-  // Explicit resize, else the default curriculum follows the saved size, else a
-  // custom deck plays in full unless the setup screen asks for fewer at game start.
-  const effectiveCount =
-    targetCount ??
-    (!isCustomDeck || shouldShuffle ? readSavedPlayCount(theme) : undefined) ??
-    (isCustomDeck ? rawDeck.length : TOTAL_BLOCKS);
+  const effectiveCount = targetCount ?? rawDeck.length;
 
   if (rawDeck.length > effectiveCount) {
     rawDeck = rawDeck.slice(0, effectiveCount);

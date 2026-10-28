@@ -39,18 +39,16 @@ describe('createGameBlocks', () => {
     expect(blocks[11].question.title).toBe('');
   });
 
-  it('limits a game to the setup screen deck size at game start, without padding', () => {
+  it('plays the whole deck at game start, even with a deck size saved by an older build', () => {
     localStorage.setItem('mp_custom_blocks_v5_classic', JSON.stringify(custom(30)));
     localStorage.setItem('mp_block_count_classic', '20');
     localStorage.setItem('mp_shuffle_blocks_classic', 'false');
-    expect(createGameBlocks('classic', undefined, true)).toHaveLength(20);
-    localStorage.setItem('mp_block_count_classic', '60');
     expect(createGameBlocks('classic', undefined, true)).toHaveLength(30);
   });
 
-  it('uses the built-in curriculum, sized by the saved count, when there is no custom deck', () => {
+  it('uses the full built-in curriculum when there is no custom deck', () => {
     localStorage.setItem('mp_block_count_classic', '25');
-    expect(createGameBlocks('classic')).toHaveLength(25);
+    expect(createGameBlocks('classic')).toHaveLength(CLASSIC_QUESTIONS.length);
   });
 
   it('keeps question order when shuffle is off', () => {

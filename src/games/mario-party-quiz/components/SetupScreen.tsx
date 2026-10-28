@@ -8,7 +8,6 @@ import { CharacterId, CharacterInfo, Team, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
 import { CHARACTERS, CHARACTER_LIST } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
-import { MarioCoin } from '@/shared/components/MarioCoin';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { TeamAvatar } from './TeamAvatar';
 import { TeamCalculatorModal } from './TeamCalculatorModal';
@@ -26,7 +25,6 @@ interface SetupScreenProps {
 }
 
 const AVAILABLE_COUNTS = [2, 3, 4, 5, 6, 7, 8] as const;
-const DECK_COUNT_OPTIONS = [10, 15, 20, 25, 30, 60] as const;
 
 /** Module-level avatar reader helper. */
 const readStoredAvatar = (charId: CharacterId) => {
@@ -58,55 +56,16 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
   const [editingTeamNum, setEditingTeamNum] = useState<number | null>(null);
   const [celebrationChar, setCelebrationChar] = useState<{ char: CharacterInfo; slotNumber: number; teamNum: number } | null>(null);
 
-  // Deck size and shuffle settings synced with localStorage
-  const [deckSize, setDeckSize] = useState<number>(() => {
-    try {
-      const saved = localStorage.getItem(`mp_block_count_${theme}`);
-      if (saved) {
-        const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= 10 && val <= 60) return val;
-      }
-    } catch {}
-    return 60;
-  });
-
-  const [isShuffleEnabled, setIsShuffleEnabled] = useState<boolean>(() => {
+  // Question order is chosen in the Question Studio; shown here for reference
+  const [isShuffleEnabled] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(`mp_shuffle_blocks_${theme}`);
       if (saved !== null) return saved === 'true';
     } catch {}
     return true;
   });
+  const questionCount = deckLength ?? 60;
 
-  const handleUpdateDeckSize = useCallback((count: number) => {
-    sounds.playPop();
-    setDeckSize(count);
-    try {
-      localStorage.setItem(`mp_block_count_${theme}`, String(count));
-    } catch {}
-  }, [theme]);
-
-  const playableCount = deckLength ? Math.min(deckSize, deckLength) : deckSize;
-  const deckCountOptions = useMemo(() => {
-    if (!deckLength) return DECK_COUNT_OPTIONS.map(count => ({ count, label: String(count) }));
-    return [
-      ...DECK_COUNT_OPTIONS.filter(count => count < deckLength).map(count => ({ count, label: String(count) })),
-      { count: 60, label: `All ${deckLength}` },
-    ];
-  }, [deckLength]);
-
-  const handleToggleShuffle = useCallback(() => {
-    sounds.playClick();
-    setIsShuffleEnabled(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem(`mp_shuffle_blocks_${theme}`, String(next));
-      } catch {}
-      return next;
-    });
-  }, [theme]);
-
-  const [startingCoins, setStartingCoins] = useState<number>(0);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
 
   // Assigned teams count
@@ -205,7 +164,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
         id: `team_${char.id}`,
         characterId: char.id,
         name: teamName,
-        coins: startingCoins,
+        coins: 0,
         stars: 0,
         streak: 0,
         blocksOpened: 0,
@@ -216,8 +175,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
       });
     }
 
-    onStartGame(teams, startingCoins);
-  }, [teamCount, slotAssignments, shuffledChars, customTeamNames, startingCoins, onStartGame]);
+    onStartGame(teams, 0);
+  }, [teamCount, slotAssignments, shuffledChars, customTeamNames, onStartGame]);
 
   return (
     <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center">
@@ -323,14 +282,28 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
           <div className="p-2.5 sm:p-3.5 md:p-4 lg:px-6 flex-1 min-h-0 flex flex-col justify-between space-y-[clamp(0.4rem,1.2vh,0.85rem)] overflow-y-auto sm:overflow-hidden">
             {/* Team Count Picker Header */}
             <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-800/60 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 rounded-xl sm:rounded-2xl border border-white/10">
-              <div>
-                <h3 className="font-mario text-xs sm:text-sm md:text-base text-yellow-300 flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-indigo-400 shrink-0" />
-                  <span>NUMBER OF TEAMS</span>
-                </h3>
-                <p className="text-[0.625rem] sm:text-xs text-indigo-200 mt-0.5">
-                  Select how many teams are playing in today's class:
-                </p>
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setCalculatorOpen(true);
+                  }}
+                  className="shrink-0 w-9 h-9 rounded-xl bg-slate-900/80 hover:bg-slate-700 border border-white/15 hover:border-amber-300/60 flex items-center justify-center cursor-pointer transition-colors"
+                  title="Team size calculator: split your class into groups"
+                  aria-label="Open team size calculator"
+                >
+                  <Calculator className="w-4 h-4 text-amber-300" />
+                </button>
+                <div>
+                  <h3 className="font-mario text-xs sm:text-sm md:text-base text-yellow-300 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-indigo-400 shrink-0" />
+                    <span>NUMBER OF TEAMS</span>
+                  </h3>
+                  <p className="text-[0.625rem] sm:text-xs text-indigo-200 mt-0.5">
+                    Select how many teams are playing in today's class:
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
@@ -488,104 +461,6 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
               </div>
             </div>
 
-            {/* Starting Coins, Deck Size, and Calculator Row */}
-            <div className="shrink-0 flex flex-col gap-2">
-              <div className="flex flex-col md:flex-row gap-2">
-                {/* Starting Coins */}
-                <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex items-center justify-between gap-2">
-                  <div>
-                    <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
-                      STARTING COINS
-                    </span>
-                    <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200 hidden sm:block">
-                      Coins per team at kickoff
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 sm:gap-1.5">
-                    {[0, 5, 10, 15, 20].map((amt) => (
-                      <button
-                        key={amt}
-                        type="button"
-                        onClick={() => {
-                          if (amt === 0) sounds.playPop();
-                          else if (amt >= 10) sounds.playStarCoin();
-                          else sounds.playCoin();
-                          setStartingCoins(amt);
-                        }}
-                        className={`px-2 py-1 rounded-xl font-mario text-xs transition-all border cursor-pointer flex items-center gap-1 ${
-                          startingCoins === amt
-                            ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md scale-105 glass-glow-gold'
-                            : 'bg-slate-700/80 hover:bg-slate-650 text-slate-200 border-white/20'
-                        }`}
-                      >
-                        <span className="font-bold">{amt}</span>
-                        <MarioCoin size="sm" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Deck Size Selector & Shuffle Toggle */}
-                <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex items-center justify-between gap-2">
-                  <div>
-                    <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
-                      DECK SIZE ({playableCount} Qs)
-                    </span>
-                    <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200 hidden sm:block">
-                      Number of blocks on the board
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
-                    {deckCountOptions.map(({ count, label }) => (
-                      <button
-                        key={count}
-                        type="button"
-                        onClick={() => handleUpdateDeckSize(count)}
-                        className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl font-mario text-xs transition-all border cursor-pointer ${
-                          (deckLength ? Math.min(count, deckLength) : count) === playableCount
-                            ? 'bg-indigo-600 text-white border-indigo-300 shadow font-black'
-                            : 'bg-slate-700/80 hover:bg-slate-650 text-slate-300 border-white/15'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={handleToggleShuffle}
-                      className={`px-2 py-1 rounded-xl text-[0.6875rem] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
-                        isShuffleEnabled
-                          ? 'bg-emerald-600/80 text-white border-emerald-400'
-                          : 'bg-slate-700/80 text-amber-300 border-white/15'
-                      }`}
-                      title={isShuffleEnabled ? 'Prompts randomized on start' : 'Prompts played in order 1..N'}
-                    >
-                      <Shuffle className="w-3 h-3" />
-                      <span>{isShuffleEnabled ? 'Shuffle' : 'In-Order'}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Class Calculator */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setCalculatorOpen(true);
-                  }}
-                  className="px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] rounded-xl sm:rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all flex md:flex-col justify-between items-center md:items-start shrink-0"
-                >
-                  <span className="font-mario text-xs sm:text-sm text-yellow-300 flex items-center gap-1.5">
-                    <Calculator className="w-3.5 h-3.5 text-amber-300" />
-                    Team size
-                  </span>
-                  <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200">Class → groups</span>
-                </button>
-              </div>
-            </div>
-
             {/* Launch Button */}
             <div className="shrink-0 flex flex-col items-center gap-1 pt-0.5">
               <button
@@ -607,8 +482,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 <Shuffle className="w-3 h-3 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
-                    ? `${playableCount} questions configured (${isShuffleEnabled ? 'shuffled' : 'in order'}). Any team can answer!`
-                    : `All ${playableCount} question & mystery card locations ready (${isShuffleEnabled ? 'randomized' : 'in order'})!`}
+                    ? `${questionCount} questions configured (${isShuffleEnabled ? 'shuffled' : 'in order'}). Any team can answer!`
+                    : `All ${questionCount} question & mystery card locations ready (${isShuffleEnabled ? 'randomized' : 'in order'})!`}
                 </span>
               </div>
             </div>
