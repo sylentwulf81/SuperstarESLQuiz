@@ -10,7 +10,7 @@ interface FactionAvatarProps {
 }
 
 const SIZE_MAP = {
-  xs: 'w-5 h-5 rounded-md text-[10px]',
+  xs: 'w-5 h-5 rounded-md text-[0.625rem]',
   sm: 'w-7 h-7 rounded-lg text-sm',
   md: 'w-9 h-9 rounded-xl text-base',
   lg: 'w-12 h-12 rounded-xl text-xl',

@@ -83,7 +83,7 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
           <div className="flex items-center justify-center gap-2 sm:gap-4 my-4 bg-slate-950/60 p-3.5 sm:p-4 rounded-2xl border border-sky-500/30 shadow-inner">
             {/* Frozen Team */}
             <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-sky-950/70 border border-sky-400/50 relative overflow-hidden">
-              <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+              <div className="absolute -top-2 -right-2 bg-red-600 text-white text-[0.5625rem] font-black px-1.5 py-0.5 rounded shadow">
                 FROZEN
               </div>
               <TeamAvatar
@@ -92,10 +92,10 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
                 customUrl={skippedTeam.customImageUrl}
                 className="opacity-75 grayscale-25 ring-2 ring-sky-400/70"
               />
-              <span className="font-bold text-xs sm:text-sm text-slate-300 mt-1.5 truncate max-w-[110px]">
+              <span className="font-bold text-xs sm:text-sm text-slate-300 mt-1.5 truncate max-w-[6.875rem]">
                 {skippedTeam.name}
               </span>
-              <span className="text-[10px] text-sky-300 font-bold uppercase tracking-wider">
+              <span className="text-[0.625rem] text-sky-300 font-bold uppercase tracking-wider">
                 Skipped
               </span>
             </div>
@@ -103,14 +103,14 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
             {/* Transition Arrow */}
             <div className="flex flex-col items-center justify-center text-sky-300 px-1">
               <SkipForward className="w-6 h-6 sm:w-8 sm:h-8 animate-pulse text-sky-400" />
-              <span className="text-[10px] uppercase font-bold text-sky-300 tracking-wider">
+              <span className="text-[0.625rem] uppercase font-bold text-sky-300 tracking-wider">
                 Auto-Pass
               </span>
             </div>
 
             {/* Next Team */}
             <div className="flex-1 flex flex-col items-center p-2 rounded-xl bg-emerald-950/70 border border-emerald-400/60 shadow-[0_0_15px_rgba(52,211,153,0.25)] relative overflow-hidden">
-              <div className="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+              <div className="absolute -top-2 -right-2 bg-emerald-500 text-slate-950 text-[0.5625rem] font-black px-1.5 py-0.5 rounded shadow">
                 ACTIVE
               </div>
               <TeamAvatar
@@ -119,10 +119,10 @@ export const BlueShellSkipOverlay: React.FC<BlueShellSkipOverlayProps> = ({
                 customUrl={nextTeam.customImageUrl}
                 className="ring-2 ring-emerald-400"
               />
-              <span className="font-bold text-xs sm:text-sm text-emerald-200 mt-1.5 truncate max-w-[110px]">
+              <span className="font-bold text-xs sm:text-sm text-emerald-200 mt-1.5 truncate max-w-[6.875rem]">
                 {nextTeam.name}
               </span>
-              <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-wider">
+              <span className="text-[0.625rem] text-emerald-300 font-bold uppercase tracking-wider">
                 Plays Now!
               </span>
             </div>

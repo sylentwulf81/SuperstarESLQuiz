@@ -238,7 +238,7 @@ export const SuperstarModal = React.memo(function SuperstarModal({
                         <TeamAvatar characterId={team.characterId} size="sm" customUrl={team.customImageUrl} />
                         <span className="font-bold text-sm text-white">{team.name}</span>
                       </div>
-                      <span className="text-[11px] text-indigo-200">
+                      <span className="text-[0.6875rem] text-indigo-200">
                         {team.blocksOpened} blocks opened
                       </span>
                     </div>

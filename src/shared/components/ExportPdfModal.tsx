@@ -164,7 +164,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
         <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-slate-950/60 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 p-0.5 shadow-lg shadow-rose-500/20 flex items-center justify-center">
-              <div className="w-full h-full bg-slate-950/80 rounded-[14px] flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950/80 rounded-[0.875rem] flex items-center justify-center">
                 <FileDown className="w-5 h-5 text-rose-300" />
               </div>
             </div>
@@ -198,7 +198,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
           <div className="lg:col-span-6 space-y-4 text-xs">
             {/* Format Selector */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-amber-300 uppercase tracking-wider block">
+              <label className="text-[0.6875rem] font-bold text-amber-300 uppercase tracking-wider block">
                 Export Format
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -223,7 +223,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                       <Check className="w-3.5 h-3.5 text-emerald-400" />
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-tight">
+                  <p className="text-[0.6875rem] text-slate-400 leading-tight">
                     Compact cheat sheet for phones/tablets. Check answers secretly while students guess.
                   </p>
                 </button>
@@ -249,7 +249,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                       <Check className="w-3.5 h-3.5 text-amber-400" />
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-tight">
+                  <p className="text-[0.6875rem] text-slate-400 leading-tight">
                     1 card per page with upside-down or fold flaps for physical paper printing.
                   </p>
                 </button>
@@ -259,14 +259,14 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
             {/* Deck Summary Card */}
             <div className="p-3.5 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-between gap-3">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-rose-300 block">
+                <span className="text-[0.625rem] font-black uppercase tracking-wider text-rose-300 block">
                   Active Question Deck
                 </span>
-                <span className="font-bold text-white text-sm block truncate max-w-[240px]">
+                <span className="font-bold text-white text-sm block truncate max-w-[15rem]">
                   {deckName || 'Question Deck'}
                 </span>
                 {lessonGoal && (
-                  <span className="text-[11px] text-slate-400 block truncate max-w-[240px]">
+                  <span className="text-[0.6875rem] text-slate-400 block truncate max-w-[15rem]">
                     Goal: {lessonGoal}
                   </span>
                 )}
@@ -282,7 +282,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
 
             {/* Cheat Sheet Helper Banner */}
             {exportMode === 'cheat_sheet' && (
-              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-[11px] flex items-start gap-2.5">
+              <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-200 text-[0.6875rem] flex items-start gap-2.5">
                 <Smartphone className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold block text-emerald-300">Live Classroom Second-Screen</span>
@@ -317,7 +317,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         <Check className="w-3.5 h-3.5 text-amber-400" />
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-tight">
+                    <p className="text-[0.6875rem] text-slate-400 leading-tight">
                       Answer is printed inverted at bottom. Students facing you cannot read it.
                     </p>
                   </button>
@@ -340,7 +340,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         <Check className="w-3.5 h-3.5 text-amber-400" />
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-tight">
+                    <p className="text-[0.6875rem] text-slate-400 leading-tight">
                       Answer is upright below fold line. Fold bottom flap backward to hide.
                     </p>
                   </button>
@@ -350,7 +350,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
 
             {/* Questions Filter */}
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block">
+              <label className="text-[0.6875rem] font-bold text-slate-300 uppercase tracking-wider block">
                 Questions to Include
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -389,7 +389,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
             <div className="space-y-2 pt-1 border-t border-white/10">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                  <label className="text-[0.6875rem] font-bold text-slate-300 uppercase tracking-wider block mb-1">
                     Paper Format
                   </label>
                   <div className="flex gap-1.5">
@@ -427,7 +427,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         onChange={(e) => setShowFoldLine(e.target.checked)}
                         className="w-4 h-4 text-amber-500 rounded bg-black/40 border-white/20 cursor-pointer"
                       />
-                      <span className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
+                      <span className="text-[0.6875rem] text-slate-300 font-medium flex items-center gap-1">
                         <Scissors className="w-3 h-3 text-slate-400" />
                         Fold guide line
                       </span>
@@ -442,7 +442,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         onChange={(e) => setIncludeOptionsList(e.target.checked)}
                         className="w-4 h-4 text-emerald-500 rounded bg-black/40 border-white/20 cursor-pointer"
                       />
-                      <span className="text-[11px] text-slate-300 font-medium">
+                      <span className="text-[0.6875rem] text-slate-300 font-medium">
                         List MC choices (A/B/C/D)
                       </span>
                     </label>
@@ -459,7 +459,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                     onChange={(e) => setIncludeHints(e.target.checked)}
                     className="w-4 h-4 text-amber-500 rounded bg-black/40 border-white/20 cursor-pointer"
                   />
-                  <span className="text-[11px] text-slate-300 font-medium">
+                  <span className="text-[0.6875rem] text-slate-300 font-medium">
                     Include hints
                   </span>
                 </label>
@@ -470,7 +470,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                     onChange={(e) => setIncludeExplanations(e.target.checked)}
                     className="w-4 h-4 text-amber-500 rounded bg-black/40 border-white/20 cursor-pointer"
                   />
-                  <span className="text-[11px] text-slate-300 font-medium">
+                  <span className="text-[0.6875rem] text-slate-300 font-medium">
                     Include explanations
                   </span>
                 </label>
@@ -519,18 +519,18 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
 
             {/* Simulated Paper Sheet */}
             {exportMode === 'cheat_sheet' ? (
-              <div className="relative flex-1 min-h-[420px] max-h-[460px] bg-white text-slate-900 rounded-2xl shadow-xl p-3 sm:p-4 flex flex-col border-4 border-slate-300 select-none overflow-hidden font-sans">
+              <div className="relative flex-1 min-h-[26.25rem] max-h-[28.75rem] bg-white text-slate-900 rounded-2xl shadow-xl p-3 sm:p-4 flex flex-col border-4 border-slate-300 select-none overflow-hidden font-sans">
                 {/* Header Banner */}
                 <div className="border border-slate-200 bg-slate-50 rounded-xl p-2.5 mb-2.5 flex items-center justify-between shrink-0">
                   <div className="min-w-0 pr-2">
                     <span className="font-bold text-slate-900 text-xs uppercase tracking-wide block truncate">
                       {deckName.toUpperCase()} • TEACHER ANSWER KEY
                     </span>
-                    <span className="text-[10px] text-slate-500 block truncate">
+                    <span className="text-[0.625rem] text-slate-500 block truncate">
                       {lessonGoal ? `Goal: ${lessonGoal} • ` : ''}Phone / Tablet Second-Screen Reference
                     </span>
                   </div>
-                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[9px] border border-amber-300 shrink-0">
+                  <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold text-[0.5625rem] border border-amber-300 shrink-0">
                     TEACHER KEY
                   </span>
                 </div>
@@ -546,11 +546,11 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         {/* Top row badges */}
                         <div className="flex items-center justify-between gap-1.5 mb-1.5">
                           <div className="flex items-center gap-1.5">
-                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-bold text-[10px] border border-slate-300">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-bold text-[0.625rem] border border-slate-300">
                               #{qNum}
                             </span>
                             <span
-                              className="px-1.5 py-0.5 rounded font-bold text-[8px] border uppercase"
+                              className="px-1.5 py-0.5 rounded font-bold text-[0.5rem] border uppercase"
                               style={{
                                 backgroundColor: `rgb(${qMeta.bg.join(',')})`,
                                 color: `rgb(${qMeta.text.join(',')})`,
@@ -561,7 +561,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                             </span>
                           </div>
                           {q.rewardCoins && (
-                            <span className="text-[9px] font-bold text-amber-700">
+                            <span className="text-[0.5625rem] font-bold text-amber-700">
                               ★ {q.rewardCoins}
                             </span>
                           )}
@@ -574,7 +574,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
 
                         {/* Options if MC and enabled */}
                         {includeOptionsList && q.type === 'multiple_choice' && (q as any).options && (
-                          <div className="text-[9px] text-slate-500 mb-1.5 flex flex-wrap gap-x-2">
+                          <div className="text-[0.5625rem] text-slate-500 mb-1.5 flex flex-wrap gap-x-2">
                             {((q as any).options as string[]).map((opt, i) => (
                               <span key={i}>
                                 <strong className="text-slate-700">{['A', 'B', 'C', 'D'][i]})</strong> {opt}
@@ -584,18 +584,18 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         )}
 
                         {/* Bold Emerald Answer Badge */}
-                        <div className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[11px] flex items-center justify-between">
+                        <div className="px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold text-[0.6875rem] flex items-center justify-between">
                           <span>✔ ANSWER: {ans.answerText}</span>
                         </div>
 
                         {/* Notes / hints if any */}
                         {includeExplanations && ans.explanationText && (
-                          <p className="text-[9px] text-slate-500 italic mt-1">
+                          <p className="text-[0.5625rem] text-slate-500 italic mt-1">
                             Note: {ans.explanationText}
                           </p>
                         )}
                         {includeHints && ans.hintText && (
-                          <p className="text-[9px] text-slate-500 italic mt-0.5">
+                          <p className="text-[0.5625rem] text-slate-500 italic mt-0.5">
                             Hint: {ans.hintText}
                           </p>
                         )}
@@ -605,20 +605,20 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                 </div>
 
                 {/* Footer preview */}
-                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[9px] text-slate-400 mt-2 shrink-0">
+                <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[0.5625rem] text-slate-400 mt-2 shrink-0">
                   <span>Superstar ESL Quiz • Teacher Second-Screen Key</span>
                   <span>~{Math.max(1, Math.ceil(totalCount / 12))} Pages Total</span>
                 </div>
               </div>
             ) : (
-              <div className="relative flex-1 min-h-[380px] bg-white text-slate-900 rounded-2xl shadow-xl p-4 sm:p-5 flex flex-col justify-between border-4 border-slate-300 select-none overflow-hidden font-sans">
+              <div className="relative flex-1 min-h-[23.75rem] bg-white text-slate-900 rounded-2xl shadow-xl p-4 sm:p-5 flex flex-col justify-between border-4 border-slate-300 select-none overflow-hidden font-sans">
                 {/* Paper Top Header */}
-                <div className="border-b-2 border-slate-200 pb-2 flex items-center justify-between gap-2 text-[10px]">
+                <div className="border-b-2 border-slate-200 pb-2 flex items-center justify-between gap-2 text-[0.625rem]">
                   <div>
-                    <span className="font-bold text-slate-900 uppercase tracking-wide block truncate max-w-[200px]">
+                    <span className="font-bold text-slate-900 uppercase tracking-wide block truncate max-w-[12.5rem]">
                       {deckName.toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-slate-500 block truncate max-w-[200px]">
+                    <span className="text-[0.5625rem] text-slate-500 block truncate max-w-[12.5rem]">
                       {lessonGoal ? `Lesson: ${lessonGoal}` : 'Classroom Question Deck'}
                     </span>
                   </div>
@@ -630,14 +630,14 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                 {/* Question Strip */}
                 <div className="flex items-center justify-between gap-2 my-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-black text-[10px] border border-amber-300">
+                    <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-black text-[0.625rem] border border-amber-300">
                       Q#{currentPreviewQ?.blockNumber || currentPreviewQ?.id || previewIndex + 1}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold text-[9px] border border-indigo-200 uppercase">
+                    <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold text-[0.5625rem] border border-indigo-200 uppercase">
                       {typeMeta.label}
                     </span>
                   </div>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">
+                  <span className="text-[0.5625rem] font-bold text-slate-400 uppercase">
                     {currentPreviewQ?.category || 'TRIVIA'}
                   </span>
                 </div>
@@ -655,7 +655,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                         (opt: string, i: number) => (
                           <div
                             key={i}
-                            className="px-2 py-1 rounded bg-slate-50 border border-slate-200 text-[10px] text-slate-700 truncate"
+                            className="px-2 py-1 rounded bg-slate-50 border border-slate-200 text-[0.625rem] text-slate-700 truncate"
                           >
                             <span className="font-bold text-slate-900 mr-1.5">
                               {['A', 'B', 'C', 'D'][i]})
@@ -670,10 +670,10 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                   {/* True / False preview */}
                   {currentPreviewQ?.type === 'true_false' && (
                     <div className="mt-3 flex gap-2">
-                      <span className="flex-1 text-center py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[10px]">
+                      <span className="flex-1 text-center py-1 rounded bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-[0.625rem]">
                         TRUE
                       </span>
-                      <span className="flex-1 text-center py-1 rounded bg-rose-50 border border-rose-200 text-rose-700 font-bold text-[10px]">
+                      <span className="flex-1 text-center py-1 rounded bg-rose-50 border border-rose-200 text-rose-700 font-bold text-[0.625rem]">
                         FALSE
                       </span>
                     </div>
@@ -698,7 +698,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                 {showFoldLine && (
                   <div className="relative my-2">
                     <div className="border-t-2 border-dashed border-slate-400 w-full" />
-                    <span className="absolute left-1/2 -top-2 -translate-x-1/2 bg-white px-2 text-[8px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                    <span className="absolute left-1/2 -top-2 -translate-x-1/2 bg-white px-2 text-[0.5rem] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                       <Scissors className="w-2.5 h-2.5" />
                       FOLD HERE TO CONCEAL ANSWER
                     </span>
@@ -713,7 +713,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                       : 'bg-slate-50 border-slate-300'
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[8px] font-bold text-slate-400 mb-1">
+                  <div className="flex items-center justify-between text-[0.5rem] font-bold text-slate-400 mb-1">
                     <span>TEACHER ANSWER KEY</span>
                     <span className="text-amber-700 font-medium">
                       {orientation === 'upside_down' ? 'Printed Inverted 180°' : 'Concealed by fold'}
@@ -731,7 +731,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                       ANSWER: {answerInfo.answerText}
                     </p>
                     {includeExplanations && (answerInfo.explanationText || answerInfo.hintText) && (
-                      <p className="text-[9px] text-slate-600 mt-0.5">
+                      <p className="text-[0.5625rem] text-slate-600 mt-0.5">
                         {answerInfo.explanationText ? `Note: ${answerInfo.explanationText}` : `Hint: ${answerInfo.hintText}`}
                       </p>
                     )}
@@ -742,7 +742,7 @@ export const ExportPdfModal: React.FC<ExportPdfModalProps> = React.memo(function
                 <button
                   type="button"
                   onClick={() => setIsSimulatingFold(!isSimulatingFold)}
-                  className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 text-[9px] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
+                  className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 text-[0.5625rem] font-semibold flex items-center gap-1 cursor-pointer transition-colors"
                   title="Simulate paper folding over answer"
                 >
                   {isSimulatingFold ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}

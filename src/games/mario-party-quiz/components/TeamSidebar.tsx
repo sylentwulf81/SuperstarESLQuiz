@@ -77,7 +77,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             {side === 'right' ? 'TEAMS' : 'STANDINGS'}
           </span>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+          <span className="text-[0.625rem] font-bold text-slate-400 uppercase tracking-widest">
             {rankingSource.length} Teams
           </span>
         </div>
@@ -114,7 +114,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
               >
                 {/* Active Turn Badge - positioned safely inside without clipping */}
                 {isActive && (
-                  <span className="absolute -top-2 right-2.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-mario text-[9px] shadow border border-white font-black z-20">
+                  <span className="absolute -top-2 right-2.5 px-2 py-0.5 rounded-full bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-mario text-[0.5625rem] shadow border border-white font-black z-20">
                     ★ TURN ★
                   </span>
                 )}
@@ -134,7 +134,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                     />
                     {rankInfo && (
                       <span
-                        className={`absolute -top-1.5 -left-1.5 h-4.5 px-1.5 rounded-md text-[9px] flex items-center justify-center border leading-none ${rankInfo.badge}`}
+                        className={`absolute -top-1.5 -left-1.5 h-4.5 px-1.5 rounded-md text-[0.5625rem] flex items-center justify-center border leading-none ${rankInfo.badge}`}
                       >
                         {rankInfo.text}
                       </span>
@@ -148,27 +148,27 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                     {/* Status badges */}
                     <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                       {team.hasDoubleTurn && (
-                        <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-0.2 rounded text-[8px] font-black flex items-center gap-0.5 border border-yellow-200">
+                        <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-0.2 rounded text-[0.5rem] font-black flex items-center gap-0.5 border border-yellow-200">
                           <Zap className="w-2 h-2 fill-current" /> 2x
                         </span>
                       )}
                       {team.doubleNextCoinReward && (
-                        <span className="bg-red-700 text-yellow-100 px-1 py-0.2 rounded text-[8px] font-black border border-yellow-300">
+                        <span className="bg-red-700 text-yellow-100 px-1 py-0.2 rounded text-[0.5rem] font-black border border-yellow-300">
                           ×2
                         </span>
                       )}
                       {team.blooperNextCoin && (
-                        <span className="bg-indigo-900 text-indigo-100 px-1 py-0.2 rounded text-[8px] font-black">
+                        <span className="bg-indigo-900 text-indigo-100 px-1 py-0.2 rounded text-[0.5rem] font-black">
                           🦑
                         </span>
                       )}
                       {team.skipNextCoinReward && (
-                        <span className="bg-sky-600 text-white px-1 py-0.2 rounded text-[8px] font-black flex items-center gap-0.5">
+                        <span className="bg-sky-600 text-white px-1 py-0.2 rounded text-[0.5rem] font-black flex items-center gap-0.5">
                           <ShieldAlert className="w-2 h-2" /> Skip
                         </span>
                       )}
                       {team.streak > 1 && (
-                        <span className="flex items-center gap-0.5 bg-black/60 text-amber-300 text-[8px] font-bold px-1 py-0.2 rounded border border-amber-400/40">
+                        <span className="flex items-center gap-0.5 bg-black/60 text-amber-300 text-[0.5rem] font-bold px-1 py-0.2 rounded border border-amber-400/40">
                           <Flame className="w-2 h-2 fill-amber-400" />
                           {team.streak}
                         </span>
@@ -252,7 +252,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                 >
                   {rankInfo && (
                     <span
-                      className={`absolute -top-1.5 -left-1.5 h-4 px-1 rounded-md text-[8px] flex items-center justify-center border ${rankInfo.badge}`}
+                      className={`absolute -top-1.5 -left-1.5 h-4 px-1 rounded-md text-[0.5rem] flex items-center justify-center border ${rankInfo.badge}`}
                     >
                       {rankInfo.text}
                     </span>

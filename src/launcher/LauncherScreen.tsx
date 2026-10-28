@@ -161,7 +161,7 @@ const SpotlightHero = React.memo(function SpotlightHero({
         <span>{spotlightGames.length}</span>
       </div>
 
-      <div className="relative z-10 p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[440px] lg:h-[460px]">
+      <div className="relative z-10 p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row items-center justify-between gap-8 min-h-[27.5rem] lg:h-[28.75rem]">
         {/* Left Info Column */}
         <div className="flex-1 max-w-3xl flex flex-col justify-between h-full w-full">
           <AnimatePresence mode="wait">
@@ -175,7 +175,7 @@ const SpotlightHero = React.memo(function SpotlightHero({
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
-                  <span className={`text-[11px] font-black uppercase px-3 py-1 rounded-full ${spotlightGame.badgeColor} tracking-wider shadow-lg flex items-center gap-1`}>
+                  <span className={`text-[0.6875rem] font-black uppercase px-3 py-1 rounded-full ${spotlightGame.badgeColor} tracking-wider shadow-lg flex items-center gap-1`}>
                     <Sparkles className="w-3.5 h-3.5" />
                     {spotlightGame.badge}
                   </span>
@@ -338,17 +338,17 @@ const SpotlightHero = React.memo(function SpotlightHero({
               {isPaused ? (
                 <>
                   <Play className="w-3 h-3 text-amber-300 fill-current" />
-                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Play</span>
+                  <span className="text-[0.625rem] font-bold text-amber-300 uppercase tracking-wider">Play</span>
                 </>
               ) : isHovered ? (
                 <>
                   <Pause className="w-3 h-3 text-amber-300" />
-                  <span className="text-[10px] font-bold text-amber-300 uppercase tracking-wider">Hover</span>
+                  <span className="text-[0.625rem] font-bold text-amber-300 uppercase tracking-wider">Hover</span>
                 </>
               ) : (
                 <>
                   <Clock className="w-3 h-3 text-amber-400" />
-                  <span className="text-[11px] font-mono font-bold text-slate-200">{countdownSeconds}s</span>
+                  <span className="text-[0.6875rem] font-mono font-bold text-slate-200">{countdownSeconds}s</span>
                 </>
               )}
             </button>
@@ -410,11 +410,11 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-400 selection:text-slate-950">
       {/* Top Steam/Epic Games Style Launcher Navigation Bar */}
       <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/10 px-4 sm:px-6 py-2.5 shadow-2xl">
-        <div className="max-w-[1750px] mx-auto flex flex-wrap items-center justify-between gap-3">
+        <div className="max-w-[109.375rem] mx-auto flex flex-wrap items-center justify-between gap-3">
           {/* Brand & Suite Logo */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 p-0.5 shadow-[0_0_20px_rgba(245,158,11,0.4)] flex items-center justify-center">
-              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+              <div className="w-full h-full bg-slate-950 rounded-[0.875rem] flex items-center justify-center">
                 <GraduationCap className="w-5 h-5 text-yellow-300" />
               </div>
             </div>
@@ -423,11 +423,11 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                 <h1 className="font-mario text-lg sm:text-xl text-yellow-300 tracking-wider flex items-center gap-1.5">
                   SUPERSTAR ESL
                 </h1>
-                <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 tracking-widest hidden sm:inline-block">
+                <span className="text-[0.625rem] uppercase font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 tracking-widest hidden sm:inline-block">
                   CLASSROOM ACTIVITIES
                 </span>
               </div>
-              <p className="text-[11px] text-white/50 -mt-0.5">
+              <p className="text-[0.6875rem] text-white/50 -mt-0.5">
                 Upgraded Interactive PowerPoint Alternatives for ESL & Language Teachers
               </p>
             </div>
@@ -471,7 +471,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
       </header>
 
       {/* Main Launcher Body */}
-      <main className="flex-1 max-w-[1750px] w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
+      <main className="flex-1 max-w-[109.375rem] w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-8">
         {/* Spotlight Hero Banner (Epic Games / Steam Featured Carousel) */}
         <SpotlightHero
           spotlightGames={spotlightGames}
@@ -506,7 +506,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
           </div>
 
           {/* Search Box */}
-          <div className="relative min-w-[260px] md:w-72">
+          <div className="relative min-w-[16.25rem] md:w-72">
             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -561,7 +561,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                     </p>
 
                     {/* Stats Pill Row */}
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-white/60">
+                    <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-white/60">
                       {game.activityStyle && (
                         <span className="bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-400/30 text-indigo-200 font-bold uppercase tracking-wide">
                           {ACTIVITY_STYLE_LABELS[game.activityStyle]}
@@ -601,7 +601,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                           START
                         </button>
 
-                        <div className="flex items-center justify-between gap-2 text-[11px] pt-1">
+                        <div className="flex items-center justify-between gap-2 text-[0.6875rem] pt-1">
                           {game.hasTeacherGuide ? (
                             <button
                               onClick={() => {
@@ -642,7 +642,7 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                           <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
                           Preview Activity
                         </button>
-                        <p className="text-[10px] text-center text-white/40 italic">
+                        <p className="text-[0.625rem] text-center text-white/40 italic">
                           Coming in the classroom activity suite
                         </p>
                       </div>
@@ -673,11 +673,11 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                   </div>
                   <div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${previewGame.badgeColor}`}>
+                      <span className={`text-[0.625rem] font-black uppercase px-2.5 py-0.5 rounded-full ${previewGame.badgeColor}`}>
                         {previewGame.badge}
                       </span>
                       {previewGame.activityStyle && (
-                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/50 border border-white/20 text-white/80">
+                        <span className="text-[0.625rem] font-black uppercase px-2.5 py-0.5 rounded-full bg-slate-950/50 border border-white/20 text-white/80">
                           {ACTIVITY_STYLE_LABELS[previewGame.activityStyle]}
                         </span>
                       )}
@@ -718,19 +718,19 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
                 {/* Stats Grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 p-3 rounded-2xl border border-white/10 text-center">
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-white/50 block">Players</span>
+                    <span className="text-[0.625rem] uppercase font-bold text-white/50 block">Players</span>
                     <span className="font-bold text-white text-xs">{previewGame.stats.players}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-white/50 block">Duration</span>
+                    <span className="text-[0.625rem] uppercase font-bold text-white/50 block">Duration</span>
                     <span className="font-bold text-white text-xs">{previewGame.stats.duration}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-white/50 block">Bank Size</span>
+                    <span className="text-[0.625rem] uppercase font-bold text-white/50 block">Bank Size</span>
                     <span className="font-bold text-white text-xs">{previewGame.stats.questions}</span>
                   </div>
                   <div>
-                    <span className="text-[10px] uppercase font-bold text-white/50 block">Grades</span>
+                    <span className="text-[0.625rem] uppercase font-bold text-white/50 block">Grades</span>
                     <span className="font-bold text-white text-xs">{previewGame.stats.grades}</span>
                   </div>
                 </div>

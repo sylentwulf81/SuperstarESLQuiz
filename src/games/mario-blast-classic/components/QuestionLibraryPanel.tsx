@@ -396,7 +396,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
           <h3 className="font-mario text-lg text-yellow-300">
             Question Library
           </h3>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[0.6875rem] text-slate-400">
             Save custom sets or load premade curriculum
           </span>
         </div>
@@ -473,7 +473,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
                 onActiveBankChange?.(undefined, undefined);
                 setName('');
               }}
-              className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
+              className="text-[0.6875rem] text-slate-400 hover:text-white underline cursor-pointer"
             >
               Clear link & save as separate set
             </button>
@@ -623,7 +623,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
 
         {/* Number of Questions Selector */}
         <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-          <span className="text-orange-200/90 font-semibold text-[11px] uppercase tracking-wider">
+          <span className="text-orange-200/90 font-semibold text-[0.6875rem] uppercase tracking-wider">
             Questions to include:
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
@@ -701,7 +701,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
               </button>
             </div>
           </div>
-          <span className="text-[11px] text-slate-400 ml-auto">
+          <span className="text-[0.6875rem] text-slate-400 ml-auto">
             Will save questions 1 through {Math.min(saveCount, questions.length)}.
           </span>
         </div>
@@ -711,7 +711,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-5">
         {showStarterExamples && (
           <section>
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-orange-200 mb-2">Examples</h4>
+            <h4 className="text-[0.6875rem] font-black uppercase tracking-wider text-orange-200 mb-2">Examples</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {STARTER_QUESTION_BANKS.map(bank => (
                 <BankCard
@@ -741,9 +741,9 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
 
         <section>
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[11px] font-black uppercase tracking-wider text-sky-200">Yours</h4>
+            <h4 className="text-[0.6875rem] font-black uppercase tracking-wider text-sky-200">Yours</h4>
             {mine.length > 0 && (
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[0.6875rem] text-slate-400">
                 {mine.length} {mine.length === 1 ? 'custom set' : 'custom sets'}
               </span>
             )}
@@ -872,21 +872,21 @@ const BankCard = React.memo(function BankCard({
           <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <span className="font-bold text-white text-sm leading-tight truncate">{bank.name}</span>
             {isActive && (
-              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 shrink-0">
+              <span className="px-1.5 py-0.2 rounded-full text-[0.5625rem] font-black uppercase tracking-wider bg-emerald-500/25 text-emerald-300 border border-emerald-400/40 shrink-0">
                 Active
               </span>
             )}
           </div>
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mario shrink-0">
+          <span className="px-2 py-0.5 rounded-full text-[0.6875rem] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 font-mario shrink-0">
             {bank.questions.length} Qs
           </span>
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           {bank.lessonGoal && (
-            <p className="text-[11px] text-rose-200 leading-snug line-clamp-1">{bank.lessonGoal}</p>
+            <p className="text-[0.6875rem] text-rose-200 leading-snug line-clamp-1">{bank.lessonGoal}</p>
           )}
           {bank.questions.length < 60 && (
-            <span className="text-[10px] text-slate-400 ml-auto shrink-0 font-medium">
+            <span className="text-[0.625rem] text-slate-400 ml-auto shrink-0 font-medium">
               Blocks 1–{bank.questions.length}
             </span>
           )}
@@ -897,7 +897,7 @@ const BankCard = React.memo(function BankCard({
       </button>
 
       {fillerCount > 0 && (
-        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-[11px] text-amber-100">
+        <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-[0.6875rem] text-amber-100">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span className="flex-1 leading-snug">
             Questions {bank.questions.length - fillerCount + 1}–{bank.questions.length} are built-in examples added by an older version.

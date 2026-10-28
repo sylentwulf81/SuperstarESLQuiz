@@ -80,7 +80,7 @@ export const HeaderNav = React.memo(function HeaderNav({
 
   return (
     <header className="relative z-40 bg-slate-900 border-b border-white/15 px-2 sm:px-3 lg:px-4 py-1.5 shadow-xl shrink-0 w-full">
-      <div className="w-full max-w-[1750px] mx-auto grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
+      <div className="w-full max-w-[109.375rem] mx-auto grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 min-w-0">
         {/* Brand + pass */}
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 justify-self-start">
           <h1 className="font-mario text-sm sm:text-base lg:text-lg text-yellow-300 drop-shadow truncate min-w-0">
@@ -88,7 +88,7 @@ export const HeaderNav = React.memo(function HeaderNav({
           </h1>
           {theme !== 'classic' && (
             <span
-              className={`hidden xl:inline-block text-[10px] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm shrink-0 ${
+              className={`hidden xl:inline-block text-[0.625rem] font-black uppercase px-2 py-0.5 rounded-full border shadow-sm shrink-0 ${
                 theme === 'summer'
                   ? 'bg-amber-400 text-slate-950 border-amber-300'
                   : theme === 'halloween'
@@ -105,7 +105,7 @@ export const HeaderNav = React.memo(function HeaderNav({
               onNextTurn();
             }}
             title="Pass turn to next team"
-            className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 py-1 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
+            className="hidden sm:inline-flex items-center gap-1 text-[0.6875rem] font-bold bg-slate-800/80 hover:bg-slate-750 active:scale-95 text-white/90 px-2 py-1 rounded-xl border border-white/15 transition-all cursor-pointer shadow-sm uppercase tracking-wider shrink-0"
           >
             <SkipForward className="w-3.5 h-3.5 text-indigo-300" />
             <span className="hidden xl:inline">Pass</span>
@@ -115,20 +115,20 @@ export const HeaderNav = React.memo(function HeaderNav({
         {/* Center: cleared always; music player visible on laptop & desktop screens */}
         <div className="flex items-center justify-center gap-2 min-w-0">
           <div
-            className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-xl border h-[34px] shrink-0 ${
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2 py-1 rounded-xl border h-[2.125rem] shrink-0 ${
               isGameOver
                 ? 'bg-amber-950/70 border-yellow-400/60 shadow-[0_0_15px_rgba(250,204,21,0.25)]'
                 : 'bg-slate-800/60 border-white/10 text-slate-300'
             }`}
           >
-            <span className={isGameOver ? 'text-yellow-300 font-bold text-[11px]' : 'text-white/60 text-[11px]'}>
+            <span className={isGameOver ? 'text-yellow-300 font-bold text-[0.6875rem]' : 'text-white/60 text-[0.6875rem]'}>
               {isGameOver ? '🏁' : 'Cleared'}
             </span>
-            <span className={`font-bold font-pixel text-[10px] ${isGameOver ? 'text-yellow-300' : 'text-amber-300'}`}>
+            <span className={`font-bold font-pixel text-[0.625rem] ${isGameOver ? 'text-yellow-300' : 'text-amber-300'}`}>
               {openedCount}/{totalBlocks}
             </span>
           </div>
-          <div className="hidden lg:block shrink-0 max-w-[280px] xl:max-w-none">
+          <div className="hidden lg:block shrink-0 max-w-[17.5rem] xl:max-w-none">
             <MusicPlayer />
           </div>
         </div>
@@ -246,7 +246,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 26, stiffness: 280 }}
-                  className="fixed top-0 right-0 bottom-0 w-full sm:w-[380px] max-w-[92vw] bg-slate-900 border-l border-white/20 shadow-2xl p-4 sm:p-5 flex flex-col justify-between overflow-y-auto text-white z-10"
+                  className="fixed top-0 right-0 bottom-0 w-full sm:w-[23.75rem] max-w-[92vw] bg-slate-900 border-l border-white/20 shadow-2xl p-4 sm:p-5 flex flex-col justify-between overflow-y-auto text-white z-10"
                 >
                   {/* Drawer Top / Header */}
                   <div className="space-y-4">
@@ -259,7 +259,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                           <h3 className="font-mario text-base sm:text-lg text-yellow-300 tracking-wider">
                             HOST MENU
                           </h3>
-                          <p className="text-[11px] text-indigo-200">Controls, music player & guide</p>
+                          <p className="text-[0.6875rem] text-indigo-200">Controls, music player & guide</p>
                         </div>
                       </div>
 
@@ -289,7 +289,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                           <Library className="w-4 h-4 text-amber-300" />
                           <div>
                             <div className="font-semibold text-xs sm:text-sm text-white">Library</div>
-                            <div className="text-[10px] text-slate-400">Back to classroom activities</div>
+                            <div className="text-[0.625rem] text-slate-400">Back to classroom activities</div>
                           </div>
                         </button>
                       )}
@@ -305,14 +305,14 @@ export const HeaderNav = React.memo(function HeaderNav({
                         <Settings2 className="w-4 h-4 text-amber-300" />
                         <div>
                           <div className="font-semibold text-xs sm:text-sm text-white">Studio</div>
-                          <div className="text-[10px] text-slate-400">Edit questions & answers</div>
+                          <div className="text-[0.625rem] text-slate-400">Edit questions & answers</div>
                         </div>
                       </button>
 
                       <div className="p-2.5 rounded-2xl bg-slate-800 border border-white/15 flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <div className="font-semibold text-xs sm:text-sm text-white">Account</div>
-                          <div className="text-[10px] text-slate-400">Sign in for cloud backup</div>
+                          <div className="text-[0.625rem] text-slate-400">Sign in for cloud backup</div>
                         </div>
                         <AccountMenu
                           onManualSync={onManualSync}
@@ -397,7 +397,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                             <div className="font-mario text-xs sm:text-sm text-yellow-300">
                               HOW TO PLAY & HOST GUIDE
                             </div>
-                            <div className="text-[10px] text-indigo-200">
+                            <div className="text-[0.625rem] text-indigo-200">
                               Teacher manual & rules (EN / 日本語)
                             </div>
                           </div>
@@ -423,7 +423,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                               <div className="font-semibold text-xs sm:text-sm text-white">
                                 Catch-up Note: {showCatchUpNote ? 'Shown' : 'Hidden'}
                               </div>
-                              <div className="text-[10px] text-slate-400">
+                              <div className="text-[0.625rem] text-slate-400">
                                 {showCatchUpNote
                                   ? '1st place sees why Blue Shell & Bowser cards are missing'
                                   : 'Keep mystery draws surprising — catch-up still applies'}
@@ -451,7 +451,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                             <div className="font-semibold text-xs sm:text-sm text-white">
                               Sound Effects: {soundEnabled ? 'Enabled' : 'Muted'}
                             </div>
-                            <div className="text-[10px] text-slate-400">
+                            <div className="text-[0.625rem] text-slate-400">
                               Coin sounds, fanfares, and character voice FX
                             </div>
                           </div>
@@ -474,7 +474,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                               <div className="font-semibold text-xs sm:text-sm text-white">
                                 Shuffle Board Blocks
                               </div>
-                              <div className="text-[10px] text-slate-400">
+                              <div className="text-[0.625rem] text-slate-400">
                                 Randomize question and mystery positions
                               </div>
                             </div>
@@ -497,7 +497,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                             <div className="font-semibold text-xs sm:text-sm text-red-300">
                               Restart / New Activity
                             </div>
-                            <div className="text-[10px] text-red-400/80">
+                            <div className="text-[0.625rem] text-red-400/80">
                               Return to team setup screen
                             </div>
                           </div>
@@ -568,7 +568,7 @@ export const HeaderNav = React.memo(function HeaderNav({
                       </p>
                       <div className="mt-2.5 p-2.5 bg-slate-800/80 rounded-xl border border-white/10 text-xs text-indigo-200">
                         <p className="font-semibold text-amber-300 mb-0.5">The following will be lost:</p>
-                        <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px]">
+                        <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[0.6875rem]">
                           <li>Board progress ({openedCount} of {totalBlocks} mystery blocks opened)</li>
                           <li>Current team scores, rankings, and active turn</li>
                           <li>Active power-ups and coin steal logs</li>

@@ -261,7 +261,7 @@ const TeamCoinChip: React.FC<{
         {team.coins}
       </span>
       {label && (
-        <span className="text-[9px] font-black uppercase tracking-wider text-white/90">{label}</span>
+        <span className="text-[0.5625rem] font-black uppercase tracking-wider text-white/90">{label}</span>
       )}
     </div>
   );
@@ -651,9 +651,9 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
             <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-black/45 pointer-events-none" />
             <div className="absolute inset-1.5 rounded-xl border border-white/25 pointer-events-none" />
 
-            <div className="relative z-10 min-h-[22px] flex items-center justify-center pt-2 px-2">
+            <div className="relative z-10 min-h-[1.375rem] flex items-center justify-center pt-2 px-2">
               {picked ? (
-                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
+                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[0.625rem] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
                   ★ YOUR PICK ★
                 </span>
               ) : null}
@@ -674,7 +674,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                 </div>
               ) : (
                 <div className="bg-black/70 border border-white/30 rounded-full py-0.5 px-2">
-                  <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
+                  <span className="font-pixel text-[0.5rem] sm:text-[0.5625rem] uppercase tracking-wider text-amber-200">
                     {specialLabel}
                   </span>
                 </div>
@@ -686,13 +686,13 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
             <div className={`absolute inset-0 bg-gradient-to-b ${theme.shell} opacity-95 pointer-events-none`} />
             <div className="absolute inset-1 rounded-xl border border-white/25 pointer-events-none" />
 
-            <div className="relative z-10 min-h-[22px] flex items-center justify-center">
+            <div className="relative z-10 min-h-[1.375rem] flex items-center justify-center">
               {picked ? (
-                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[10px] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
+                <span className="px-2.5 py-0.5 bg-gradient-to-r from-yellow-300 to-amber-400 text-slate-950 font-black text-[0.625rem] sm:text-xs rounded-full uppercase tracking-wider shadow-md border border-white/60 animate-pulse">
                   ★ YOUR PICK ★
                 </span>
               ) : (
-                <span className="px-2 py-0.5 bg-black/60 text-yellow-300 font-bold text-[9px] sm:text-[10px] rounded-full uppercase tracking-wider border border-white/20">
+                <span className="px-2 py-0.5 bg-black/60 text-yellow-300 font-bold text-[0.5625rem] sm:text-[0.625rem] rounded-full uppercase tracking-wider border border-white/20">
                   REWARD
                 </span>
               )}
@@ -714,13 +714,13 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                 {card.title}
               </h4>
               {!compact && (
-                <p className="text-[10px] sm:text-xs text-white/95 font-medium leading-snug line-clamp-2 px-0.5">
+                <p className="text-[0.625rem] sm:text-xs text-white/95 font-medium leading-snug line-clamp-2 px-0.5">
                   {card.subtitle}
                 </p>
               )}
             </div>
 
-            <div className="relative z-10 min-h-[26px] flex items-center justify-center">
+            <div className="relative z-10 min-h-[1.625rem] flex items-center justify-center">
               {card.coins > 0 ? (
                 <div className="bg-black/60 border border-yellow-300/70 rounded-full py-0.5 px-2.5 flex items-center gap-1 shadow-md">
                   <span className="font-mario text-amber-200 text-xs sm:text-sm">+{card.coins}</span>
@@ -728,7 +728,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                 </div>
               ) : (
                 <div className="bg-black/50 border border-white/25 rounded-full py-0.5 px-2 flex items-center gap-1">
-                  <span className="font-pixel text-[8px] sm:text-[9px] uppercase tracking-wider text-amber-200">
+                  <span className="font-pixel text-[0.5rem] sm:text-[0.5625rem] uppercase tracking-wider text-amber-200">
                     {specialLabel}
                   </span>
                 </div>
@@ -783,14 +783,14 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
               className="ring-2 ring-white/80"
             />
             <div className="leading-tight min-w-0">
-              <span className="text-[10px] font-black uppercase tracking-wider text-white/90 block">Drawing</span>
-              <span className="text-sm font-bold text-white block max-w-[140px] truncate">{currentTeam.name}</span>
+              <span className="text-[0.625rem] font-black uppercase tracking-wider text-white/90 block">Drawing</span>
+              <span className="text-sm font-bold text-white block max-w-[8.75rem] truncate">{currentTeam.name}</span>
             </div>
             <CoinScore coins={currentTeam.coins} />
             {phase === 'reveal' &&
               gameTheme === 'classic' &&
               (selectedCard?.type === 'king_boo' || selectedCard?.type === 'boo_steal_10') && (
-                <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[0.625rem] font-black uppercase tracking-widest shrink-0">
                   Safe
                 </span>
               )}
@@ -805,7 +805,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                 : 'Choose 1 of 6 cards'}
             </p>
             {phase === 'pick' && showCatchUpNote && isCatchUpRestrictedTeam(teams, currentTeam.id) && (
-              <p className="text-[10px] sm:text-xs font-bold text-sky-300 mt-0.5">
+              <p className="text-[0.625rem] sm:text-xs font-bold text-sky-300 mt-0.5">
                 1st place catch-up: no steal, swap, or equalize cards this draw
               </p>
             )}
@@ -817,7 +817,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                 sounds.playClick();
                 onSkipAction();
               }}
-              className="shrink-0 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-[11px] font-bold uppercase tracking-wider border border-white/20 cursor-pointer inline-flex items-center gap-1.5"
+              className="shrink-0 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 text-[0.6875rem] font-bold uppercase tracking-wider border border-white/20 cursor-pointer inline-flex items-center gap-1.5"
             >
               <SkipForward className="w-3.5 h-3.5" />
               Skip action
@@ -836,7 +836,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
               <X className="w-5 h-5" />
             </button>
           ) : (
-            <div className="w-[108px] hidden sm:block" />
+            <div className="w-[6.75rem] hidden sm:block" />
           )}
         </div>
 
@@ -855,7 +855,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                     const isThisPicked = selectedIndex === idx;
                     const isCardFlipped = revealedIndices.includes(idx);
                     return (
-                      <div key={idx} className="flex flex-col items-center gap-2 w-full max-w-[220px]">
+                      <div key={idx} className="flex flex-col items-center gap-2 w-full max-w-[13.75rem]">
                         <div
                           className="relative w-full max-h-[min(48vh,380px)] aspect-[2/3] [perspective:1200px] cursor-pointer"
                           onClick={() => selectedIndex === null && handlePickCard(card, idx)}
@@ -1001,7 +1001,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                                   }`}
                                 >
                                   <TeamAvatar characterId={opp.characterId} size="sm" customUrl={opp.customImageUrl} />
-                                  <span className="text-[11px] font-black truncate max-w-[4.5rem] text-center">{opp.name}</span>
+                                  <span className="text-[0.6875rem] font-black truncate max-w-[4.5rem] text-center">{opp.name}</span>
                                   <CoinScore coins={opp.coins} size="sm" />
                                 </button>
                               );
@@ -1072,7 +1072,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                                     className="shrink-0"
                                   />
                                   {!shuffled && (
-                                    <span className="text-[10px] sm:text-xs font-black truncate w-full text-center shrink-0">
+                                    <span className="text-[0.625rem] sm:text-xs font-black truncate w-full text-center shrink-0">
                                       {opp.name}
                                     </span>
                                   )}
@@ -1221,7 +1221,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                           <Flame className="w-7 h-7 text-red-500 animate-pulse" />
                           <h4 className="font-mario text-3xl sm:text-4xl text-white">RIVALS −5</h4>
                           {gameTheme === 'classic' && (
-                            <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[10px] font-black uppercase tracking-widest">
+                            <span className="px-2.5 py-1 rounded-full bg-red-600 text-white text-[0.625rem] font-black uppercase tracking-widest">
                               Round over
                             </span>
                           )}
@@ -1480,7 +1480,7 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
 
                 {cards.length > 1 && (
                 <div className="shrink-0">
-                  <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center lg:text-left">
+                  <p className="text-[0.625rem] sm:text-xs font-bold uppercase tracking-widest text-slate-400 mb-2 text-center lg:text-left">
                     The other cards
                   </p>
                   <div className="flex justify-center lg:justify-start gap-2 overflow-x-auto pb-1">
@@ -1490,10 +1490,10 @@ export const RewardRouletteModal = React.memo(function RewardRouletteModal({
                       return (
                         <div
                           key={idx}
-                          className={`w-[72px] sm:w-[92px] h-[108px] sm:h-[132px] rounded-xl border bg-gradient-to-b ${theme.shell} border-white/20 p-2 flex flex-col items-center justify-center text-center shrink-0 opacity-80`}
+                          className={`w-[4.5rem] sm:w-[5.75rem] h-[6.75rem] sm:h-[8.25rem] rounded-xl border bg-gradient-to-b ${theme.shell} border-white/20 p-2 flex flex-col items-center justify-center text-center shrink-0 opacity-80`}
                         >
                           {getCardIcon(card.type, 'w-6 h-6 sm:w-7 sm:h-7')}
-                          <span className="font-mario text-[10px] sm:text-xs text-yellow-100 leading-tight mt-1 line-clamp-2">
+                          <span className="font-mario text-[0.625rem] sm:text-xs text-yellow-100 leading-tight mt-1 line-clamp-2">
                             {card.title}
                           </span>
                         </div>

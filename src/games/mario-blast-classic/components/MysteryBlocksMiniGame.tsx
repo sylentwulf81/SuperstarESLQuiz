@@ -134,11 +134,11 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
                   alt=""
                   className="w-5 h-5 rounded-full object-cover"
                 />
-                <span className="font-mario text-[11px] text-yellow-200 leading-none">×2</span>
+                <span className="font-mario text-[0.6875rem] text-yellow-200 leading-none">×2</span>
               </span>
             )}
             {bloopered && (
-              <span className="rounded-full bg-indigo-900 border border-indigo-200 px-1.5 py-0.5 font-mario text-[11px] text-indigo-100 leading-none">
+              <span className="rounded-full bg-indigo-900 border border-indigo-200 px-1.5 py-0.5 font-mario text-[0.6875rem] text-indigo-100 leading-none">
                 🦑1
               </span>
             )}
@@ -147,7 +147,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
             <h2 className="font-mario text-xl sm:text-3xl text-yellow-300 text-shadow-mario">MYSTERY BLOCKS</h2>
             <p className="text-xs sm:text-sm text-amber-100 font-bold">Pick 1 of 3 ? Blocks</p>
           </div>
-          <div className="w-[120px] hidden sm:block" />
+          <div className="w-[7.5rem] hidden sm:block" />
         </div>
 
         <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col">
@@ -193,7 +193,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
                       />
                       {testMode ? (
                         <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1 p-2">
-                          <span className="font-mario text-[10px] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
+                          <span className="font-mario text-[0.625rem] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
                           <span className="font-mario text-lg sm:text-xl text-yellow-100 text-shadow-mario text-center leading-tight">
                             {face.title}
                           </span>
@@ -202,7 +202,7 @@ export const MysteryBlocksMiniGame: React.FC<MysteryBlocksMiniGameProps> = React
                           )}
                         </div>
                       ) : (
-                        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
+                        <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[0.625rem] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
                           Block {idx + 1}
                         </span>
                       )}

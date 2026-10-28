@@ -254,7 +254,7 @@ export const QuestionModal = React.memo(function QuestionModal({
               <CheckCircle className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-300 shrink-0 ml-2 drop-shadow" />
             )}
             {!isAnswerRevealed && isEliminated && (
-              <span className="text-[10px] sm:text-xs font-bold text-red-300 uppercase bg-red-950/90 px-2 py-1 rounded-lg border border-red-500/50 shrink-0 ml-2">
+              <span className="text-[0.625rem] sm:text-xs font-bold text-red-300 uppercase bg-red-950/90 px-2 py-1 rounded-lg border border-red-500/50 shrink-0 ml-2">
                 Incorrect
               </span>
             )}
@@ -345,7 +345,7 @@ export const QuestionModal = React.memo(function QuestionModal({
             <span className="font-mario text-lg sm:text-2xl md:text-3xl text-yellow-300 text-shadow-mario whitespace-nowrap">
               BLOCK #{question.blockNumber}
             </span>
-            <span className="hidden sm:inline bg-slate-700/90 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border border-white/20 text-indigo-200">
+            <span className="hidden sm:inline bg-slate-700/90 px-3 py-1 rounded-full text-[0.6875rem] font-bold uppercase tracking-wider border border-white/20 text-indigo-200">
               {question.category.replace('_', ' ')}
             </span>
           </div>
@@ -353,7 +353,7 @@ export const QuestionModal = React.memo(function QuestionModal({
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <div className={`flex items-center gap-2 px-2.5 py-1 rounded-xl ${charInfo.bgColor} bg-opacity-60 border border-white/30 text-xs sm:text-sm font-bold text-white`}>
               <TeamAvatar characterId={currentTeam.characterId} size="xs" customUrl={currentTeam.customImageUrl} />
-              <span className="hidden sm:inline max-w-[140px] truncate">{currentTeam.name}</span>
+              <span className="hidden sm:inline max-w-[8.75rem] truncate">{currentTeam.name}</span>
               <div className={`flex items-center gap-1 ml-1 px-2 py-0.5 rounded-lg border transition-colors ${
                 currentTeam.coins < 0
                   ? 'bg-red-950/90 border-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.4)]'
@@ -495,7 +495,7 @@ export const QuestionModal = React.memo(function QuestionModal({
 
                 {isAnswerRevealed && question.explanation && (
                   <div className="p-4 sm:p-5 bg-black/60 rounded-2xl border border-white/20 text-center space-y-1 shadow-inner animate-in fade-in duration-300">
-                    <span className="text-[11px] uppercase font-black text-amber-300 tracking-widest block">
+                    <span className="text-[0.6875rem] uppercase font-black text-amber-300 tracking-widest block">
                       EXPLANATION
                     </span>
                     <p className="text-base sm:text-lg text-slate-100 font-medium">
@@ -591,7 +591,7 @@ export const QuestionModal = React.memo(function QuestionModal({
               )}
 
               <div className="flex-1 min-h-0 flex flex-col justify-center gap-3 overflow-y-auto">
-                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 bg-black/75 rounded-3xl border-2 border-white/25 min-h-[72px]">
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 p-3 sm:p-4 bg-black/75 rounded-3xl border-2 border-white/25 min-h-[4.5rem]">
                   {spelledLetters.length === 0 ? (
                     <span className="text-slate-400 text-sm sm:text-lg font-bold italic">
                       Tap letters to spell the word
@@ -647,7 +647,7 @@ export const QuestionModal = React.memo(function QuestionModal({
 
                 {showScrambledClue && (
                   <div className="mx-auto px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border-2 border-amber-400/60 shadow-lg text-center animate-in fade-in duration-200">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 block mb-1">
+                    <span className="text-[0.625rem] font-black uppercase tracking-widest text-amber-300 block mb-1">
                       Scrambled Word Letters:
                     </span>
                     <div className="flex flex-wrap items-center justify-center gap-2">
@@ -735,7 +735,7 @@ export const QuestionModal = React.memo(function QuestionModal({
               </span>
 
               {currentTeam.hasDoubleTurn && (
-                <span className="text-[11px] bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2 py-1 rounded-lg font-bold border border-yellow-300/80">
+                <span className="text-[0.6875rem] bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-2 py-1 rounded-lg font-bold border border-yellow-300/80">
                   2x Double Turn
                 </span>
               )}

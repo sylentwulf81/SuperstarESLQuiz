@@ -173,7 +173,7 @@ export const InvasionSetup: React.FC<InvasionSetupProps> = React.memo(function I
                       className="w-14 h-14 sm:w-16 sm:h-16 shadow-md"
                     />
                     <span
-                      className="text-[10px] font-black uppercase tracking-wide"
+                      className="text-[0.625rem] font-black uppercase tracking-wide"
                       style={{ color: faction.accentColor }}
                     >
                       {faction.tagline}

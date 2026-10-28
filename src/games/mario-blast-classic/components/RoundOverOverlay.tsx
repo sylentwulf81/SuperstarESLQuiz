@@ -141,7 +141,7 @@ export const RoundOverOverlay: React.FC<RoundOverOverlayProps> = React.memo(func
           {question && (
             <div className="mt-4 p-3.5 sm:p-4 rounded-2xl bg-black/60 border border-white/20 text-left space-y-2 max-w-2xl mx-auto shadow-inner">
               {lessonGoal && (
-                <p className="text-[10px] font-black uppercase tracking-widest text-rose-300">
+                <p className="text-[0.625rem] font-black uppercase tracking-widest text-rose-300">
                   {lessonGoal}
                 </p>
               )}

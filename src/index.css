@@ -136,6 +136,13 @@
     overflow: hidden !important;
     overscroll-behavior: none;
   }
+
+  /* Presentation stage for game screens: designed at 1920×1080 (1rem = 16px) and scaled
+     with the viewport, so a 1440p monitor and a 1080p classroom display show the same
+     layout. Uses font-size rather than transform: scale so text stays sharp. */
+  html.stage-scale {
+    font-size: clamp(12px, min(100vw / 120, 100vh / 67.5), 48px);
+  }
 }
 
 .font-mario {

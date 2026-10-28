@@ -17,6 +17,7 @@ import { MysteryBlocksMiniGame } from './components/MysteryBlocksMiniGame';
 import { SuperMushroomMiniGame } from './components/SuperMushroomMiniGame';
 import { RoundOverOverlay } from './components/RoundOverOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
+import { useStageScale } from '@/shared/hooks/useStageScale';
 import { BlockState, GameQuestion, QuestionType, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party-quiz/data/rewards';
 import { loadClassicTestGame, persistClassicTestGame } from './data/classicRewards';
@@ -67,6 +68,8 @@ export function MarioBlastClassic({
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(initialOpenStudio);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
+  // Game screens scale as a 16:9 stage; the Studio keeps normal desktop sizing
+  useStageScale(!isCustomizerOpen);
   const [isReviewingRound, setIsReviewingRound] = useState(false);
   const pendingEffectsRef = useRef<EngineEffect[]>([]);
 

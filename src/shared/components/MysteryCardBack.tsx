@@ -67,7 +67,7 @@ export const MysteryCardBack: React.FC<MysteryCardBackProps> = React.memo(functi
 
       {/* Top Header Badge */}
       <div className="relative z-10 text-center pt-0.5 sm:pt-1">
-        <span className="font-mario text-[8px] sm:text-[10px] md:text-xs text-yellow-300 tracking-wider bg-black/60 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-400/50 shadow-sm leading-none inline-block">
+        <span className="font-mario text-[0.5rem] sm:text-[0.625rem] md:text-xs text-yellow-300 tracking-wider bg-black/60 px-2 sm:px-2.5 py-0.5 rounded-full border border-amber-400/50 shadow-sm leading-none inline-block">
           {badgeText}
         </span>
       </div>
@@ -94,11 +94,11 @@ export const MysteryCardBack: React.FC<MysteryCardBackProps> = React.memo(functi
         {bottomLabel !== undefined ? (
           bottomLabel
         ) : slotNumber !== undefined ? (
-          <span className="text-[9px] sm:text-[10px] md:text-[11px] font-black text-amber-200 uppercase tracking-wider bg-black/60 px-2 py-0.5 rounded-full border border-amber-400/40 leading-none inline-block">
+          <span className="text-[0.5625rem] sm:text-[0.625rem] md:text-[0.6875rem] font-black text-amber-200 uppercase tracking-wider bg-black/60 px-2 py-0.5 rounded-full border border-amber-400/40 leading-none inline-block">
             CARD {slotNumber}
           </span>
         ) : (
-          <span className="text-[9px] sm:text-[10px] font-bold text-amber-200 uppercase tracking-wider bg-black/50 px-2 py-0.5 rounded-full border border-amber-400/40 animate-pulse leading-none inline-block">
+          <span className="text-[0.5625rem] sm:text-[0.625rem] font-bold text-amber-200 uppercase tracking-wider bg-black/50 px-2 py-0.5 rounded-full border border-amber-400/40 animate-pulse leading-none inline-block">
             TAP TO PICK
           </span>
         )}

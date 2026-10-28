@@ -151,7 +151,7 @@ export const GameBoard = React.memo(function GameBoard({
                   </div>
                   <div>
                     <div className="flex items-center justify-center sm:justify-start gap-2">
-                      <span className="bg-red-600 text-white text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow">
+                      <span className="bg-red-600 text-white text-[0.625rem] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow">
                         BOARD CLEAR
                       </span>
                       <span className="font-mario text-yellow-300 text-base sm:text-lg text-shadow-gold">

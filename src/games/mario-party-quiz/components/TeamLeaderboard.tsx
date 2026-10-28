@@ -48,7 +48,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
   }, [teams]);
 
   return (
-    <div className="w-full max-w-[1750px] mx-auto px-1.5 sm:px-3 pt-1 pb-0.5 shrink-0">
+    <div className="w-full max-w-[109.375rem] mx-auto px-1.5 sm:px-3 pt-1 pb-0.5 shrink-0">
       <div className="bg-slate-900/95 rounded-xl sm:rounded-2xl border border-white/15 p-1.5 sm:p-2 shadow-xl overflow-visible">
         <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2">
           {teams.map((team, idx) => {
@@ -93,7 +93,7 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
               >
                 {showPodiumBadge && (
                   <span
-                    className={`absolute -top-1.5 -left-1.5 z-20 h-4 min-w-[1.5rem] px-1 rounded-md text-[9px] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
+                    className={`absolute -top-1.5 -left-1.5 z-20 h-4 min-w-[1.5rem] px-1 rounded-md text-[0.5625rem] font-black tracking-wide whitespace-nowrap flex items-center justify-center border ring-1 ring-black/40 ${RANK_STYLES[rank]}`}
                     title={`Rank ${rankLabel(rank)}`}
                   >
                     {rankLabel(rank)}
@@ -111,32 +111,32 @@ export const TeamLeaderboard = React.memo(function TeamLeaderboard({
                   />
                   <div className="absolute -bottom-1 -right-1 flex items-center gap-0.5">
                     {team.hasDoubleTurn && (
-                      <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
+                      <span className="bg-gradient-to-r from-amber-500 to-red-600 text-yellow-100 px-1 py-px rounded-full text-[0.5625rem] font-black flex items-center shadow-sm border border-yellow-200/70">
                         <Zap className="w-2.5 h-2.5 fill-yellow-300" />
                       </span>
                     )}
                     {team.doubleNextCoinReward && (
-                      <span className="bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm border border-yellow-200/70">
+                      <span className="bg-gradient-to-r from-red-500 to-rose-600 text-yellow-100 px-1 py-px rounded-full text-[0.5625rem] font-black flex items-center shadow-sm border border-yellow-200/70">
                         2x
                       </span>
                     )}
                     {team.skipNextCoinReward && (
-                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[0.5625rem] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
                       </span>
                     )}
                     {team.blooperNextCoin && (
-                      <span className="bg-indigo-800 text-indigo-100 px-1 py-px rounded-full text-[9px] font-black shadow-sm">
+                      <span className="bg-indigo-800 text-indigo-100 px-1 py-px rounded-full text-[0.5625rem] font-black shadow-sm">
                         🦑
                       </span>
                     )}
                     {isStunned && (
-                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[9px] font-black flex items-center shadow-sm">
+                      <span className="bg-sky-600 text-white px-1 py-px rounded-full text-[0.5625rem] font-black flex items-center shadow-sm">
                         <ShieldAlert className="w-2.5 h-2.5" />
                       </span>
                     )}
                     {team.streak > 1 && (
-                      <span className="flex items-center bg-black/70 text-amber-300 font-bold text-[9px] px-1 py-px rounded-full border border-amber-400/40">
+                      <span className="flex items-center bg-black/70 text-amber-300 font-bold text-[0.5625rem] px-1 py-px rounded-full border border-amber-400/40">
                         <Flame className="w-2.5 h-2.5 fill-amber-400" />
                         {team.streak}
                       </span>

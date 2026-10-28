@@ -319,7 +319,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                   </div>
 
                   {sec.tip && (
-                    <div className="mt-3 p-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-[11px] sm:text-xs text-amber-200 font-medium">
+                    <div className="mt-3 p-2 rounded-xl bg-amber-500/15 border border-amber-400/30 text-[0.6875rem] sm:text-xs text-amber-200 font-medium">
                       {sec.tip}
                     </div>
                   )}
@@ -398,7 +398,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                   <strong>{t.mysteryCards.subtitle}</strong> {t.mysteryCards.instructions}
                 </span>
               </div>
-              <span className="font-mono text-[11px] text-amber-300 bg-black/40 px-2.5 py-0.5 rounded-md self-start sm:self-auto shrink-0 border border-amber-400/30">
+              <span className="font-mono text-[0.6875rem] text-amber-300 bg-black/40 px-2.5 py-0.5 rounded-md self-start sm:self-auto shrink-0 border border-amber-400/30">
                 {t.mysteryCards.deckInfo}
               </span>
             </div>
@@ -422,7 +422,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                           <span className="font-mario text-base sm:text-xl text-yellow-300">
                             {t.mysteryCards.cardDescriptions[activeTestedCard.id]?.title || activeTestedCard.title}
                           </span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-400/40">
+                          <span className="text-[0.625rem] font-bold uppercase tracking-wider bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-400/40">
                             🔊 SOUND PLAYED
                           </span>
                         </div>
@@ -506,15 +506,15 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                           </h4>
                           {card.coins > 0 ? (
                             <div className="bg-black/70 border border-yellow-300/70 rounded-full py-0.5 px-2 flex items-center gap-1">
-                              <span className="font-mario text-amber-200 text-[11px]">+{card.coins}</span>
+                              <span className="font-mario text-amber-200 text-[0.6875rem]">+{card.coins}</span>
                               <MarioCoin size="xs" />
                             </div>
                           ) : (
-                            <p className="text-[10px] text-indigo-100 font-medium leading-snug line-clamp-2 px-0.5">
+                            <p className="text-[0.625rem] text-indigo-100 font-medium leading-snug line-clamp-2 px-0.5">
                               {translatedSubtitle}
                             </p>
                           )}
-                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/50 border border-white/20 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-yellow-300">
+                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/50 border border-white/20 flex items-center justify-center gap-1 text-[0.5625rem] sm:text-[0.625rem] font-bold text-yellow-300">
                             <Volume2 className="w-3 h-3 text-yellow-400 shrink-0" />
                             <span className="truncate">{t.mysteryCards.testSoundLabel}</span>
                           </div>
@@ -525,10 +525,10 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                         <div className="absolute inset-1.5 rounded-xl border border-white/15 pointer-events-none" />
 
                         <div className="relative z-10 flex items-center justify-between gap-1 mb-1">
-                          <span className="text-[9px] font-bold tracking-wider text-amber-300 uppercase bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30">
+                          <span className="text-[0.5625rem] font-bold tracking-wider text-amber-300 uppercase bg-black/40 px-2 py-0.5 rounded-full border border-amber-400/30">
                             {card.coins > 0 ? `+${card.coins} COINS` : 'SPECIAL'}
                           </span>
-                          <span className="text-[10px] text-yellow-300 opacity-60">★</span>
+                          <span className="text-[0.625rem] text-yellow-300 opacity-60">★</span>
                         </div>
 
                         <div className="relative z-10 my-auto flex flex-col items-center">
@@ -538,13 +538,13 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
                           <h4 className="font-mario text-xs sm:text-sm text-yellow-300 leading-tight drop-shadow">
                             {translatedTitle}
                           </h4>
-                          <p className="text-[10px] sm:text-[11px] text-indigo-100 font-medium mt-1 leading-snug px-0.5">
+                          <p className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-100 font-medium mt-1 leading-snug px-0.5">
                             {translatedSubtitle}
                           </p>
                         </div>
 
                         <div className="relative z-10 mt-1">
-                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/40 border border-white/20 flex items-center justify-center gap-1 text-[9px] sm:text-[10px] font-bold text-yellow-300">
+                          <div className="w-full py-1 px-1.5 rounded-xl bg-black/40 border border-white/20 flex items-center justify-center gap-1 text-[0.5625rem] sm:text-[0.625rem] font-bold text-yellow-300">
                             <Volume2 className="w-3 h-3 text-yellow-400 shrink-0" />
                             <span className="truncate">{t.mysteryCards.testSoundLabel}</span>
                           </div>

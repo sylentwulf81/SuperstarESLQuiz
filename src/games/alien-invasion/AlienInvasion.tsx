@@ -13,6 +13,7 @@ import { InvasionCinematic } from './components/InvasionCinematic';
 import { ENDING_SCENES, INTRO_SCENES } from './data/cinematicScenes';
 import { EngineEffect, afterPaint, playEngineSound } from '@/shared/engineFx';
 import { bgm } from '@/shared/utils/bgm';
+import { useStageScale } from '@/shared/hooks/useStageScale';
 import {
   createMapTakeoverState,
   reduceMapTakeover,
@@ -39,6 +40,7 @@ export function AlienInvasion({
   const [state, setState] = React.useState(createMapTakeoverState);
   const [isRulesOpen, setIsRulesOpen] = React.useState(false);
   const pendingEffectsRef = useRef<EngineEffect[]>([]);
+  useStageScale();
 
   const runEffects = useCallback((effects: EngineEffect[]) => {
     for (const effect of effects) {

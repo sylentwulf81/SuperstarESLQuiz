@@ -148,13 +148,13 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
             sounds.playClick();
             setShowTracklist((prev) => !prev);
           }}
-          className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 max-w-[130px] sm:max-w-[160px] text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
+          className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 max-w-[8.125rem] sm:max-w-[10rem] text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
           title="Click to view tracklist & choose songs"
         >
           <Music className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:scale-110 transition-transform" />
           <div className="flex flex-col min-w-0 flex-1">
             <div className="flex items-center gap-1 min-w-0">
-              <span className="truncate text-[11px] font-bold text-indigo-100 group-hover:text-amber-200">
+              <span className="truncate text-[0.6875rem] font-bold text-indigo-100 group-hover:text-amber-200">
                 {currentTrack?.name || 'No Track'}
               </span>
               <ChevronDown
@@ -285,7 +285,7 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
               </div>
               <div>
                 <h4 className="text-xs font-bold text-white tracking-wide">Jukebox Tracklist</h4>
-                <p className="text-[10px] text-slate-400">
+                <p className="text-[0.625rem] text-slate-400">
                   {bgmState.tracks.length} tracks available
                 </p>
               </div>
@@ -298,7 +298,7 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
                   sounds.playClick();
                   fileInputRef.current?.click();
                 }}
-                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 transition-colors shadow"
+                className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[0.625rem] font-bold flex items-center gap-1 transition-colors shadow"
               >
                 <Upload className="w-3 h-3" />
                 Upload Audio
@@ -319,9 +319,9 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
           <div className="max-h-72 overflow-y-auto p-2.5 space-y-3 divide-y divide-white/5">
             {/* Section: 8-Bit Retro Chiptunes */}
             <div>
-              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-300 flex items-center justify-between">
+              <div className="px-2 py-1 text-[0.625rem] font-bold uppercase tracking-wider text-amber-300 flex items-center justify-between">
                 <span>Retro Chiptunes (Zero-Lag Synthesizer)</span>
-                <span className="text-[9px] text-slate-400 font-normal">Looping 8-Bit</span>
+                <span className="text-[0.5625rem] text-slate-400 font-normal">Looping 8-Bit</span>
               </div>
               <div className="space-y-1 mt-1">
                 {synthTracks.map(({ track, idx }) => {
@@ -371,9 +371,9 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
 
             {/* Section: Custom Uploaded Tracks */}
             <div className="pt-2">
-              <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
+              <div className="px-2 py-1 text-[0.625rem] font-bold uppercase tracking-wider text-emerald-400 flex items-center justify-between">
                 <span>My Uploaded Music</span>
-                <span className="text-[9px] text-slate-400 font-normal">
+                <span className="text-[0.5625rem] text-slate-400 font-normal">
                   Saved to your browser
                 </span>
               </div>
@@ -381,7 +381,7 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
               {customTracks.length === 0 ? (
                 <div className="p-3 text-center rounded-xl bg-white/5 border border-dashed border-white/10 mt-1">
                   <p className="text-xs text-slate-300 font-medium">No custom music uploaded</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
+                  <p className="text-[0.625rem] text-slate-400 mt-0.5">
                     Upload your MP3, WAV, or audio files to enjoy your own soundtrack while playing.
                   </p>
                   <button
@@ -429,7 +429,7 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
                           <div className="min-w-0">
                             <p className="truncate font-medium">{track.name}</p>
                             {track.fileSize && (
-                              <span className="text-[9px] text-slate-400">
+                              <span className="text-[0.5625rem] text-slate-400">
                                 {formatFileSize(track.fileSize)}
                               </span>
                             )}
@@ -462,7 +462,7 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
           </div>
 
           {/* Popover Footer Info */}
-          <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-between text-[10px] text-slate-400">
+          <div className="px-4 py-2 border-t border-white/10 bg-black/40 flex items-center justify-between text-[0.625rem] text-slate-400">
             <span>💾 Custom MP3s saved locally in your browser</span>
             <span className="text-slate-500">HTML5 + IndexedDB</span>
           </div>

@@ -30,7 +30,7 @@ export function PromptMarkField({ value, onChange, onEnter }: PromptMarkFieldPro
         }}
         className="w-full bg-black/40 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-400/60"
       />
-      <p className="text-[11px] text-slate-400 mt-1.5">Tap the word to change. Or type *like this*.</p>
+      <p className="text-[0.6875rem] text-slate-400 mt-1.5">Tap the word to change. Or type *like this*.</p>
       {words.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-2">
           {words.map(word => (

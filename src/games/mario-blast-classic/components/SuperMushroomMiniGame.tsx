@@ -76,14 +76,14 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = React
           <span className="text-sm font-bold text-white">{currentTeam.name}</span>
           <span className="flex items-center gap-0.5 rounded-full bg-red-700 border border-yellow-300 pl-0.5 pr-1.5 py-0.5">
             <img src={MUSHROOM_ART} alt="" className="w-5 h-5 rounded-full object-cover" />
-            <span className="font-mario text-[11px] text-yellow-200 leading-none">×2</span>
+            <span className="font-mario text-[0.6875rem] text-yellow-200 leading-none">×2</span>
           </span>
         </div>
         <div className="text-center">
           <h2 className="font-mario text-xl sm:text-3xl text-yellow-300 text-shadow-mario">SUPER MUSHROOM</h2>
           <p className="text-xs sm:text-sm text-amber-100 font-bold">Pick 1 of 3 — then ×2</p>
         </div>
-        <div className="w-[120px] hidden sm:block" />
+        <div className="w-[7.5rem] hidden sm:block" />
       </div>
 
       <div className="flex-1 min-h-0 p-4 sm:p-6 flex flex-col">
@@ -123,14 +123,14 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = React
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     {testMode ? (
                       <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-1 p-2">
-                        <span className="font-mario text-[10px] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
+                        <span className="font-mario text-[0.625rem] text-yellow-200 bg-black/50 px-1.5 py-0.5 rounded-full">TEST</span>
                         <span className="font-mario text-3xl sm:text-4xl text-yellow-100 text-shadow-mario leading-none">
                           +{face.base}
                         </span>
                         <span className="font-mario text-lg text-yellow-200">×2 → +{face.doubled}</span>
                       </div>
                     ) : (
-                      <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
+                      <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[0.625rem] sm:text-xs font-black uppercase tracking-widest text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full">
                         {idx + 1}
                       </span>
                     )}
@@ -147,7 +147,7 @@ export const SuperMushroomMiniGame: React.FC<SuperMushroomMiniGameProps> = React
                       <InkedPayoutReveal original={face.doubled} compact />
                     ) : (
                       <>
-                        <span className="font-mario text-[10px] sm:text-xs text-white/80">{face.base} ×2</span>
+                        <span className="font-mario text-[0.625rem] sm:text-xs text-white/80">{face.base} ×2</span>
                         <div className="inline-flex items-center gap-2 sm:gap-3">
                           <span className="font-mario text-[clamp(2.75rem,8vw,5.5rem)] text-yellow-300 leading-none text-shadow-mario">
                             +{face.doubled}

@@ -173,7 +173,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               <Crop className="w-5 h-5 text-amber-300" />
               Crop & Adjust Image
             </h3>
-            <p className="text-[11px] text-slate-300 mt-0.5">
+            <p className="text-[0.6875rem] text-slate-300 mt-0.5">
               Drag to pan, zoom to fill the card. Portrait matches multiple-choice; landscape matches unscramble and trivia.
             </p>
           </div>
@@ -195,7 +195,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               onPointerCancel={handlePointerUp}
-              className="relative w-full h-[42vh] min-h-[280px] rounded-2xl overflow-hidden bg-black border border-white/15 cursor-grab active:cursor-grabbing touch-none"
+              className="relative w-full h-[42vh] min-h-[17.5rem] rounded-2xl overflow-hidden bg-black border border-white/15 cursor-grab active:cursor-grabbing touch-none"
             >
               {img && (
                 <img
@@ -235,7 +235,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                     sounds.playClick();
                     setAspectId(option.id);
                   }}
-                  className={`px-2.5 py-1.5 rounded-xl text-[11px] font-bold border cursor-pointer ${
+                  className={`px-2.5 py-1.5 rounded-xl text-[0.6875rem] font-bold border cursor-pointer ${
                     aspectId === option.id
                       ? 'bg-amber-500 text-slate-950 border-yellow-200'
                       : 'bg-slate-800 text-slate-300 border-white/15 hover:bg-slate-700'
@@ -274,7 +274,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   </div>
                   <div className="grid grid-cols-1 gap-1.5">
                     {['A', 'B', 'C', 'D'].map(letter => (
-                      <div key={letter} className="rounded-lg bg-slate-800 border border-white/10 px-2 py-2 text-[10px] text-slate-400 font-bold">
+                      <div key={letter} className="rounded-lg bg-slate-800 border border-white/10 px-2 py-2 text-[0.625rem] text-slate-400 font-bold">
                         {letter} Choice
                       </div>
                     ))}
@@ -308,7 +308,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
                   </div>
                 </div>
               )}
-              <p className="text-[10px] text-slate-400 leading-relaxed">
+              <p className="text-[0.625rem] text-slate-400 leading-relaxed">
                 Cropping to the card shape keeps the clue large. You can still switch aspect if the photo needs a different frame.
               </p>
             </div>

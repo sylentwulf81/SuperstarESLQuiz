@@ -153,15 +153,15 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
                     <Cloud className="w-4 h-4 text-emerald-400" />
                     <span>Firestore Cloud Sync</span>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  <span className="text-[0.625rem] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                     Active
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-tight">
+                <p className="text-[0.6875rem] text-slate-300 leading-tight">
                   Your customized question decks and settings sync automatically to your Firestore database.
                 </p>
                 {lastSyncedAt && (
-                  <p className="text-[10px] text-indigo-300">
+                  <p className="text-[0.625rem] text-indigo-300">
                     Last synced at {lastSyncedAt}
                   </p>
                 )}
@@ -219,7 +219,7 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ onManualSync, onManual
               <p className="text-xs text-slate-300 leading-relaxed">
                 Signing in is <span className="font-bold text-amber-200">completely optional</span>. Guests can play offline using local browser storage.
               </p>
-              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-white/10 text-[11px] text-indigo-200 space-y-1">
+              <div className="bg-slate-800/80 p-2.5 rounded-xl border border-white/10 text-[0.6875rem] text-indigo-200 space-y-1">
                 <div className="flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Sync your custom questions across any classroom device</span>

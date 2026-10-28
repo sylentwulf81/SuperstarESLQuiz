@@ -133,7 +133,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             <span className="font-mario text-lg sm:text-2xl text-white text-shadow-mario whitespace-nowrap block">
               BLOCK #{question.blockNumber}
             </span>
-            <span className="text-[11px] font-black uppercase tracking-wider text-white/90 truncate block">
+            <span className="text-[0.6875rem] font-black uppercase tracking-wider text-white/90 truncate block">
               Picked by {pickingTeam.name}
             </span>
           </div>
@@ -146,7 +146,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             </span>
           )}
           {testGame && (
-            <span className="hidden sm:inline-flex px-2 py-1 rounded-lg bg-red-700 border border-yellow-300 text-[10px] font-black uppercase tracking-widest text-yellow-200">
+            <span className="hidden sm:inline-flex px-2 py-1 rounded-lg bg-red-700 border border-yellow-300 text-[0.625rem] font-black uppercase tracking-widest text-yellow-200">
               Test
             </span>
           )}
@@ -178,10 +178,10 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
         {/* Left Column: Vertical Teams Rail with Giant Scores */}
         <div className="w-full md:w-64 lg:w-72 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-2.5 flex flex-col shrink-0 overflow-y-auto max-h-24 sm:max-h-28 md:max-h-none">
           <div className="flex items-center justify-between pb-1 border-b border-white/10 mb-1.5 shrink-0">
-            <span className="text-[11px] font-black uppercase tracking-wider text-yellow-300 font-mario">
+            <span className="text-[0.6875rem] font-black uppercase tracking-wider text-yellow-300 font-mario">
               {isRoundOver ? 'SCORES' : '1. SELECT WINNER'}
             </span>
-            <span className="text-[10px] text-slate-400 font-bold">
+            <span className="text-[0.625rem] text-slate-400 font-bold">
               {drawnTeamIds.length}/{teams.length} Drew{passedTeamIds.length > 0 ? ` · ${passedTeamIds.length} skipped` : ''}
             </span>
           </div>
@@ -234,7 +234,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                       <div className="font-mario text-xs sm:text-sm text-white truncate">
                         {team.name}
                       </div>
-                      <div className="text-[9.5px] sm:text-[10px] text-slate-300 font-bold">
+                      <div className="text-[0.5938rem] sm:text-[0.625rem] text-slate-300 font-bold">
                         {alreadyDrew ? 'Drew card' : isPassed ? 'No card this round' : isSelected ? 'Drawing now' : 'Can answer'}
                       </div>
                     </div>
@@ -270,7 +270,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     }`}
                   >
                     {isPassed ? <Undo2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                    <span className="text-[8px] font-black uppercase leading-none">{isPassed ? 'Undo' : 'Skip'}</span>
+                    <span className="text-[0.5rem] font-black uppercase leading-none">{isPassed ? 'Undo' : 'Skip'}</span>
                   </button>
                 )}
                 </div>
@@ -296,7 +296,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               </div>
             ) : (
               <>
-                <p className="text-[11px] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
+                <p className="text-[0.6875rem] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
                   {lessonGoal}
                 </p>
                 <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
@@ -326,7 +326,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 
                 {showScrambledClue && (
                   <div className="p-3 bg-gradient-to-r from-amber-500/20 via-yellow-500/30 to-amber-500/20 border-2 border-amber-400/60 rounded-2xl flex flex-wrap items-center justify-center gap-2 shadow-lg animate-in fade-in duration-200">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-300 w-full text-center">
+                    <span className="text-[0.625rem] font-black uppercase tracking-widest text-amber-300 w-full text-center">
                       Scrambled Word Letters:
                     </span>
                     {scrambledChars.map((char, idx) => (
@@ -520,13 +520,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     >
                       {slot.claimedByTeamId && slot.card ? (
                         <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center">
-                          <span className="font-mario text-[8.5px] sm:text-[10px] md:text-xs text-yellow-200 leading-tight line-clamp-2">
+                          <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-yellow-200 leading-tight line-clamp-2">
                             {slot.card.title}
                           </span>
                           {(slot.card.type === 'gold_star' ||
                             slot.card.type === 'bowser_revolution' ||
                             slot.card.type === 'bowser_fury') && (
-                            <span className="text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
+                            <span className="text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
                               Round Over
                             </span>
                           )}
@@ -537,7 +537,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                                 size="xs"
                                 customUrl={claimedTeam.customImageUrl}
                               />
-                              <span className="text-[8px] sm:text-[9px] font-bold text-white truncate max-w-full">
+                              <span className="text-[0.5rem] sm:text-[0.5625rem] font-bold text-white truncate max-w-full">
                                 {claimedTeam.name}
                               </span>
                             </div>
@@ -545,10 +545,10 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         </div>
                       ) : isRoundOver && slot.card ? (
                         <div className="absolute inset-0 bg-gradient-to-b from-slate-800/70 to-slate-950/80 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center opacity-70">
-                          <span className="font-mario text-[8.5px] sm:text-[10px] md:text-xs text-slate-200 leading-tight line-clamp-2">
+                          <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-slate-200 leading-tight line-clamp-2">
                             {slot.card.title}
                           </span>
-                          <span className="mt-auto text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-slate-300 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20">
+                          <span className="mt-auto text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-slate-300 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20">
                             Not picked
                           </span>
                         </div>

@@ -103,7 +103,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
         <div className="p-4 sm:p-5 space-y-5">
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-800/70 border border-white/12 p-3 text-center h-[7.75rem] flex flex-col justify-center">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">
+              <span className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">
                 Class
               </span>
               <div className="flex items-center justify-center gap-2">
@@ -139,7 +139,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
             </div>
 
             <div className="rounded-2xl bg-slate-800/70 border border-white/12 p-2.5 sm:p-3 text-center h-[7.75rem] flex flex-col justify-center">
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">
+              <span className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-indigo-200 block mb-2">
                 Teams
               </span>
               <div className="flex items-center justify-center gap-1 sm:gap-1.5 flex-wrap sm:flex-nowrap">
@@ -180,7 +180,7 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
                           : 'bg-slate-800/90 border-amber-300/40'
                     }`}
                   >
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                    <span className="text-[0.625rem] font-black uppercase tracking-widest text-slate-400">
                       {idx + 1}
                     </span>
                     <div className="font-mario text-3xl sm:text-4xl text-yellow-300 leading-none mt-0.5 tabular-nums">

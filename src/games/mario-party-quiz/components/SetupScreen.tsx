@@ -265,7 +265,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <h1 className="font-mario text-lg sm:text-2xl text-white text-shadow-mario tracking-wider truncate">
                       {THEME_UI[theme].gameTitle.toUpperCase()}
                     </h1>
-                    <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
+                    <div className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[0.625rem] sm:text-xs font-black uppercase border ${THEME_UI[theme].badgeClass}`}>
                       {theme === 'summer' ? (
                         <>
                           <Sun className="w-3 h-3 fill-current" />
@@ -290,7 +290,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     </div>
                   </div>
                   {theme === 'classic' && lessonGoal && (
-                    <p className="text-[11px] sm:text-xs font-bold text-rose-100/90 truncate max-w-md sm:max-w-xl">
+                    <p className="text-[0.6875rem] sm:text-xs font-bold text-rose-100/90 truncate max-w-md sm:max-w-xl">
                       {lessonGoal}
                     </p>
                   )}
@@ -337,7 +337,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                   <Users className="w-4 h-4 text-indigo-400 shrink-0" />
                   <span>NUMBER OF TEAMS</span>
                 </h3>
-                <p className="text-[10px] sm:text-xs text-indigo-200 mt-0.5">
+                <p className="text-[0.625rem] sm:text-xs text-indigo-200 mt-0.5">
                   Select how many teams are playing in today's class:
                 </p>
               </div>
@@ -368,11 +368,11 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
                     <span>MYSTERY CHARACTER DRAW</span>
                   </span>
-                  <span className="text-[10px] sm:text-xs text-amber-200/90 font-semibold bg-amber-950/60 border border-amber-400/40 px-2 py-0.5 rounded-full">
+                  <span className="text-[0.625rem] sm:text-xs text-amber-200/90 font-semibold bg-amber-950/60 border border-amber-400/40 px-2 py-0.5 rounded-full">
                     {assignedTeamCount} / {teamCount} Teams Assigned
                   </span>
                   {nextTeamToPick && (
-                    <span className="text-[10px] sm:text-xs text-yellow-300 font-black bg-indigo-900/80 border border-yellow-400/60 px-2.5 py-0.5 rounded-full animate-pulse shadow-md">
+                    <span className="text-[0.625rem] sm:text-xs text-yellow-300 font-black bg-indigo-900/80 border border-yellow-400/60 px-2.5 py-0.5 rounded-full animate-pulse shadow-md">
                       👉 Team {nextTeamToPick}: Pick any card!
                     </span>
                   )}
@@ -485,7 +485,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                             <span className="text-[clamp(7.5px,1vh,9px)] text-white/90 bg-black/40 px-1.5 py-0.5 rounded-full truncate leading-none">
                               {char.name}
                             </span>
-                            <span className="text-[8px] text-amber-200 underline font-semibold cursor-pointer hover:text-white">
+                            <span className="text-[0.5rem] text-amber-200 underline font-semibold cursor-pointer hover:text-white">
                               Rename ✎
                             </span>
                           </div>
@@ -506,7 +506,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
                       STARTING COINS
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
+                    <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200 hidden sm:block">
                       Coins per team at kickoff
                     </span>
                   </div>
@@ -541,7 +541,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
                       DECK SIZE ({playableCount} Qs)
                     </span>
-                    <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
+                    <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200 hidden sm:block">
                       Number of blocks on the board
                     </span>
                   </div>
@@ -564,7 +564,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <button
                       type="button"
                       onClick={handleToggleShuffle}
-                      className={`px-2 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                      className={`px-2 py-1 rounded-xl text-[0.6875rem] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
                         isShuffleEnabled
                           ? 'bg-emerald-600/80 text-white border-emerald-400'
                           : 'bg-slate-700/80 text-amber-300 border-white/15'
@@ -590,7 +590,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     <Calculator className="w-3.5 h-3.5 text-amber-300" />
                     Team size
                   </span>
-                  <span className="text-[10px] sm:text-[11px] text-indigo-200">Class → groups</span>
+                  <span className="text-[0.625rem] sm:text-[0.6875rem] text-indigo-200">Class → groups</span>
                 </button>
               </div>
             </div>
@@ -612,7 +612,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                   : 'CHOOSE TEAMS TO START'}
               </button>
 
-              <div className="flex items-center gap-1 text-[9.5px] sm:text-[11px] text-amber-300/80 font-medium text-center">
+              <div className="flex items-center gap-1 text-[0.5938rem] sm:text-[0.6875rem] text-amber-300/80 font-medium text-center">
                 <Shuffle className="w-3 h-3 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
@@ -669,7 +669,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
 
               {/* Optional inline custom team name editor */}
               <div className="mt-3 w-full bg-black/40 p-2.5 rounded-2xl border border-white/20">
-                <label className="text-[10px] font-bold text-yellow-200 block mb-1 uppercase tracking-wider">
+                <label className="text-[0.625rem] font-bold text-yellow-200 block mb-1 uppercase tracking-wider">
                   Custom Team Name (optional):
                 </label>
                 <input
