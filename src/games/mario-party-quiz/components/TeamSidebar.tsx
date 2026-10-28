@@ -71,7 +71,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
       aria-label="Classroom Teams"
     >
       {/* Desktop / Projector Vertical Rail */}
-      <div className={`hidden lg:flex flex-col h-full w-56 xl:w-64 bg-slate-900/95 ${borderClass} p-3 overflow-y-auto gap-2.5 shadow-2xl backdrop-blur-md`}>
+      <div className={`hidden lg:flex flex-col h-full w-60 xl:w-72 bg-slate-900/95 ${borderClass} p-3 overflow-y-auto gap-2.5 shadow-2xl backdrop-blur-md`}>
         <div className="px-1 py-0.5 flex items-center justify-between border-b border-white/10 pb-2 shrink-0">
           <span className="font-mario text-xs xl:text-sm text-yellow-300 tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
@@ -127,7 +127,7 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
                       size="md"
                       customUrl={team.customImageUrl}
                       className={`${
-                        teams.length >= 7 ? 'w-9 h-9 xl:w-11 xl:h-11' : 'w-11 h-11 xl:w-12 xl:h-12'
+                        teams.length >= 7 ? 'w-9 h-9 xl:w-11 xl:h-11' : 'w-12 h-12 xl:w-14 xl:h-14'
                       } rounded-xl shadow-md border ${
                         isActive ? 'ring-2 ring-yellow-300 border-yellow-100' : 'border-white/20'
                       }`}
@@ -179,10 +179,10 @@ export const TeamSidebar: React.FC<TeamSidebarProps> = React.memo(function TeamS
 
                 {/* Bottom: Huge Coin Display & Teacher Adjust Buttons */}
                 <div className={`${teams.length >= 7 ? 'mt-1 pt-1' : 'mt-2 pt-1.5'} border-t border-white/10 flex items-center justify-between gap-1`}>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-xl bg-black/60 border border-white/15 shadow-inner">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl bg-black/60 border border-white/15 shadow-inner">
                     <MarioCoin size="sm" />
                     <span
-                      className={`font-mario ${teams.length >= 7 ? 'text-xl xl:text-2xl' : 'text-2xl xl:text-3xl'} leading-none ${
+                      className={`font-mario ${teams.length >= 7 ? 'text-xl xl:text-2xl' : 'text-3xl xl:text-4xl'} leading-none ${
                         team.coins < 0
                           ? 'text-red-400 font-black'
                           : 'text-yellow-300 text-shadow-gold drop-shadow-[0_0_10px_rgba(250,204,21,0.55)]'

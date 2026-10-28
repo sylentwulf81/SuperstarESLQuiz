@@ -25,6 +25,9 @@ import {
   PlusCircle,
   AlertTriangle,
   FileDown,
+  ArrowLeft,
+  Play,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -66,6 +69,7 @@ interface CustomizerModalProps {
   onSaveCloud?: () => Promise<void>;
   onLoadCloud?: () => Promise<void>;
   onClose: () => void;
+  onBackToLauncher?: () => void;
   showCatchUpNote?: boolean;
   onToggleCatchUpNote?: () => void;
   lessonGoal?: string;
@@ -99,6 +103,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   onSaveCloud,
   onLoadCloud,
   onClose,
+  onBackToLauncher,
   showCatchUpNote = false,
   onToggleCatchUpNote,
   lessonGoal,
@@ -135,6 +140,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   const [draggedBlockId, setDraggedBlockId] = useState<number | null>(null);
   const [dragOverBlockId, setDragOverBlockId] = useState<number | null>(null);
   const [blockFilter, setBlockFilter] = useState<BlockFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | QuestionType>('all');
+  const [sortByType, setSortByType] = useState<boolean>(false);
 
   // Deck size & shuffle state synced with localStorage
   const [totalCount, setTotalCount] = useState<number>(() => {
@@ -344,6 +351,103 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
     handleReorder(currentIndex, targetIndex);
   };
 
+  const handleInsertQuestionAfter = useCallback((afterId: number) => {
+    flushSave();
+    sounds.playPowerUp();
+
+    const currentQuestions = blocks.map(b => (b.id === selectedBlockId ? editingQuestionRef.current : b.question));
+    const targetIdx = blocks.findIndex(b => b.id === afterId);
+    const insertIdx = targetIdx !== -1 ? targetIdx + 1 : currentQuestions.length;
+
+    const newBlankQ: GameQuestion = {
+      id: insertIdx + 1,
+      blockNumber: insertIdx + 1,
+      type: 'open_trivia',
+      title: '',
+      answer: '',
+      rewardCoins: 1,
+      category: 'grammar',
+    };
+
+    const updatedQuestions = [...currentQuestions];
+    updatedQuestions.splice(insertIdx, 0, newBlankQ);
+
+    const reindexedBlocks: BlockState[] = updatedQuestions.map((q, idx) => ({
+      ...blocks[Math.min(idx, blocks.length - 1)],
+      id: idx + 1,
+      question: {
+        ...q,
+        id: idx + 1,
+        blockNumber: idx + 1,
+      },
+    }));
+
+    if (onReorderBlocks) {
+      onReorderBlocks(reindexedBlocks);
+    } else {
+      reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
+    }
+    if (onResizeBlocks && reindexedBlocks.length !== blocks.length) {
+      onResizeBlocks(reindexedBlocks.length);
+    }
+
+    const newTargetId = insertIdx + 1;
+    activeBlockIdRef.current = newTargetId;
+    setSelectedBlockId(newTargetId);
+    setEditingQuestion(newBlankQ);
+    editingQuestionRef.current = newBlankQ;
+    isDirtyRef.current = false;
+    setSaveStatus('saved');
+
+    toast.success(`Inserted New Question at Block #${newTargetId}!`);
+  }, [blocks, selectedBlockId, flushSave, onReorderBlocks, onUpdateBlockQuestion, onResizeBlocks]);
+
+  const handleDeleteCurrentBlock = useCallback(() => {
+    if (blocks.length <= 1) {
+      toast.error('Cannot delete the only question block');
+      return;
+    }
+    flushSave();
+    sounds.playResetDeck();
+
+    const currentIndex = blocks.findIndex(b => b.id === selectedBlockId);
+    if (currentIndex === -1) return;
+
+    const currentQuestions = blocks.map(b => (b.id === selectedBlockId ? editingQuestionRef.current : b.question));
+    const updatedQuestions = [...currentQuestions];
+    updatedQuestions.splice(currentIndex, 1);
+
+    const reindexedBlocks: BlockState[] = updatedQuestions.map((q, idx) => ({
+      ...blocks[Math.min(idx, blocks.length - 1)],
+      id: idx + 1,
+      question: {
+        ...q,
+        id: idx + 1,
+        blockNumber: idx + 1,
+      },
+    }));
+
+    if (onReorderBlocks) {
+      onReorderBlocks(reindexedBlocks);
+    } else {
+      reindexedBlocks.forEach(b => onUpdateBlockQuestion(b.id, b.question));
+    }
+    if (onResizeBlocks && reindexedBlocks.length !== blocks.length) {
+      onResizeBlocks(reindexedBlocks.length);
+    }
+
+    const nextSelectedId = Math.min(selectedBlockId, reindexedBlocks.length);
+    activeBlockIdRef.current = nextSelectedId;
+    setSelectedBlockId(nextSelectedId);
+    const newQ = { ...reindexedBlocks[nextSelectedId - 1].question };
+    setEditingQuestion(newQ);
+    editingQuestionRef.current = newQ;
+    isDirtyRef.current = false;
+    setSaveStatus('saved');
+
+    toast.info(`Deleted Question Block #${selectedBlockId}`);
+  }, [blocks, selectedBlockId, flushSave, onReorderBlocks, onUpdateBlockQuestion, onResizeBlocks]);
+
   // Safe modal close
   const handleClose = () => {
     flushSave();
@@ -491,7 +595,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
         newQ.explanation = '';
         newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
       } else if (type === 'open_trivia') {
-        newQ.answer = 'Answer here';
+        newQ.answer = '';
         newQ.rewardCoins = Math.max(1, Number(newQ.rewardCoins) || 1);
       } else if (type === 'unscramble') {
         newQ.targetWord = 'WORD';
@@ -550,7 +654,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   // Block metrics for navigator
   const isBlockFilled = useCallback((b: BlockState) => {
     const q = b.id === currentBlock.id ? editingQuestion : b.question;
-    return Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question');
+    return Boolean(q.title && q.title.trim().length > 0 && q.title !== 'Blank Question') || q.type === 'mystery_card';
   }, [currentBlock.id, editingQuestion]);
 
   const filledBlocksCount = useMemo(() => {
@@ -558,10 +662,35 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   }, [blocks, isBlockFilled]);
 
   const filteredBlocks = useMemo(() => {
-    if (blockFilter === 'filled') return blocks.filter(isBlockFilled);
-    if (blockFilter === 'empty') return blocks.filter(b => !isBlockFilled(b));
-    return blocks;
-  }, [blocks, blockFilter, isBlockFilled]);
+    let result = blocks;
+    if (blockFilter === 'filled') result = blocks.filter(isBlockFilled);
+    else if (blockFilter === 'empty') result = blocks.filter(b => !isBlockFilled(b));
+
+    if (typeFilter !== 'all') {
+      result = result.filter(b => {
+        const q = b.id === currentBlock.id ? editingQuestion : b.question;
+        return q.type === typeFilter;
+      });
+    }
+
+    if (sortByType) {
+      const typeRank: Record<QuestionType, number> = {
+        open_trivia: 1,
+        multiple_choice: 2,
+        true_false: 3,
+        unscramble: 4,
+        mystery_card: 5,
+      };
+      result = [...result].sort((a, b) => {
+        const qa = a.id === currentBlock.id ? editingQuestion : a.question;
+        const qb = b.id === currentBlock.id ? editingQuestion : b.question;
+        const diff = (typeRank[qa.type] || 99) - (typeRank[qb.type] || 99);
+        return diff !== 0 ? diff : a.id - b.id;
+      });
+    }
+
+    return result;
+  }, [blocks, blockFilter, isBlockFilled, typeFilter, sortByType, editingQuestion, currentBlock.id]);
 
   const renderTypeSpecificFields = () => {
     if (editingQuestion.type === 'mystery_card') {
@@ -886,6 +1015,35 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
               <span>New Deck</span>
             </button>
 
+            {/* Return to Launcher Button */}
+            {onBackToLauncher && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  flushSave();
+                  onClose();
+                  onBackToLauncher();
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-sm"
+                title="Return to Activity Library"
+              >
+                <ArrowLeft className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden md:inline">Activity Library</span>
+              </button>
+            )}
+
+            {/* Play / Return to Game Button */}
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white text-xs font-bold transition-all cursor-pointer shadow-md font-mario"
+              title="Save changes and start / resume game"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              <span>PLAY GAME</span>
+            </button>
+
             {/* Modal Close Button */}
             <button
               onClick={handleClose}
@@ -1107,40 +1265,86 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1 text-[11px]">
+                <div className="flex items-center justify-between gap-1 text-[11px] mb-1.5 flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlockFilter('all');
+                        setTypeFilter('all');
+                      }}
+                      className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                        blockFilter === 'all'
+                          ? 'bg-indigo-600 text-white border-indigo-400'
+                          : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      All ({blocks.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBlockFilter('filled')}
+                      className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                        blockFilter === 'filled'
+                          ? 'bg-emerald-600 text-white border-emerald-400'
+                          : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      Filled ({filledBlocksCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlockFilter('empty');
+                        setTypeFilter('all');
+                      }}
+                      className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
+                        blockFilter === 'empty'
+                          ? 'bg-slate-700 text-white border-slate-500'
+                          : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      Empty ({blocks.length - filledBlocksCount})
+                    </button>
+                  </div>
+
+                  {/* Sort by Type Toggle */}
                   <button
                     type="button"
-                    onClick={() => setBlockFilter('all')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
-                      blockFilter === 'all'
-                        ? 'bg-indigo-600 text-white border-indigo-400'
-                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
+                    onClick={() => setSortByType(prev => !prev)}
+                    className={`px-2 py-0.5 rounded-lg font-bold text-[10px] border transition-colors cursor-pointer flex items-center gap-1 ${
+                      sortByType
+                        ? 'bg-amber-500 text-slate-950 border-amber-300 font-black'
+                        : 'bg-slate-800 text-slate-300 border-white/10 hover:text-white'
                     }`}
+                    title={sortByType ? 'Viewing grouped by question type' : 'Viewing in numerical board order (1..N)'}
                   >
-                    All ({blocks.length})
+                    <ArrowDownUp className="w-3 h-3" />
+                    <span>{sortByType ? 'Grouped' : 'Board Order'}</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setBlockFilter('filled')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
-                      blockFilter === 'filled'
-                        ? 'bg-emerald-600 text-white border-emerald-400'
-                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
-                    }`}
-                  >
-                    Filled ({filledBlocksCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBlockFilter('empty')}
-                    className={`px-2 py-0.5 rounded-lg font-bold border transition-colors cursor-pointer ${
-                      blockFilter === 'empty'
-                        ? 'bg-slate-700 text-white border-slate-500'
-                        : 'bg-slate-800/80 text-slate-400 border-white/10 hover:text-white'
-                    }`}
-                  >
-                    Empty ({blocks.length - filledBlocksCount})
-                  </button>
+                </div>
+
+                {/* Sub-Filter by Question Type */}
+                <div className="flex items-center gap-1 text-[10px] overflow-x-auto pb-0.5 scrollbar-none">
+                  {(['all', 'open_trivia', 'multiple_choice', 'true_false', 'unscramble', 'mystery_card'] as const).map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setTypeFilter(t)}
+                      className={`px-1.5 py-0.5 rounded-md font-bold transition-all shrink-0 cursor-pointer ${
+                        typeFilter === t
+                          ? 'bg-white/20 text-white border border-white/40 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 bg-black/20'
+                      }`}
+                    >
+                      {t === 'all' && 'All Types'}
+                      {t === 'open_trivia' && 'Trivia'}
+                      {t === 'multiple_choice' && 'MC'}
+                      {t === 'true_false' && 'T/F'}
+                      {t === 'unscramble' && 'Unscramble'}
+                      {t === 'mystery_card' && 'Mystery'}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1339,8 +1543,8 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                     </span>
                   </div>
 
-                  {/* Shift Block Position Buttons */}
-                  <div className="flex items-center gap-1.5">
+                  {/* Shift, Insert & Delete Block Buttons */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">Position:</span>
                     <button
                       type="button"
@@ -1350,7 +1554,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                       title="Move this question earlier (swap with previous block)"
                     >
                       <span>◀</span>
-                      <span className="text-[10px]">Shift Left</span>
+                      <span className="text-[10px]">Shift</span>
                     </button>
                     <button
                       type="button"
@@ -1359,8 +1563,29 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                       className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-200 border border-white/15 text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
                       title="Move this question later (swap with next block)"
                     >
-                      <span className="text-[10px]">Shift Right</span>
+                      <span className="text-[10px]">Shift</span>
                       <span>▶</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleInsertQuestionAfter(selectedBlockId)}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600/80 hover:bg-indigo-500 text-white border border-indigo-300/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+                      title="Insert a blank question block immediately after this one (shifts rest forward)"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-yellow-300" />
+                      <span className="text-[10px]">Insert After</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={blocks.length <= 1}
+                      onClick={handleDeleteCurrentBlock}
+                      className="px-2 py-1 rounded-lg bg-rose-950/60 hover:bg-rose-900/80 disabled:opacity-30 text-rose-300 border border-rose-400/40 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-sm active:scale-95"
+                      title="Delete this question block (shifts following questions earlier)"
+                    >
+                      <Trash2 className="w-3 h-3 text-rose-400" />
+                      <span className="text-[10px]">Delete</span>
                     </button>
                   </div>
                 </div>

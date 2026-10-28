@@ -42,6 +42,8 @@ export interface Team {
   skipNextCoinReward?: boolean;
   /** Classic Blooper: next coin payout for this team is exactly 1, then cleared. */
   blooperNextCoin?: boolean;
+  /** Inking team ID who squirted the Blooper ink, receiving the stolen coin difference */
+  blooperInkerTeamId?: string;
   customImageUrl?: string;
 }
 

@@ -26,6 +26,25 @@ interface QuestionLibraryPanelProps {
 
 type Armed = { id: string; mode: 'load' | 'delete' | 'update' } | null;
 
+const LOCAL_CUSTOM_BANKS_KEY = 'superstar_local_custom_banks_v1';
+
+export function loadLocalCustomBanks(): CloudQuestionBank[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_CUSTOM_BANKS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+export function saveLocalCustomBanks(banks: CloudQuestionBank[]) {
+  try {
+    localStorage.setItem(LOCAL_CUSTOM_BANKS_KEY, JSON.stringify(banks.slice(0, 25)));
+  } catch {}
+}
+
 /**
  * Bolt Performance Optimization:
  * 1) Wrapped QuestionLibraryPanel and BankCard in React.memo to prevent VDOM re-renders
@@ -46,7 +65,7 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
   const [name, setName] = useState(activeBankName || '');
   const [targetGoal, setTargetGoal] = useState(lessonGoal || '');
   const [saveCount, setSaveCount] = useState<number>(questions.length || 60);
-  const [mine, setMine] = useState<CloudQuestionBank[]>([]);
+  const [mine, setMine] = useState<CloudQuestionBank[]>(() => loadLocalCustomBanks());
   const [loadingMine, setLoadingMine] = useState(false);
   const [busy, setBusy] = useState(false);
   const [armed, setArmed] = useState<Armed>(null);
@@ -68,15 +87,23 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
   }, [activeBankName, name]);
 
   useEffect(() => {
+    const localBanks = loadLocalCustomBanks();
     if (!isLoggedIn) {
-      setMine([]);
+      setMine(localBanks);
       return;
     }
     let cancelled = false;
     setLoadingMine(true);
     listQuestionBanks()
-      .then(banks => {
-        if (!cancelled) setMine(banks);
+      .then(cloudBanks => {
+        if (!cancelled) {
+          const cloudIds = new Set(cloudBanks.map(b => b.id));
+          const merged = [...cloudBanks, ...localBanks.filter(b => !cloudIds.has(b.id))];
+          setMine(merged);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setMine(localBanks);
       })
       .finally(() => {
         if (!cancelled) setLoadingMine(false);
@@ -84,7 +111,6 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
     return () => {
       cancelled = true;
     };
-    // listQuestionBanks identity changes when cloud status updates; refetch only when sign-in changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
@@ -106,17 +132,13 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
       toast.error('Name this set first');
       return;
     }
-    if (!isLoggedIn) {
-      toast.error('Sign in to save a set to your Cloud Library');
-      return;
-    }
 
     const finalCount = Math.max(1, Math.min(saveCount, questions.length));
     const rawSlice = questions.slice(0, finalCount);
 
     setBusy(true);
 
-    // Optimize large base64 images so that cloud documents never exceed Firestore 1MB limits
+    // Optimize large base64 images so that documents never exceed storage limits
     const selectedQuestions = await Promise.all(
       rawSlice.map(async (question) => {
         let imageUrl = question.imageUrl;
@@ -135,42 +157,73 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
       })
     );
 
-    const result = await saveQuestionBank({
-      id: targetBankId,
+    const bankId = targetBankId || `local_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const localBank: CloudQuestionBank = {
+      id: bankId,
       name: trimmed,
       lessonGoal: targetGoal.trim(),
       questions: selectedQuestions,
-    });
-    setBusy(false);
+      updatedAt: new Date().toISOString(),
+    };
 
-    if (!result.success || !result.bank) {
-      toast.error(result.error || 'Could not save this set');
-      return;
+    // Always persist to local custom library immediately
+    const existingLocal = loadLocalCustomBanks();
+    const updatedLocal = [
+      localBank,
+      ...existingLocal.filter(b => b.id !== localBank.id && b.name.toLowerCase() !== trimmed.toLowerCase()),
+    ].slice(0, 25);
+    saveLocalCustomBanks(updatedLocal);
+
+    let cloudResultBank: CloudQuestionBank | undefined;
+    if (isLoggedIn) {
+      try {
+        const result = await saveQuestionBank({
+          id: targetBankId,
+          name: trimmed,
+          lessonGoal: targetGoal.trim(),
+          questions: selectedQuestions,
+        });
+        if (result.success && result.bank) {
+          cloudResultBank = result.bank;
+        }
+      } catch {
+        // Cloud failed; local copy succeeded
+      }
     }
 
+    setBusy(false);
     sounds.playSaveCloud();
-    const saved = result.bank;
-    setMine(prev => [saved, ...prev.filter(bank => bank.id !== saved.id)]);
-    setName(saved.name);
-    onActiveBankChange?.(saved.id, saved.name);
+
+    const activeSaved = cloudResultBank || localBank;
+    setMine(prev => [
+      activeSaved,
+      ...prev.filter(b => b.id !== activeSaved.id && b.name.toLowerCase() !== activeSaved.name.toLowerCase()),
+    ]);
+    setName(activeSaved.name);
+    onActiveBankChange?.(activeSaved.id, activeSaved.name);
     setArmed(null);
 
     toast.success(
-      targetBankId
-        ? `Updated “${saved.name}” (${selectedQuestions.length} Qs synced)`
-        : `Saved “${saved.name}” (${selectedQuestions.length} Qs attached)`
+      isLoggedIn && cloudResultBank
+        ? `Saved “${activeSaved.name}” to Cloud & Local Library!`
+        : `Saved “${activeSaved.name}” to Local Library (${selectedQuestions.length} Qs)!`
     );
   };
 
   const handleDelete = async (bankId: string) => {
     setBusy(true);
-    const ok = await deleteQuestionBank(bankId);
+    // Delete from local storage
+    const local = loadLocalCustomBanks().filter(b => b.id !== bankId);
+    saveLocalCustomBanks(local);
+
+    if (isLoggedIn) {
+      try {
+        await deleteQuestionBank(bankId);
+      } catch {}
+    }
     setBusy(false);
     setArmed(null);
-    if (!ok) {
-      toast.error('Could not delete that set');
-      return;
-    }
+
     if (activeBankId === bankId) {
       onActiveBankChange?.(undefined, undefined);
     }
@@ -456,10 +509,11 @@ export const QuestionLibraryPanel = React.memo(function QuestionLibraryPanel({
                 sounds.playClick();
                 void loginWithGoogle();
               }}
-              className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs cursor-pointer shadow"
+              className="flex items-center gap-1.5 px-3 py-2 bg-indigo-950/70 hover:bg-indigo-900/90 text-indigo-200 border border-indigo-400/40 font-bold rounded-xl text-xs cursor-pointer shadow transition-colors"
+              title="Sign in with Google to enable automatic cloud backup across devices"
             >
-              <LogIn className="w-3.5 h-3.5 text-indigo-600" />
-              Sign in to Save
+              <LogIn className="w-3.5 h-3.5 text-amber-300" />
+              <span>Cloud Sync (Google)</span>
             </button>
           )}
         </div>

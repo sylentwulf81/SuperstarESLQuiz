@@ -270,17 +270,29 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               </div>
             )}
 
-            {/* Answer Box */}
+            {/* Optional Question Image (For Visual True/False, Vocab Clues & Prompts) */}
+            {(question.imageUrl || (question as any).image) && (
+              <div className="my-2.5 mx-auto max-w-sm sm:max-w-md max-h-48 sm:max-h-56 rounded-2xl overflow-hidden border-2 border-amber-300/50 shadow-xl bg-black/60 flex items-center justify-center">
+                <img
+                  src={question.imageUrl || (question as any).image}
+                  alt={question.title || 'Question Clue'}
+                  className="max-h-48 sm:max-h-56 w-auto object-contain rounded-xl"
+                  loading="lazy"
+                />
+              </div>
+            )}
+
+            {/* Answer Display Section */}
             {question.type === 'multiple_choice' ? (
               <div className="mt-2.5 sm:mt-3 mx-auto w-full max-w-2xl flex flex-col gap-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full">
                   {question.options.map((opt, optIdx) => {
                     const isCorrect = optIdx === question.correctIndex;
                     const letter = ['A', 'B', 'C', 'D'][optIdx];
                     return (
                       <div
                         key={optIdx}
-                        className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2 font-mario text-xs sm:text-sm md:text-base transition-all text-left ${
+                        className={`p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border-2 flex items-center gap-2.5 font-mario text-xs sm:text-sm md:text-base transition-all text-left min-h-[3.25rem] ${
                           answerRevealed
                             ? isCorrect
                               ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
@@ -289,124 +301,73 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         }`}
                       >
                         <span
-                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
+                          className={`w-7 h-7 sm:w-8 sm:h-8 rounded-xl flex items-center justify-center font-black text-xs shrink-0 ${
                             answerRevealed && isCorrect
-                              ? 'bg-white text-emerald-900'
+                              ? 'bg-white text-emerald-900 shadow-md'
                               : 'bg-black/50 text-yellow-300 border border-white/20'
                           }`}
                         >
-                          {answerRevealed && isCorrect ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : letter}
+                          {answerRevealed && isCorrect ? <Check className="w-4 h-4 stroke-[3]" /> : letter}
                         </span>
-                        <span className="truncate">{opt}</span>
+                        <span className="break-words leading-snug flex-1">{opt}</span>
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="flex justify-center mt-0.5">
-                  {!answerRevealed ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playCardFlip();
-                        setAnswerRevealed(true);
-                      }}
-                      className="px-5 py-1.5 sm:py-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-mario text-xs sm:text-base border border-indigo-300/50 inline-flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-300" />
-                      <span>Reveal Answer</span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3 py-1.5 rounded-xl border border-white/15">
-                        Answer: {['A', 'B', 'C', 'D'][question.correctIndex]} — {question.options[question.correctIndex]}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setAnswerRevealed(false);
-                        }}
-                        className="p-1.5 rounded-xl bg-black/55 hover:bg-white/20 text-indigo-100 border border-white/20 cursor-pointer"
-                        title="Hide answer"
-                      >
-                        <EyeOff className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {answerRevealed && (
+                  <div className="flex justify-center mt-1 animate-in fade-in duration-200">
+                    <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3.5 py-1.5 rounded-xl border border-white/15 shadow">
+                      Correct Answer: {['A', 'B', 'C', 'D'][question.correctIndex]} — {question.options[question.correctIndex]}
+                    </span>
+                  </div>
+                )}
               </div>
             ) : question.type === 'true_false' ? (
               <div className="mt-3 mx-auto w-full max-w-xl flex flex-col gap-2">
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 w-full">
                   <div
-                    className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2 font-mario text-lg sm:text-2xl transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-lg sm:text-2xl transition-all shadow-md ${
                       answerRevealed
                         ? question.isTrue
-                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
+                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black scale-102'
                           : 'bg-slate-900/50 border-white/10 text-slate-500 opacity-40'
                         : 'bg-slate-800/90 text-white border-white/20'
                     }`}
                   >
-                    <Check className={`w-6 h-6 ${answerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} strokeWidth={3} />
+                    <Check className={`w-7 h-7 ${answerRevealed && question.isTrue ? 'text-white' : 'text-emerald-400'}`} strokeWidth={3} />
                     <span>TRUE</span>
                   </div>
                   <div
-                    className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2 font-mario text-lg sm:text-2xl transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-lg sm:text-2xl transition-all shadow-md ${
                       answerRevealed
                         ? !question.isTrue
-                          ? 'bg-emerald-600 border-emerald-300 text-white ring-4 ring-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.5)] font-black'
+                          ? 'bg-rose-600 border-rose-300 text-white ring-4 ring-rose-400 shadow-[0_0_20px_rgba(244,63,94,0.5)] font-black scale-102'
                           : 'bg-slate-900/50 border-white/10 text-slate-500 opacity-40'
                         : 'bg-slate-800/90 text-white border-white/20'
                     }`}
                   >
-                    <X className={`w-6 h-6 ${answerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} strokeWidth={3} />
+                    <X className={`w-7 h-7 ${answerRevealed && !question.isTrue ? 'text-white' : 'text-rose-400'}`} strokeWidth={3} />
                     <span>FALSE</span>
                   </div>
                 </div>
 
-                <div className="flex justify-center">
-                  {!answerRevealed ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        sounds.playCardFlip();
-                        setAnswerRevealed(true);
-                      }}
-                      className="px-5 py-2 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-mario text-sm sm:text-base border border-indigo-300/50 inline-flex items-center gap-2 cursor-pointer shadow-lg hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Eye className="w-5 h-5 text-yellow-300" />
-                      <span>Reveal Answer</span>
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {question.explanation && (
-                        <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3 py-1.5 rounded-xl border border-white/15">
-                          {question.explanation}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          sounds.playClick();
-                          setAnswerRevealed(false);
-                        }}
-                        className="p-1.5 rounded-xl bg-black/55 hover:bg-white/20 text-indigo-100 border border-white/20 cursor-pointer"
-                        title="Hide answer"
-                      >
-                        <EyeOff className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+                {answerRevealed && question.explanation && (
+                  <div className="flex justify-center mt-1 animate-in fade-in duration-200">
+                    <span className="text-xs sm:text-sm text-yellow-200 font-bold bg-black/60 px-3.5 py-1.5 rounded-xl border border-white/15 shadow">
+                      {question.explanation}
+                    </span>
+                  </div>
+                )}
               </div>
             ) : answerText && (
               <div
                 className={`relative mt-3 mx-auto w-full max-w-xl min-h-[3.5rem] px-5 rounded-2xl border-2 flex items-center justify-center transition-all ${
                   answerRevealed
-                    ? 'bg-black/80 border-emerald-400/50 py-3 pr-14 shadow-lg'
-                    : 'h-[3.5rem] bg-indigo-700/80 hover:bg-indigo-650 border-indigo-300/50'
+                    ? 'bg-black/85 border-emerald-400/50 py-3 pr-14 shadow-lg'
+                    : 'h-[3.5rem] bg-indigo-700/80 hover:bg-indigo-650 border-indigo-300/50 cursor-pointer shadow-md'
                 }`}
+                onClick={!answerRevealed ? () => { sounds.playCardFlip(); setAnswerRevealed(true); } : undefined}
               >
                 {answerRevealed ? (
                   <>
@@ -415,7 +376,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     </p>
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.stopPropagation();
                         sounds.playClick();
                         setAnswerRevealed(false);
                       }}
@@ -426,17 +388,10 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     </button>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playCardFlip();
-                      setAnswerRevealed(true);
-                    }}
-                    className="absolute inset-0 w-full h-full rounded-[14px] text-white font-mario text-lg sm:text-2xl cursor-pointer inline-flex items-center justify-center gap-2.5"
-                  >
-                    <Eye className="w-6 h-6 text-yellow-300" />
-                    Reveal Answer
-                  </button>
+                  <div className="flex items-center justify-center gap-2.5 text-white font-mario text-lg sm:text-xl">
+                    <Eye className="w-5 h-5 text-yellow-300" />
+                    <span>Click to Reveal Answer</span>
+                  </div>
                 )}
               </div>
             )}

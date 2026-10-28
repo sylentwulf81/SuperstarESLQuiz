@@ -17,7 +17,7 @@ import { MysteryBlocksMiniGame } from './components/MysteryBlocksMiniGame';
 import { SuperMushroomMiniGame } from './components/SuperMushroomMiniGame';
 import { RoundOverOverlay } from './components/RoundOverOverlay';
 import { useAuth } from '@/shared/context/AuthContext';
-import { GameQuestion, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
+import { BlockState, GameQuestion, QuestionType, RewardCard, RewardCardActionOptions, Team } from '@/shared/types';
 import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party-quiz/data/rewards';
 import { loadClassicTestGame, persistClassicTestGame } from './data/classicRewards';
 import {
@@ -259,18 +259,20 @@ export function MarioBlastClassic({
     persistQuestions(resizedBlocks);
   };
 
-  const handleCreateBlankDeck = (count?: number) => {
+  const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
     handleActiveBankChange(undefined, undefined);
     const target = count ?? blocks.length;
     const blankQuestions: GameQuestion[] = Array.from({ length: target }, (_, i) => ({
       id: i + 1,
-      type: 'multiple_choice',
-      title: '',
-      options: ['', '', '', ''],
-      correctIndex: 0,
-      rewardCoins: 1,
       blockNumber: i + 1,
       category: 'grammar',
+      title: '',
+      rewardCoins: 1,
+      ...(defaultType === 'multiple_choice'
+        ? { type: 'multiple_choice' as const, options: ['', '', '', ''], correctIndex: 0 }
+        : defaultType === 'true_false'
+        ? { type: 'true_false' as const, isTrue: true, explanation: '' }
+        : { type: 'open_trivia' as const, answer: '' }),
     }));
     const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
     dispatch({
@@ -282,6 +284,14 @@ export function MarioBlastClassic({
     persistClassicLessonGoal('');
     persistQuestions(newBlocks);
   };
+
+  const handleReorderBlocks = useCallback((newBlocks: BlockState[]) => {
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: newBlocks,
+    });
+    persistQuestions(newBlocks);
+  }, [dispatch, persistQuestions]);
 
   const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
@@ -439,12 +449,24 @@ export function MarioBlastClassic({
               onManualLoad={handleManualLoad}
             />
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-              <TeamSidebar
-                teams={teams}
-                currentTeamIndex={currentTeamIndex}
-                onSelectTeamTurn={handleSelectTeamTurn}
-                onAdjustCoins={handleAdjustCoins}
-              />
+              {teams.length <= 4 ? (
+                <TeamSidebar
+                  teams={teams}
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
+                />
+              ) : (
+                <TeamSidebar
+                  teams={teams.slice(0, 4)}
+                  allTeams={teams}
+                  startIndex={0}
+                  side="left"
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
+                />
+              )}
               <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <GameBoard
                   blocks={blocks}
@@ -454,13 +476,25 @@ export function MarioBlastClassic({
                   onOpenLeaderboard={handleDeclareWinner}
                 />
               </main>
+              {teams.length > 4 && (
+                <TeamSidebar
+                  teams={teams.slice(4)}
+                  allTeams={teams}
+                  startIndex={4}
+                  side="right"
+                  hideMobileTrack
+                  currentTeamIndex={currentTeamIndex}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
+                />
+              )}
             </div>
           </div>
         )}
       </div>
 
       <AnimatePresence>
-        {selectedQuestion && (!roundOverReason || isReviewingRound) && (
+        {selectedQuestion && (
           <ClassicRoundModal
             question={selectedQuestion}
             lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
@@ -523,13 +557,12 @@ export function MarioBlastClassic({
       </AnimatePresence>
 
       <AnimatePresence>
-        {roundOverReason && !isReviewingRound && (
+        {roundOverReason && !selectedQuestion && (
           <RoundOverOverlay
             reason={roundOverReason}
             cardCount={slots.length}
             question={selectedQuestion}
             lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
-            onReviewQuestion={() => setIsReviewingRound(true)}
             onContinue={handleContinueRoundOver}
           />
         )}
@@ -548,9 +581,11 @@ export function MarioBlastClassic({
             onResetAllQuestions={handleResetAllQuestions}
             onResizeBlocks={handleResizeBlocks}
             onCreateBlankDeck={handleCreateBlankDeck}
+            onReorderBlocks={handleReorderBlocks}
             onSaveCloud={async () => { await handleManualSync(); }}
             onLoadCloud={async () => { await handleManualLoad(); }}
             onClose={() => setIsCustomizerOpen(false)}
+            onBackToLauncher={onExitToLauncher}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
             lessonGoal={lessonGoal}

@@ -901,52 +901,51 @@ class SoundEngine {
     const ctx = this.getContext();
     if (!ctx) return;
 
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
+    const now = ctx.currentTime;
+
     // Cheeky staccato cartoon tiptoe squeaks
     const squeaks = [
-      { f: 620, endF: 880, d: 0.08, t: 0 },
-      { f: 880, endF: 1150, d: 0.08, t: 85 },
-      { f: 720, endF: 980, d: 0.08, t: 170 },
-      { f: 1040, endF: 1350, d: 0.12, t: 255 },
+      { f: 640, endF: 920, d: 0.08, t: 0 },
+      { f: 900, endF: 1200, d: 0.08, t: 0.085 },
+      { f: 740, endF: 1020, d: 0.08, t: 0.17 },
+      { f: 1080, endF: 1400, d: 0.11, t: 0.255 },
     ];
 
     squeaks.forEach(sq => {
-      setTimeout(() => {
-        if (!this.ctx) return;
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(sq.f, now);
-        osc.frequency.exponentialRampToValueAtTime(sq.endF, now + sq.d);
+      const startTime = now + sq.t;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(sq.f, startTime);
+      osc.frequency.exponentialRampToValueAtTime(sq.endF, startTime + sq.d);
 
-        gain.gain.setValueAtTime(0.24, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + sq.d);
+      gain.gain.setValueAtTime(0.35, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + sq.d);
 
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + sq.d);
-      }, sq.t);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + sq.d);
     });
 
     // Mischievous cartoon zip slide / scamper finish
-    setTimeout(() => {
-      if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1250, now);
-      osc.frequency.exponentialRampToValueAtTime(420, now + 0.32);
+    const slideStart = now + 0.36;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1300, slideStart);
+    osc.frequency.exponentialRampToValueAtTime(400, slideStart + 0.32);
 
-      gain.gain.setValueAtTime(0.22, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+    gain.gain.setValueAtTime(0.32, slideStart);
+    gain.gain.exponentialRampToValueAtTime(0.001, slideStart + 0.32);
 
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.32);
-    }, 360);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(slideStart);
+    osc.stop(slideStart + 0.32);
   }
 }
 

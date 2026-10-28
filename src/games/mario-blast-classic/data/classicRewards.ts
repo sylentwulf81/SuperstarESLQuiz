@@ -209,20 +209,20 @@ export function classicGameHeat(
   return clamp01(0.5 * board + 0.5 * coinHeat);
 }
 
-/** Plain coin payouts — the bulk of every round (~70% of slots). */
+/** Plain coin payouts calibrated to prevent runaway inflation. */
 const COIN_DEAL_WEIGHTS: Partial<Record<RewardCardType, number>> = {
-  great_coins_3: 38,
-  wonderful_coins_5: 32,
-  super_coins_10: 18,
-  // Rare round-ender treated as a coin haul, not an “action”
-  gold_star: 2,
+  great_coins_3: 45,
+  wonderful_coins_5: 35,
+  super_coins_10: 12,
+  // Rare round-ender treated as a coin haul
+  gold_star: 4,
 };
 
 const REGULAR_ACTION_WEIGHTS: Partial<Record<RewardCardType, number>> = {
-  super_star_x2: 28,
-  ghost_steal_5: 24,
-  blooper: 24,
-  mystery_blocks: 16,
+  ghost_steal_5: 32,
+  blooper: 28,
+  super_star_x2: 22,
+  mystery_blocks: 18,
 };
 
 function pickWeightedType(
@@ -242,13 +242,13 @@ function pickWeightedType(
   return entries[0][0];
 }
 
-/** ~70% coin / ~30% action across the table (usually 1–2 actions). */
+/** Balanced coin & action distribution: ~45–55% actions (e.g. 3 of 6, 4 of 8) for maximum excitement. */
 function pickActionCountForRound(slotCount: number): number {
-  const target = Math.round(slotCount * 0.3); // 2 for 6–7 cards, 2 for 8
+  const target = Math.round(slotCount * 0.5); // 3 for 6 cards, 4 for 8 cards
   const r = Math.random();
-  if (r < 0.1) return Math.max(0, target - 1); // sometimes lean coin-heavier
-  if (r < 0.85) return Math.min(2, Math.max(1, target));
-  return Math.min(2, target + 1);
+  if (r < 0.15) return Math.max(1, target - 1);
+  if (r < 0.85) return target;
+  return Math.min(slotCount - 1, target + 1);
 }
 
 function pickEscalationType(heat: number): RewardCardType {
@@ -384,9 +384,11 @@ export function applyCoinPayout(team: Team, amount: number): {
   skipped: boolean;
   doubled: boolean;
   bloopered: boolean;
+  heistDifference: number;
+  inkerTeamId?: string;
 } {
   if (amount <= 0) {
-    return { team, awarded: 0, skipped: false, doubled: false, bloopered: false };
+    return { team, awarded: 0, skipped: false, doubled: false, bloopered: false, heistDifference: 0 };
   }
   if (team.skipNextCoinReward) {
     return {
@@ -395,20 +397,26 @@ export function applyCoinPayout(team: Team, amount: number): {
       skipped: true,
       doubled: false,
       bloopered: false,
+      heistDifference: 0,
     };
   }
   if (team.blooperNextCoin) {
+    const inkerTeamId = team.blooperInkerTeamId;
+    const heistDifference = Math.max(0, amount - 1);
     return {
       team: {
         ...team,
         coins: team.coins + 1,
         blooperNextCoin: false,
+        blooperInkerTeamId: undefined,
         doubleNextCoinReward: false,
       },
       awarded: 1,
       skipped: false,
       doubled: false,
       bloopered: true,
+      heistDifference,
+      inkerTeamId,
     };
   }
   const doubled = Boolean(team.doubleNextCoinReward);
@@ -423,6 +431,7 @@ export function applyCoinPayout(team: Team, amount: number): {
     skipped: false,
     doubled,
     bloopered: false,
+    heistDifference: 0,
   };
 }
 

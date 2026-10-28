@@ -24,6 +24,7 @@ interface SetupScreenProps {
 }
 
 const AVAILABLE_COUNTS = [2, 3, 4, 5, 6, 7, 8] as const;
+const DECK_COUNT_OPTIONS = [10, 15, 20, 25, 30, 60] as const;
 
 /** Module-level avatar reader helper. */
 const readStoredAvatar = (charId: CharacterId) => {
@@ -36,7 +37,7 @@ const readStoredAvatar = (charId: CharacterId) => {
 
 /**
  * SetupScreen component:
- * Manages team counts, mystery character draw, and starting coins.
+ * Manages team counts, free-choice mystery character draw, editable team names, and starting coins.
  */
 export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function SetupScreen({
   theme,
@@ -48,66 +49,135 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
 }) {
   const [teamCount, setTeamCount] = useState<number>(4);
   const [shuffledChars, setShuffledChars] = useState<CharacterInfo[]>(() => shuffleArray(CHARACTER_LIST));
-  const [revealedIndices, setRevealedIndices] = useState<Set<number>>(new Set());
-  const [celebrationChar, setCelebrationChar] = useState<{ char: CharacterInfo; slotNumber: number } | null>(null);
+  // slotAssignments: slotIdx (0..7) -> teamNum (1..teamCount) or null
+  const [slotAssignments, setSlotAssignments] = useState<(number | null)[]>(() => Array(8).fill(null));
+  const [customTeamNames, setCustomTeamNames] = useState<Record<number, string>>({});
+  const [editingTeamNum, setEditingTeamNum] = useState<number | null>(null);
+  const [celebrationChar, setCelebrationChar] = useState<{ char: CharacterInfo; slotNumber: number; teamNum: number } | null>(null);
+
+  // Deck size and shuffle settings synced with localStorage
+  const [deckSize, setDeckSize] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(`mp_block_count_${theme}`);
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 10 && val <= 60) return val;
+      }
+    } catch {}
+    return 60;
+  });
+
+  const [isShuffleEnabled, setIsShuffleEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem(`mp_shuffle_blocks_${theme}`);
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    return true;
+  });
+
+  const handleUpdateDeckSize = useCallback((count: number) => {
+    sounds.playPop();
+    setDeckSize(count);
+    try {
+      localStorage.setItem(`mp_block_count_${theme}`, String(count));
+    } catch {}
+  }, [theme]);
+
+  const handleToggleShuffle = useCallback(() => {
+    sounds.playClick();
+    setIsShuffleEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem(`mp_shuffle_blocks_${theme}`, String(next));
+      } catch {}
+      return next;
+    });
+  }, [theme]);
 
   const [startingCoins, setStartingCoins] = useState<number>(0);
   const [calculatorOpen, setCalculatorOpen] = useState(false);
 
-  const activeRoster = useMemo(() => {
-    return shuffledChars.slice(0, teamCount);
-  }, [shuffledChars, teamCount]);
+  // Assigned teams count
+  const assignedTeamCount = useMemo(() => {
+    return slotAssignments.filter(n => n !== null && n <= teamCount).length;
+  }, [slotAssignments, teamCount]);
+
+  // Next team number to pick (1..teamCount)
+  const nextTeamToPick = useMemo(() => {
+    const assignedSet = new Set(slotAssignments.filter(n => n !== null && n <= teamCount));
+    for (let t = 1; t <= teamCount; t++) {
+      if (!assignedSet.has(t)) return t;
+    }
+    return null;
+  }, [slotAssignments, teamCount]);
 
   const handleReshuffle = useCallback(() => {
     sounds.playShuffle();
     setShuffledChars(shuffleArray(CHARACTER_LIST));
-    setRevealedIndices(new Set());
+    setSlotAssignments(Array(8).fill(null));
     setCelebrationChar(null);
   }, []);
 
   const handleSelectCount = useCallback((count: number) => {
     sounds.playPop();
     setTeamCount(count);
-    // Keep revealed indices that are within the new count
-    setRevealedIndices(prev => {
-      const next = new Set<number>();
-      prev.forEach(idx => {
-        if (idx < count) next.add(idx);
-      });
-      return next;
-    });
+    // Remove assignments that exceed new count
+    setSlotAssignments(prev => prev.map(t => (t !== null && t <= count ? t : null)));
   }, []);
 
-  const handleRevealSlot = useCallback((idx: number) => {
-    setRevealedIndices(prev => {
-      if (prev.has(idx)) return prev;
-      const char = activeRoster[idx];
-      if (char) {
-        sounds.playSpecialCardFanfare();
-        setTimeout(() => {
-          sounds.playCharacterSelect();
-        }, 180);
-        setCelebrationChar({ char, slotNumber: idx + 1 });
-      }
-      return new Set(prev).add(idx);
+  const handlePickSlot = useCallback((slotIdx: number) => {
+    const currentTeam = slotAssignments[slotIdx];
+    if (currentTeam !== null) {
+      // Already picked: allow editing team name
+      setEditingTeamNum(currentTeam);
+      return;
+    }
+    if (!nextTeamToPick) return;
+
+    const teamNum = nextTeamToPick;
+    const char = shuffledChars[slotIdx];
+
+    sounds.playSpecialCardFanfare();
+    setTimeout(() => {
+      sounds.playCharacterSelect();
+    }, 180);
+
+    setSlotAssignments(prev => {
+      const next = [...prev];
+      next[slotIdx] = teamNum;
+      return next;
     });
-  }, [activeRoster]);
+
+    setCelebrationChar({ char, slotNumber: slotIdx + 1, teamNum });
+  }, [slotAssignments, nextTeamToPick, shuffledChars]);
 
   const handleRevealAll = useCallback(() => {
     sounds.playSpecialCardFanfare();
-    const all = new Set<number>();
-    for (let i = 0; i < teamCount; i++) {
-      all.add(i);
-    }
-    setRevealedIndices(all);
+    setSlotAssignments(prev => {
+      const next = [...prev];
+      const assignedSet = new Set(next.filter(n => n !== null && n <= teamCount));
+      let slotIdx = 0;
+      for (let t = 1; t <= teamCount; t++) {
+        if (!assignedSet.has(t)) {
+          while (slotIdx < 8 && next[slotIdx] !== null) {
+            slotIdx++;
+          }
+          if (slotIdx < 8) {
+            next[slotIdx] = t;
+            slotIdx++;
+          }
+        }
+      }
+      return next;
+    });
   }, [teamCount]);
 
-  // Auto-dismiss celebration card after 1.8s
+  // Auto-dismiss celebration card after 2.2s
   useEffect(() => {
     if (!celebrationChar) return;
     const t = window.setTimeout(() => {
       setCelebrationChar(null);
-    }, 1800);
+    }, 2200);
     return () => window.clearTimeout(t);
   }, [celebrationChar]);
 
@@ -116,21 +186,35 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
   const handleStart = useCallback(() => {
     if (teamCount < 2) return;
     sounds.playGameStart();
-    const teams: Team[] = activeRoster.map(char => ({
-      id: `team_${char.id}`,
-      characterId: char.id,
-      name: char.name, // Pure character name, no 'Team' prefix and no editable input
-      coins: startingCoins,
-      stars: 0,
-      streak: 0,
-      blocksOpened: 0,
-      coinsStolen: 0,
-      hasDoubleTurn: false,
-      skipTurns: 0,
-      customImageUrl: readStoredAvatar(char.id),
-    }));
+
+    // Collect assigned teams, or assign fallback characters in order
+    const teams: Team[] = [];
+    const usedCharIds = new Set<CharacterId>();
+
+    for (let t = 1; t <= teamCount; t++) {
+      const slotIdx = slotAssignments.findIndex(val => val === t);
+      const char = slotIdx !== -1 ? shuffledChars[slotIdx] : shuffledChars.find(c => !usedCharIds.has(c.id)) || shuffledChars[t - 1];
+      usedCharIds.add(char.id);
+
+      const teamName = (customTeamNames[t] || '').trim() || char.name;
+
+      teams.push({
+        id: `team_${char.id}`,
+        characterId: char.id,
+        name: teamName,
+        coins: startingCoins,
+        stars: 0,
+        streak: 0,
+        blocksOpened: 0,
+        coinsStolen: 0,
+        hasDoubleTurn: false,
+        skipTurns: 0,
+        customImageUrl: readStoredAvatar(char.id),
+      });
+    }
+
     onStartGame(teams, startingCoins);
-  }, [teamCount, activeRoster, startingCoins, onStartGame]);
+  }, [teamCount, slotAssignments, shuffledChars, customTeamNames, startingCoins, onStartGame]);
 
   return (
     <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center justify-start sm:justify-center">
@@ -267,14 +351,19 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
             {/* Mystery Randomization Board */}
             <div className="flex-1 min-h-0 flex flex-col justify-center">
               <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 mb-1.5 sm:mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mario text-xs sm:text-sm md:text-base text-white text-shadow-mario flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-300" />
                     <span>MYSTERY CHARACTER DRAW</span>
                   </span>
                   <span className="text-[10px] sm:text-xs text-amber-200/90 font-semibold bg-amber-950/60 border border-amber-400/40 px-2 py-0.5 rounded-full">
-                    {revealedIndices.size} / {teamCount} Revealed
+                    {assignedTeamCount} / {teamCount} Teams Assigned
                   </span>
+                  {nextTeamToPick && (
+                    <span className="text-[10px] sm:text-xs text-yellow-300 font-black bg-indigo-900/80 border border-yellow-400/60 px-2.5 py-0.5 rounded-full animate-pulse shadow-md">
+                      👉 Team {nextTeamToPick}: Pick any card!
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1.5 sm:gap-2">
@@ -291,10 +380,10 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                     type="button"
                     onClick={handleRevealAll}
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-indigo-700/80 hover:bg-indigo-600 border border-indigo-400/50 text-xs font-bold text-white cursor-pointer transition-all active:scale-95 shadow"
-                    title="Reveal all teams instantly"
+                    title="Automatically reveal and assign all remaining teams"
                   >
                     <Eye className="w-3 h-3 text-yellow-300" />
-                    <span>Reveal All</span>
+                    <span>Quick Assign</span>
                   </button>
                 </div>
               </div>
@@ -302,36 +391,18 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
               {/* Mystery Cards Grid - Exactly 8 slots in 2x4 grid with fluid viewport-adaptive height */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                 {shuffledChars.map((char, idx) => {
-                  const isActiveTeam = idx < teamCount;
-                  const isRevealed = isActiveTeam && revealedIndices.has(idx);
-
-                  if (!isActiveTeam) {
-                    return (
-                      <div
-                        key={char.id}
-                        onClick={() => handleSelectCount(idx + 1)}
-                        className="relative h-[clamp(5rem,13.5vh,8.75rem)] rounded-xl sm:rounded-2xl border-2 border-dashed border-white/10 bg-slate-950/40 select-none flex flex-col items-center justify-center p-2 text-center cursor-pointer hover:border-white/30 hover:bg-slate-900/40 transition-all group opacity-40 hover:opacity-75"
-                        title={`Click to set team count to ${idx + 1}`}
-                      >
-                        <div className="w-[clamp(1.5rem,3.4vh,2.25rem)] h-[clamp(1.5rem,3.4vh,2.25rem)] rounded-full border border-white/15 bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-yellow-300 group-hover:border-yellow-400/50 transition-colors">
-                          <span className="font-mario text-[clamp(10px,1.3vh,13px)] font-bold">#{idx + 1}</span>
-                        </div>
-                        <span className="font-mario text-[clamp(9.5px,1.2vh,11px)] text-slate-400 mt-1 group-hover:text-slate-200">
-                          Inactive
-                        </span>
-                        <span className="text-[clamp(8px,1.1vh,10px)] text-slate-500 group-hover:text-amber-300/80 font-bold mt-0.5">
-                          + Add Team
-                        </span>
-                      </div>
-                    );
-                  }
+                  const assignedTeam = slotAssignments[idx];
+                  const isRevealed = assignedTeam !== null && assignedTeam <= teamCount;
+                  const teamDisplayName = isRevealed
+                    ? (customTeamNames[assignedTeam] || '').trim() || char.name
+                    : '';
 
                   return (
                     <div
                       key={char.id}
-                      onClick={() => handleRevealSlot(idx)}
+                      onClick={() => handlePickSlot(idx)}
                       style={{ perspective: '1000px' }}
-                      className="relative h-[clamp(5rem,13.5vh,8.75rem)] rounded-xl sm:rounded-2xl cursor-pointer select-none group"
+                      className="relative h-[clamp(5.2rem,13.8vh,8.85rem)] rounded-xl sm:rounded-2xl cursor-pointer select-none group"
                     >
                       <motion.div
                         animate={{ rotateY: isRevealed ? 180 : 0 }}
@@ -344,23 +415,22 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                           style={{ backfaceVisibility: 'hidden' }}
                           className="absolute inset-0 rounded-xl sm:rounded-2xl border-2 sm:border-3 border-amber-300 bg-gradient-to-b from-amber-500 via-yellow-600 to-amber-700 shadow-xl overflow-hidden flex flex-col items-center justify-between p-2 transition-transform group-hover:scale-[1.02] group-hover:brightness-110"
                         >
-                          {/* Inner Bevel */}
                           <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-yellow-200/50 pointer-events-none" />
 
-                          {/* Slot Badge */}
-                          <span className="font-mario text-[clamp(9px,1.2vh,11px)] text-yellow-100 bg-black/50 px-2 py-0.5 rounded-full border border-white/20 shadow leading-none">
-                            #{idx + 1}
+                          {/* Card Number Badge */}
+                          <span className="font-mario text-[clamp(10px,1.3vh,12px)] text-yellow-100 bg-black/55 px-2.5 py-0.5 rounded-full border border-white/20 shadow leading-none font-bold">
+                            Card #{idx + 1}
                           </span>
 
                           {/* Big Glowing Question Mark */}
                           <div className="flex flex-col items-center justify-center my-auto">
-                            <span className="font-mario text-[clamp(1.75rem,4.2vh,3rem)] text-white text-shadow-mario drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] animate-pulse leading-none">
+                            <span className="font-mario text-[clamp(1.85rem,4.4vh,3.2rem)] text-white text-shadow-mario drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] animate-pulse leading-none">
                               ?
                             </span>
                           </div>
 
                           <span className="text-[clamp(8px,1.1vh,10px)] font-black uppercase tracking-wider text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full shadow leading-none">
-                            Tap to Reveal
+                            {nextTeamToPick ? `Pick for Team ${nextTeamToPick}` : 'Tap to Reveal'}
                           </span>
                         </div>
 
@@ -372,29 +442,41 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                           <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-white/30 pointer-events-none" />
 
                           <div className="w-full flex items-center justify-between z-10 px-0.5">
-                            <span className="font-mario text-[clamp(9px,1.1vh,11px)] text-yellow-200 bg-black/55 px-1.5 py-0.5 rounded-full border border-white/20 leading-none">
-                              #{idx + 1}
+                            <span className="font-mario text-[clamp(9px,1.1vh,11px)] text-yellow-200 bg-black/60 px-2 py-0.5 rounded-full border border-yellow-300/60 leading-none font-bold">
+                              TEAM {assignedTeam}
                             </span>
-                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-bold shadow">
-                              <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[3.5]" />
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (assignedTeam) setEditingTeamNum(assignedTeam);
+                              }}
+                              className="w-4 h-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow cursor-pointer transition-transform hover:scale-110"
+                              title="Click to rename this team"
+                            >
+                              <Check className="w-2.5 h-2.5 stroke-[3.5]" />
                             </div>
                           </div>
 
-                          {/* Avatar */}
-                          <div className="my-auto flex flex-col items-center gap-0.5 z-10 min-w-0">
+                          {/* Avatar & Names */}
+                          <div className="my-auto flex flex-col items-center gap-0.5 z-10 min-w-0 max-w-full">
                             <TeamAvatar
                               characterId={char.id}
                               size="sm"
-                              className="w-[clamp(2rem,5vh,3.25rem)] h-[clamp(2rem,5vh,3.25rem)] shadow-lg ring-2 ring-white/80 shrink-0"
+                              className="w-[clamp(2.1rem,5.2vh,3.4rem)] h-[clamp(2.1rem,5.2vh,3.4rem)] shadow-lg ring-2 ring-white/80 shrink-0"
                             />
-                            <h4 className="font-mario text-[clamp(0.7rem,1.6vh,0.95rem)] text-white text-shadow-mario leading-tight mt-0.5 truncate max-w-full">
-                              {char.name}
+                            <h4 className="font-mario text-[clamp(0.72rem,1.6vh,0.95rem)] text-white text-shadow-mario leading-tight mt-0.5 truncate max-w-full px-1">
+                              {teamDisplayName}
                             </h4>
                           </div>
 
-                          <span className="text-[clamp(7.5px,1.1vh,9.5px)] font-bold text-white/90 bg-black/40 px-1.5 py-0.5 rounded-full truncate max-w-full z-10 leading-none">
-                            {char.catchphrase}
-                          </span>
+                          <div className="w-full flex items-center justify-between z-10 px-1 gap-1">
+                            <span className="text-[clamp(7.5px,1vh,9px)] text-white/90 bg-black/40 px-1.5 py-0.5 rounded-full truncate leading-none">
+                              {char.name}
+                            </span>
+                            <span className="text-[8px] text-amber-200 underline font-semibold cursor-pointer hover:text-white">
+                              Rename ✎
+                            </span>
+                          </div>
                         </div>
                       </motion.div>
                     </div>
@@ -403,60 +485,102 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
               </div>
             </div>
 
-            {/* Starting Coins and Calculator Row */}
-            <div className="shrink-0 flex flex-col lg:flex-row gap-2">
-              <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
-                    STARTING COINS PER TEAM
-                  </span>
-                  <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
-                    Starting with 5 or 10 coins enables exciting Boo steal & Bowser cards immediately!
-                  </span>
+            {/* Starting Coins, Deck Size, and Calculator Row */}
+            <div className="shrink-0 flex flex-col gap-2">
+              <div className="flex flex-col md:flex-row gap-2">
+                {/* Starting Coins */}
+                <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
+                      STARTING COINS
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
+                      Coins per team at kickoff
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    {[0, 5, 10, 15, 20].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => {
+                          if (amt === 0) sounds.playPop();
+                          else if (amt >= 10) sounds.playStarCoin();
+                          else sounds.playCoin();
+                          setStartingCoins(amt);
+                        }}
+                        className={`px-2 py-1 rounded-xl font-mario text-xs transition-all border cursor-pointer flex items-center gap-1 ${
+                          startingCoins === amt
+                            ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md scale-105 glass-glow-gold'
+                            : 'bg-slate-700/80 hover:bg-slate-650 text-slate-200 border-white/20'
+                        }`}
+                      >
+                        <span className="font-bold">{amt}</span>
+                        <MarioCoin size="sm" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {[0, 5, 10, 15, 20].map((amt) => (
+                {/* Deck Size Selector & Shuffle Toggle */}
+                <div className="flex-1 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] sm:px-4 bg-slate-800/60 rounded-xl sm:rounded-2xl border border-white/10 flex items-center justify-between gap-2">
+                  <div>
+                    <span className="font-mario text-xs sm:text-sm text-yellow-300 block">
+                      DECK SIZE ({deckSize} Qs)
+                    </span>
+                    <span className="text-[10px] sm:text-[11px] text-indigo-200 hidden sm:block">
+                      Number of blocks on the board
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+                    {DECK_COUNT_OPTIONS.map((count) => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => handleUpdateDeckSize(count)}
+                        className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-xl font-mario text-xs transition-all border cursor-pointer ${
+                          deckSize === count
+                            ? 'bg-indigo-600 text-white border-indigo-300 shadow font-black'
+                            : 'bg-slate-700/80 hover:bg-slate-650 text-slate-300 border-white/15'
+                        }`}
+                      >
+                        {count}
+                      </button>
+                    ))}
                     <button
-                      key={amt}
                       type="button"
-                      onClick={() => {
-                        if (amt === 0) {
-                          sounds.playPop();
-                        } else if (amt >= 10) {
-                          sounds.playStarCoin();
-                        } else {
-                          sounds.playCoin();
-                        }
-                        setStartingCoins(amt);
-                      }}
-                      className={`px-[clamp(0.45rem,0.9vw,0.7rem)] py-[clamp(0.2rem,0.5vh,0.35rem)] rounded-xl font-mario text-xs sm:text-sm transition-all border cursor-pointer flex items-center gap-1 ${
-                        startingCoins === amt
-                          ? 'bg-amber-500 text-slate-950 border-yellow-200 shadow-md scale-105 glass-glow-gold'
-                          : 'bg-slate-700/80 hover:bg-slate-650 text-slate-200 border-white/20'
+                      onClick={handleToggleShuffle}
+                      className={`px-2 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1 ${
+                        isShuffleEnabled
+                          ? 'bg-emerald-600/80 text-white border-emerald-400'
+                          : 'bg-slate-700/80 text-amber-300 border-white/15'
                       }`}
+                      title={isShuffleEnabled ? 'Prompts randomized on start' : 'Prompts played in order 1..N'}
                     >
-                      <span className="font-bold">{amt}</span>
-                      <MarioCoin size="sm" />
+                      <Shuffle className="w-3 h-3" />
+                      <span>{isShuffleEnabled ? 'Shuffle' : 'In-Order'}</span>
                     </button>
-                  ))}
+                  </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setCalculatorOpen(true);
-                }}
-                className="lg:w-[10.5rem] shrink-0 px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] rounded-xl sm:rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all flex lg:flex-col justify-between items-center lg:items-start"
-              >
-                <span className="font-mario text-xs sm:text-sm text-yellow-300 flex items-center gap-1.5">
-                  <Calculator className="w-3.5 h-3.5 text-amber-300" />
-                  Team size
-                </span>
-                <span className="text-[10px] sm:text-[11px] text-indigo-200">Class → groups</span>
-              </button>
+                {/* Class Calculator */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    sounds.playClick();
+                    setCalculatorOpen(true);
+                  }}
+                  className="px-3 py-[clamp(0.35rem,0.8vh,0.6rem)] rounded-xl sm:rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-white/10 hover:border-amber-300/50 text-left cursor-pointer transition-all flex md:flex-col justify-between items-center md:items-start shrink-0"
+                >
+                  <span className="font-mario text-xs sm:text-sm text-yellow-300 flex items-center gap-1.5">
+                    <Calculator className="w-3.5 h-3.5 text-amber-300" />
+                    Team size
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-indigo-200">Class → groups</span>
+                </button>
+              </div>
             </div>
 
             {/* Launch Button */}
@@ -480,8 +604,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 <Shuffle className="w-3 h-3 text-amber-400 shrink-0" />
                 <span>
                   {theme === 'classic'
-                    ? 'All 60 prompts shuffle at the start. Any team can answer!'
-                    : 'All 60 question & mystery card locations are automatically randomized at the start!'}
+                    ? `${deckSize} questions configured (${isShuffleEnabled ? 'shuffled' : 'in order'}). Any team can answer!`
+                    : `All ${deckSize} question & mystery card locations ready (${isShuffleEnabled ? 'randomized' : 'in order'})!`}
                 </span>
               </div>
             </div>
@@ -489,7 +613,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
         </motion.div>
       </div>
 
-      {/* Character Celebration Fanfare Popup Card */}
+      {/* Character Celebration Fanfare Popup Card with Inline Team Name Input */}
       <AnimatePresence>
         {celebrationChar && (
           <div
@@ -505,8 +629,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
               onClick={(e) => e.stopPropagation()}
             >
               <div className="absolute top-3 inset-x-0 flex justify-center">
-                <span className="font-mario text-xs sm:text-sm text-yellow-200 bg-black/60 px-4 py-1 rounded-full border border-yellow-300/80 shadow">
-                  ★ TEAM {celebrationChar.slotNumber} REVEALED! ★
+                <span className="font-mario text-xs sm:text-sm text-yellow-200 bg-black/60 px-4 py-1 rounded-full border border-yellow-300/80 shadow font-bold">
+                  ★ TEAM {celebrationChar.teamNum} REVEALED! ★
                 </span>
               </div>
 
@@ -531,13 +655,80 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 "{celebrationChar.char.catchphrase}"
               </p>
 
+              {/* Optional inline custom team name editor */}
+              <div className="mt-3 w-full bg-black/40 p-2.5 rounded-2xl border border-white/20">
+                <label className="text-[10px] font-bold text-yellow-200 block mb-1 uppercase tracking-wider">
+                  Custom Team Name (optional):
+                </label>
+                <input
+                  type="text"
+                  value={customTeamNames[celebrationChar.teamNum] ?? celebrationChar.char.name}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCustomTeamNames(prev => ({ ...prev, [celebrationChar.teamNum]: val }));
+                  }}
+                  placeholder={celebrationChar.char.name}
+                  className="w-full bg-slate-900 border border-white/30 rounded-xl px-3 py-1.5 text-xs text-white text-center font-bold focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                />
+              </div>
+
               <button
                 type="button"
                 onClick={() => setCelebrationChar(null)}
-                className="mt-5 px-6 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-mario text-sm border-2 border-white cursor-pointer shadow-lg active:scale-95 transition-transform"
+                className="mt-4 px-6 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-mario text-sm border-2 border-white cursor-pointer shadow-lg active:scale-95 transition-transform font-bold"
               >
                 AWESOME!
               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Standalone Team Name Editor Modal */}
+      <AnimatePresence>
+        {editingTeamNum !== null && (
+          <div
+            onClick={() => setEditingTeamNum(null)}
+            className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm cursor-pointer"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="w-full max-w-sm bg-slate-900 border-2 border-yellow-400 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center gap-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="font-mario text-lg text-yellow-300">
+                Rename Team #{editingTeamNum}
+              </h3>
+              <p className="text-xs text-indigo-200 -mt-2">
+                Enter a custom name for this group to appear on the scoreboard:
+              </p>
+              <input
+                type="text"
+                autoFocus
+                value={customTeamNames[editingTeamNum] || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomTeamNames(prev => ({ ...prev, [editingTeamNum]: val }));
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setEditingTeamNum(null);
+                  }
+                }}
+                placeholder={`e.g. Super Stars, Team ${editingTeamNum}`}
+                className="w-full bg-black/60 border border-white/30 rounded-2xl px-4 py-2.5 text-sm text-white font-bold text-center focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              />
+              <div className="flex items-center gap-2 w-full justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEditingTeamNum(null)}
+                  className="flex-1 py-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-mario text-xs border border-white cursor-pointer font-bold shadow"
+                >
+                  SAVE NAME
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

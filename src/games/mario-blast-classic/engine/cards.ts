@@ -7,21 +7,42 @@ export function applyPayoutToTeam(roster: Team[], teamId: string, amount: number
   let skipped = false;
   let doubled = false;
   let bloopered = false;
-  const next = roster.map(t => {
+  let heistDifference = 0;
+  let inkerTeamId: string | undefined = undefined;
+
+  let next = roster.map(t => {
     if (t.id !== teamId) return t;
     const result = applyCoinPayout(t, amount);
     awarded = result.awarded;
     skipped = result.skipped;
     doubled = result.doubled;
     bloopered = result.bloopered;
+    heistDifference = result.heistDifference;
+    inkerTeamId = result.inkerTeamId;
     return result.team;
   });
-  return { teams: next, awarded, skipped, doubled, bloopered };
+
+  // Blooper Heist: inker team steals the difference directly!
+  if (bloopered && heistDifference > 0 && inkerTeamId) {
+    next = next.map(t => {
+      if (t.id === inkerTeamId) {
+        return {
+          ...t,
+          coins: t.coins + heistDifference,
+          coinsStolen: (t.coinsStolen || 0) + heistDifference,
+        };
+      }
+      return t;
+    });
+  }
+
+  return { teams: next, awarded, skipped, doubled, bloopered, heistDifference, inkerTeamId };
 }
 
 function payoutEffects(
   drawingName: string,
-  payout: { awarded: number; skipped: boolean; doubled: boolean; bloopered: boolean },
+  payout: { awarded: number; skipped: boolean; doubled: boolean; bloopered: boolean; heistDifference?: number; inkerTeamId?: string },
+  teams: Team[],
   prefix = ''
 ): EngineEffect[] {
   if (payout.skipped) {
@@ -31,8 +52,14 @@ function payoutEffects(
     ];
   }
   if (payout.bloopered) {
+    const inker = payout.inkerTeamId ? teams.find(t => t.id === payout.inkerTeamId) : null;
+    const diff = payout.heistDifference || 0;
+    const message = inker && diff > 0
+      ? `🦑 INKED! ${drawingName} got +1 coin. ${inker.name} stole the other +${diff} coins!`
+      : `🦑 INKED! ${drawingName} got +1 coin!`;
     return [
-      { kind: 'toast', message: prefix || `🦑 INKED! ${drawingName} got +1 coin!` },
+      { kind: 'sound', sound: 'blooper' },
+      { kind: 'toast', message: prefix || message },
     ];
   }
   const sound: EngineSound = payout.doubled ? 'powerUp' : 'coin';
@@ -67,7 +94,7 @@ export function applyClassicReward(
       const amount = card.coins || (card.type === 'gold_star' ? 15 : 0);
       const payout = applyPayoutToTeam(nextTeams, drawingTeam.id, amount);
       nextTeams = payout.teams;
-      effects.push(...payoutEffects(drawingTeam.name, payout));
+      effects.push(...payoutEffects(drawingTeam.name, payout, nextTeams));
       break;
     }
     case 'blooper': {
@@ -77,9 +104,12 @@ export function applyClassicReward(
         : nextTeams.find(t => t.id !== drawingTeam.id);
       if (target) {
         nextTeams = nextTeams.map(t =>
-          t.id === target.id ? { ...t, blooperNextCoin: true } : t
+          t.id === target.id ? { ...t, blooperNextCoin: true, blooperInkerTeamId: drawingTeam.id } : t
         );
-        effects.push({ kind: 'toast', message: `🦑 BLOOPER! ${target.name}'s next coin card pays only 1!` });
+        effects.push({
+          kind: 'toast',
+          message: `🦑 BLOOPER! ${drawingTeam.name} inked ${target.name}! Next payout reduced to 1 and remainder stolen!`,
+        });
       }
       break;
     }

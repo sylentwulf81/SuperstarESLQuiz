@@ -122,10 +122,10 @@ export const GameBoard = React.memo(function GameBoard({
     return Math.min(boardDimensions.width / cols, boardDimensions.height / rows);
   }, [boardDimensions, cols, rows]);
 
-  // Font size scales naturally with cell size
-  const numberFontSize = Math.max(16, Math.min(52, Math.floor(approxCellSize * 0.46)));
-  const teamLabelFontSize = Math.max(9, Math.min(16, Math.floor(approxCellSize * 0.16)));
-  const coinLabelFontSize = Math.max(10, Math.min(18, Math.floor(approxCellSize * 0.18)));
+  // Font size scales naturally with cell size (scaled up for high-visibility back of classroom viewing)
+  const numberFontSize = Math.max(18, Math.min(68, Math.floor(approxCellSize * 0.56)));
+  const teamLabelFontSize = Math.max(10, Math.min(18, Math.floor(approxCellSize * 0.18)));
+  const coinLabelFontSize = Math.max(11, Math.min(20, Math.floor(approxCellSize * 0.2)));
 
   return (
     <div

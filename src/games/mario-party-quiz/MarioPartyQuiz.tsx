@@ -508,6 +508,7 @@ export function MarioPartyQuiz({
             onSaveCloud={handleManualSync}
             onLoadCloud={handleManualLoad}
             onClose={() => setIsCustomizerOpen(false)}
+            onBackToLauncher={onExitToLauncher}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
             lessonGoal={lessonGoal}

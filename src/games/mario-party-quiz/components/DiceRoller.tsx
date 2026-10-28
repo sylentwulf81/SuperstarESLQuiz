@@ -25,6 +25,15 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   const [hasRolled, setHasRolled] = useState<boolean>(false);
   const timerRef = useRef<number | null>(null);
 
+  const rollUniformDie = () => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
+      const buf = new Uint32Array(1);
+      window.crypto.getRandomValues(buf);
+      return (buf[0] % 6) + 1;
+    }
+    return Math.floor(Math.random() * 6) + 1;
+  };
+
   const startRoll = () => {
     if (isRolling || hasRolled) return;
     setIsRolling(true);
@@ -35,13 +44,13 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
 
     timerRef.current = window.setInterval(() => {
       counter++;
-      const randomFace = Math.floor(Math.random() * 6) + 1;
+      const randomFace = rollUniformDie();
       setFace(randomFace);
       sounds.playDiceTick();
 
       if (counter >= maxTicks) {
         if (timerRef.current) clearInterval(timerRef.current);
-        const finalResult = Math.floor(Math.random() * 6) + 1;
+        const finalResult = rollUniformDie();
         setFace(finalResult);
         setIsRolling(false);
         setHasRolled(true);
