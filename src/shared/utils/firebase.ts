@@ -35,6 +35,10 @@ export interface CloudQuestionBank {
   lessonGoal: string;
   questions: Question[];
   updatedAt: string;
+  /** Library folder name; empty or missing means unfiled. */
+  folder?: string;
+  /** Optional short note shown on the deck card. */
+  description?: string;
 }
 
 // Initialize Firebase App
@@ -206,7 +210,7 @@ export interface SaveBankResult {
  */
 export async function saveQuestionBankToFirestore(
   userId: string,
-  bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }
+  bank: { id?: string; name: string; lessonGoal: string; questions: Question[]; folder?: string; description?: string }
 ): Promise<SaveBankResult> {
   if (!userId) {
     return { saved: null, error: 'User is not signed in' };
@@ -225,6 +229,8 @@ export async function saveQuestionBankToFirestore(
     lessonGoal: bank.lessonGoal.trim(),
     questions: bank.questions,
     updatedAt: new Date().toISOString(),
+    ...(bank.folder !== undefined ? { folder: bank.folder } : {}),
+    ...(bank.description !== undefined ? { description: bank.description } : {}),
   };
 
   const questionsData = JSON.stringify(saved.questions);
@@ -249,6 +255,9 @@ export async function saveQuestionBankToFirestore(
         lessonGoal: saved.lessonGoal,
         questionsData,
         updatedAt: saved.updatedAt,
+        // Only written when given, so saving a deck's questions keeps its folder
+        ...(bank.folder !== undefined ? { folder: bank.folder } : {}),
+        ...(bank.description !== undefined ? { description: bank.description } : {}),
       },
       { merge: true }
     );
@@ -280,6 +289,8 @@ export async function listQuestionBanksFromFirestore(userId: string): Promise<Cl
           lessonGoal: typeof data.lessonGoal === 'string' ? data.lessonGoal : '',
           questions: parsed,
           updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : '',
+          folder: typeof data.folder === 'string' ? data.folder : undefined,
+          description: typeof data.description === 'string' ? data.description : undefined,
         });
       } catch {
         // skip a corrupt bank

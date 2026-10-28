@@ -14,7 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   saveQuestionsCloud: (theme: GameTheme, questions: Question[], extras?: { lessonGoal?: string }) => Promise<boolean>;
   loadQuestionsCloud: (theme: GameTheme) => Promise<SavedQuestionSet | null>;
-  saveQuestionBank: (bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }) => Promise<{ success: boolean; bank?: CloudQuestionBank; error?: string }>;
+  saveQuestionBank: (bank: { id?: string; name: string; lessonGoal: string; questions: Question[]; folder?: string; description?: string }) => Promise<{ success: boolean; bank?: CloudQuestionBank; error?: string }>;
   listQuestionBanks: () => Promise<CloudQuestionBank[]>;
   deleteQuestionBank: (bankId: string) => Promise<boolean>;
 }
@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const handleSaveBank = async (
-    bank: { id?: string; name: string; lessonGoal: string; questions: Question[] }
+    bank: { id?: string; name: string; lessonGoal: string; questions: Question[]; folder?: string; description?: string }
   ): Promise<{ success: boolean; bank?: CloudQuestionBank; error?: string }> => {
     if (!user) return { success: false, error: 'Sign in to save sets to your Cloud Library' };
     setSyncStatus('syncing');

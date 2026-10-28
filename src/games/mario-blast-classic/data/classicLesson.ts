@@ -2,10 +2,11 @@ export const DEFAULT_CLASSIC_LESSON_GOAL = 'Make this into a “Have you ever…
 
 const STORAGE_KEY = 'mp_classic_lesson_goal_v1';
 
+/** The default goal is used only until the teacher sets one; a cleared goal stays empty. */
 export function loadClassicLessonGoal(): string {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored && stored.trim()) return stored.trim();
+    if (stored !== null) return stored.trim();
   } catch {
     // ignore
   }
@@ -14,7 +15,7 @@ export function loadClassicLessonGoal(): string {
 
 export function persistClassicLessonGoal(goal: string): void {
   try {
-    localStorage.setItem(STORAGE_KEY, goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL);
+    localStorage.setItem(STORAGE_KEY, goal.trim());
   } catch {
     // ignore
   }

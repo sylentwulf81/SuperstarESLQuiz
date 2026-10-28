@@ -296,9 +296,11 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               </div>
             ) : (
               <>
-                <p className="text-[0.6875rem] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
-                  {lessonGoal}
-                </p>
+                {lessonGoal && (
+                  <p className="text-[0.6875rem] sm:text-xs font-black uppercase tracking-[0.25em] text-rose-300 mb-1">
+                    {lessonGoal}
+                  </p>
+                )}
                 <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
                   <MarkedPrompt text={question.title} />
                 </h2>

@@ -169,7 +169,7 @@ export const ImageCropModal: React.FC<ImageCropModalProps> = ({
       <div className="w-full max-w-5xl max-h-[94vh] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-white/15 flex items-center justify-between gap-3">
           <div>
-            <h3 className="font-mario text-lg sm:text-xl text-yellow-300 flex items-center gap-2">
+            <h3 className="text-lg sm:text-xl font-bold text-yellow-300 flex items-center gap-2">
               <Crop className="w-5 h-5 text-amber-300" />
               Crop & Adjust Image
             </h3>

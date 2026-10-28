@@ -22,7 +22,6 @@ import { BlockState, GameQuestion, QuestionType, RewardCard, RewardCardActionOpt
 import { loadShowCatchUpNote, persistShowCatchUpNote } from '@/games/mario-party-quiz/data/rewards';
 import { loadClassicTestGame, persistClassicTestGame } from './data/classicRewards';
 import {
-  DEFAULT_CLASSIC_LESSON_GOAL,
   loadClassicLessonGoal,
   persistClassicLessonGoal,
   resetClassicLessonGoal,
@@ -195,7 +194,7 @@ export function MarioBlastClassic({
   };
 
   const commitLessonGoal = (goal: string) => {
-    const next = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
+    const next = goal.trim();
     setLessonGoal(next);
     persistClassicLessonGoal(next);
     if (isLoggedIn && user) {
@@ -292,7 +291,7 @@ export function MarioBlastClassic({
 
   const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
-    const nextGoal = goal.trim() || DEFAULT_CLASSIC_LESSON_GOAL;
+    const nextGoal = goal.trim();
     const normalized = questions.map(question => ({
       ...question,
       title: legacySlashesToMarks(question.title),
@@ -499,7 +498,7 @@ export function MarioBlastClassic({
         {selectedQuestion && (
           <ClassicRoundModal
             question={selectedQuestion}
-            lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
+            lessonGoal={lessonGoal.trim()}
             pickingTeam={activeTeam!}
             teams={teams}
             slots={slots}
@@ -566,7 +565,7 @@ export function MarioBlastClassic({
             reason={roundOverReason}
             cardCount={slots.length}
             question={selectedQuestion}
-            lessonGoal={lessonGoal.trim() || DEFAULT_CLASSIC_LESSON_GOAL}
+            lessonGoal={lessonGoal.trim()}
             onContinue={handleContinueRoundOver}
           />
         )}

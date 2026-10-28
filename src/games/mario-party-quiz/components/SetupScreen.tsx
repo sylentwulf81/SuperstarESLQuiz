@@ -184,15 +184,6 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
     });
   }, [teamCount]);
 
-  // Auto-dismiss celebration card after 2.2s
-  useEffect(() => {
-    if (!celebrationChar) return;
-    const t = window.setTimeout(() => {
-      setCelebrationChar(null);
-    }, 2200);
-    return () => window.clearTimeout(t);
-  }, [celebrationChar]);
-
   const isStartReady = teamCount >= 2;
 
   const handleStart = useCallback(() => {
@@ -229,8 +220,8 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
   }, [teamCount, slotAssignments, shuffledChars, customTeamNames, startingCoins, onStartGame]);
 
   return (
-    <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center justify-start sm:justify-center">
-      <div className="w-full max-w-4xl max-h-[min(98dvh,54rem)] flex flex-col bg-slate-900 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative my-auto shrink-0 sm:shrink">
+    <div className="w-full flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 md:p-4 flex flex-col items-center">
+      <div className="w-full max-w-[110rem] flex-1 min-h-0 flex flex-col bg-slate-900 rounded-2xl sm:rounded-3xl border border-white/20 shadow-2xl overflow-hidden relative shrink-0 sm:shrink">
         <div
           className={`absolute top-0 inset-x-0 h-1.5 transition-colors duration-500 ${THEME_UI[theme].barClass} opacity-90 shrink-0`}
         />
@@ -361,7 +352,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
             </div>
 
             {/* Mystery Randomization Board */}
-            <div className="flex-1 min-h-0 flex flex-col justify-center">
+            <div className="flex-1 min-h-0 flex flex-col">
               <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 mb-1.5 sm:mb-2">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mario text-xs sm:text-sm md:text-base text-white text-shadow-mario flex items-center gap-1.5">
@@ -400,11 +391,13 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 </div>
               </div>
 
-              {/* Mystery Cards Grid - Exactly 8 slots in 2x4 grid with fluid viewport-adaptive height */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+              {/* Mystery Cards Grid: 8 slots filling the remaining height, 4 across on wide screens */}
+              <div className="flex-1 min-h-0 grid grid-cols-2 sm:grid-cols-4 grid-rows-[repeat(4,minmax(6rem,1fr))] sm:grid-rows-[repeat(2,minmax(0,1fr))] gap-2 sm:gap-3">
                 {shuffledChars.map((char, idx) => {
                   const assignedTeam = slotAssignments[idx];
                   const isRevealed = assignedTeam !== null && assignedTeam <= teamCount;
+                  // Every team has a character: the rest of the cards are out of play
+                  const isLocked = !isRevealed && !nextTeamToPick;
                   const teamDisplayName = isRevealed
                     ? (customTeamNames[assignedTeam] || '').trim() || char.name
                     : '';
@@ -412,9 +405,12 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                   return (
                     <div
                       key={char.id}
-                      onClick={() => handlePickSlot(idx)}
+                      onClick={isLocked ? undefined : () => handlePickSlot(idx)}
+                      aria-disabled={isLocked}
                       style={{ perspective: '1000px' }}
-                      className="relative h-[clamp(5.2rem,13.8vh,8.85rem)] rounded-xl sm:rounded-2xl cursor-pointer select-none group"
+                      className={`relative h-full min-h-0 rounded-xl sm:rounded-2xl select-none group transition-[opacity,filter] duration-300 ${
+                        isLocked ? 'opacity-30 grayscale pointer-events-none' : 'cursor-pointer'
+                      }`}
                     >
                       <motion.div
                         animate={{ rotateY: isRevealed ? 180 : 0 }}
@@ -429,20 +425,15 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                         >
                           <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-yellow-200/50 pointer-events-none" />
 
-                          {/* Card Number Badge */}
-                          <span className="font-mario text-[clamp(10px,1.3vh,12px)] text-yellow-100 bg-black/55 px-2.5 py-0.5 rounded-full border border-white/20 shadow leading-none font-bold">
-                            Card #{idx + 1}
-                          </span>
-
-                          {/* Big Glowing Question Mark */}
+                          {/* Big card number, readable from the back of the room */}
                           <div className="flex flex-col items-center justify-center my-auto">
-                            <span className="font-mario text-[clamp(1.85rem,4.4vh,3.2rem)] text-white text-shadow-mario drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] animate-pulse leading-none">
-                              ?
+                            <span className="font-mario text-[clamp(3rem,11vh,7.5rem)] text-white text-shadow-mario leading-none">
+                              {idx + 1}
                             </span>
                           </div>
 
-                          <span className="text-[clamp(8px,1.1vh,10px)] font-black uppercase tracking-wider text-amber-950 bg-yellow-200/95 px-2 py-0.5 rounded-full shadow leading-none">
-                            {nextTeamToPick ? `Pick for Team ${nextTeamToPick}` : 'Tap to Reveal'}
+                          <span className="text-[clamp(0.6875rem,1.6vh,1rem)] font-black uppercase tracking-wider text-amber-950 bg-yellow-200/95 px-3 py-1 rounded-full shadow leading-none">
+                            {nextTeamToPick ? `Pick for Team ${nextTeamToPick}` : 'All teams picked'}
                           </span>
                         </div>
 
@@ -454,7 +445,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                           <div className="absolute inset-1 rounded-lg sm:rounded-xl border border-white/30 pointer-events-none" />
 
                           <div className="w-full flex items-center justify-between z-10 px-0.5">
-                            <span className="font-mario text-[clamp(9px,1.1vh,11px)] text-yellow-200 bg-black/60 px-2 py-0.5 rounded-full border border-yellow-300/60 leading-none font-bold">
+                            <span className="font-mario text-[clamp(0.75rem,1.9vh,1.25rem)] text-yellow-200 bg-black/60 px-3 py-1 rounded-full border border-yellow-300/60 leading-none font-bold">
                               TEAM {assignedTeam}
                             </span>
                             <div
@@ -462,30 +453,30 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                                 e.stopPropagation();
                                 if (assignedTeam) setEditingTeamNum(assignedTeam);
                               }}
-                              className="w-4 h-4 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow cursor-pointer transition-transform hover:scale-110"
+                              className="w-[clamp(1.25rem,2.6vh,1.75rem)] h-[clamp(1.25rem,2.6vh,1.75rem)] rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center justify-center font-bold shadow cursor-pointer transition-transform hover:scale-110"
                               title="Click to rename this team"
                             >
-                              <Check className="w-2.5 h-2.5 stroke-[3.5]" />
+                              <Check className="w-3/5 h-3/5 stroke-[3.5]" />
                             </div>
                           </div>
 
                           {/* Avatar & Names */}
-                          <div className="my-auto flex flex-col items-center gap-0.5 z-10 min-w-0 max-w-full">
+                          <div className="my-auto flex flex-col items-center gap-1 z-10 min-w-0 max-w-full">
                             <TeamAvatar
                               characterId={char.id}
                               size="sm"
-                              className="w-[clamp(2.1rem,5.2vh,3.4rem)] h-[clamp(2.1rem,5.2vh,3.4rem)] shadow-lg ring-2 ring-white/80 shrink-0"
+                              className="w-[clamp(3rem,13vh,8.5rem)] h-[clamp(3rem,13vh,8.5rem)] shadow-lg ring-2 ring-white/80 shrink-0"
                             />
-                            <h4 className="font-mario text-[clamp(0.72rem,1.6vh,0.95rem)] text-white text-shadow-mario leading-tight mt-0.5 truncate max-w-full px-1">
+                            <h4 className="font-mario text-[clamp(1rem,3vh,2rem)] text-white text-shadow-mario leading-tight mt-0.5 truncate max-w-full px-1">
                               {teamDisplayName}
                             </h4>
                           </div>
 
                           <div className="w-full flex items-center justify-between z-10 px-1 gap-1">
-                            <span className="text-[clamp(7.5px,1vh,9px)] text-white/90 bg-black/40 px-1.5 py-0.5 rounded-full truncate leading-none">
+                            <span className="text-[clamp(0.6875rem,1.4vh,0.9375rem)] text-white/90 bg-black/40 px-2 py-0.5 rounded-full truncate leading-none">
                               {char.name}
                             </span>
-                            <span className="text-[0.5rem] text-amber-200 underline font-semibold cursor-pointer hover:text-white">
+                            <span className="text-[clamp(0.6875rem,1.4vh,0.9375rem)] text-amber-200 underline font-semibold cursor-pointer hover:text-white">
                               Rename ✎
                             </span>
                           </div>
@@ -628,14 +619,19 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
       {/* Character Celebration Fanfare Popup Card with Inline Team Name Input */}
       <AnimatePresence>
         {celebrationChar && (
-          <div
+          <motion.div
+            key="team-reveal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.18, ease: 'easeIn' } }}
             onClick={() => setCelebrationChar(null)}
-            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md cursor-pointer"
+            className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/75 cursor-pointer"
           >
             <motion.div
               initial={{ scale: 0.3, opacity: 0, rotate: -8 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 0.7, opacity: 0, y: -20 }}
+              // A short tween on exit: the springy entrance overshoots and would flash the card back
+              exit={{ scale: 0.9, opacity: 0, transition: { duration: 0.18, ease: 'easeIn' } }}
               transition={{ type: 'spring', stiffness: 280, damping: 16 }}
               className={`relative w-full max-w-sm rounded-3xl border-4 border-yellow-300 ${celebrationChar.char.bgColor} p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-[0_0_60px_rgba(250,204,21,0.65)]`}
               onClick={(e) => e.stopPropagation()}
@@ -692,7 +688,7 @@ export const SetupScreen: React.FC<SetupScreenProps> = React.memo(function Setup
                 AWESOME!
               </button>
             </motion.div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

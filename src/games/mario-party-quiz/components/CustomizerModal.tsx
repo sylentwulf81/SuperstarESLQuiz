@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   Play,
   Plus,
+  MoreHorizontal,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -50,10 +51,13 @@ import { shuffleWordLetters } from '@/shared/utils/shuffle';
 import { DEFAULT_CLASSIC_LESSON_GOAL } from '@/games/mario-blast-classic/data/classicLesson';
 import { legacySlashesToMarks } from '@/shared/markedPrompt';
 import { PromptMarkField } from './PromptMarkField';
-import { QuestionLibraryPanel } from '@/games/mario-blast-classic/components/QuestionLibraryPanel';
+import { MyDecksPanel } from '@/shared/decks/MyDecksPanel';
+import { Deck, persistDeck } from '@/shared/decks/deckLibrary';
+import { QuestionBank } from '@/games/mario-blast-classic/data/questionBanks';
 import { ExportPdfModal } from '@/shared/components/ExportPdfModal';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { makeBlankQuestion } from '../createBlocks';
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group';
 import { DEFAULT_QUESTIONS } from '../data/questions';
 import { SUMMER_QUESTIONS } from '../data/summerQuestions';
 import { HALLOWEEN_QUESTIONS } from '../data/halloweenQuestions';
@@ -84,7 +88,6 @@ interface CustomizerModalProps {
   onActiveBankChange?: (bankId?: string, bankName?: string) => void;
 }
 
-type TabMode = 'deck' | 'library';
 type BlockFilter = 'all' | 'filled' | 'empty';
 
 /**
@@ -118,7 +121,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   onActiveBankChange,
 }) {
   useBodyScrollLock();
-  const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle } = useAuth();
+  const { user, isLoggedIn, syncStatus, lastSyncedAt, loginWithGoogle, saveQuestionBank } = useAuth();
 
   const [internalBankId, setInternalBankId] = useState<string | undefined>(activeBankId);
   const [internalBankName, setInternalBankName] = useState<string | undefined>(activeBankName);
@@ -132,11 +135,31 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
     onActiveBankChange?.(id, name);
   }, [onActiveBankChange]);
 
-  // Navigation & View tabs
-  const [activeTab, setActiveTab] = useState<TabMode>('deck');
-  const [isNewDeckConfirmOpen, setIsNewDeckConfirmOpen] = useState(false);
-  const [newDeckDefaultType, setNewDeckDefaultType] = useState<QuestionType>('open_trivia');
+  // The Studio opens on My Decks; Edit (or a new question set) opens the Question Editor
+  const [view, setView] = useState<'decks' | 'editor'>('decks');
+  // Deck open in the Question Editor; its questions and details autosave back into it
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
+  const [deckSaveState, setDeckSaveState] = useState<'saved' | 'saving' | 'error'>('saved');
   const [isExportPdfOpen, setIsExportPdfOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close the header's More menu on outside click or Escape
+  useEffect(() => {
+    if (!isMoreMenuOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (!moreMenuRef.current?.contains(e.target as Node)) setIsMoreMenuOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMoreMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isMoreMenuOpen]);
   const [selectedBlockId, setSelectedBlockId] = useState<number>(1);
   const [draggedBlockId, setDraggedBlockId] = useState<number | null>(null);
   const [dragOverBlockId, setDragOverBlockId] = useState<number | null>(null);
@@ -155,20 +178,12 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
     return true;
   });
 
-  const handleToggleShuffle = useCallback(() => {
+  const handleSetShuffle = useCallback((shuffle: boolean) => {
     sounds.playClick();
-    setIsShuffleEnabled(prev => {
-      const next = !prev;
-      try {
-        localStorage.setItem(`mp_shuffle_blocks_${theme}`, String(next));
-      } catch {}
-      toast(next ? 'Shuffle Enabled' : 'Sequential Order Enabled', {
-        description: next
-          ? 'Blocks will be randomized on game start.'
-          : 'Blocks will appear strictly in order 1, 2, 3... on the board.',
-      });
-      return next;
-    });
+    setIsShuffleEnabled(shuffle);
+    try {
+      localStorage.setItem(`mp_shuffle_blocks_${theme}`, String(shuffle));
+    } catch {}
   }, [theme]);
 
   const currentBlock = useMemo(() => {
@@ -467,10 +482,87 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   }, [blocks, selectedBlockId, flushSave, onReorderBlocks, onUpdateBlockQuestion, onResizeBlocks]);
 
   // Safe modal close
-  const handleClose = () => {
+  // Questions as they stand, including an unflushed draft in the editor
+  const currentQuestions = () =>
+    blocks.map(b => (b.id === activeBlockIdRef.current ? sanitizeQuestion(editingQuestionRef.current) : b.question));
+
+  const saveEditingDeck = useCallback(async (deck: Deck, questions: GameQuestion[]) => {
+    setDeckSaveState('saving');
+    const result = await persistDeck({ ...deck, questions }, isLoggedIn ? saveQuestionBank : undefined);
+    const ok = result.savedLocally || result.savedToCloud;
+    setDeckSaveState(ok ? 'saved' : 'error');
+    if (!ok) {
+      toast.error(`Could not save “${deck.name}”`, {
+        description: result.cloudError || 'Browser storage is full (large question images use it up). Sign in to save to the cloud.',
+      });
+    }
+  }, [isLoggedIn, saveQuestionBank]);
+
+  // Autosave the open deck shortly after its questions or details change
+  useEffect(() => {
+    if (view !== 'editor' || !editingDeck) return;
+    const timer = setTimeout(() => void saveEditingDeck(editingDeck, blocks.map(b => b.question)), 800);
+    return () => clearTimeout(timer);
+  }, [blocks, editingDeck, view, saveEditingDeck]);
+
+  const handleLoadDeck = (deck: QuestionBank) => {
+    flushSave();
+    handleActiveBankChange(deck.id, deck.name);
+    onApplyQuestionBank?.(deck.questions, deck.lessonGoal, deck.name, deck.id);
+  };
+
+  const handleEditDeck = (deck: Deck) => {
+    handleLoadDeck(deck);
+    activeBlockIdRef.current = 1;
+    setSelectedBlockId(1);
+    setEditingDeck(deck);
+    setDeckSaveState('saved');
+    setView('editor');
+  };
+
+  const updateDeckDetails = (patch: Partial<Deck>) => {
+    setEditingDeck(prev => (prev ? { ...prev, ...patch } : prev));
+  };
+
+  // Leaving the editor with blank prompts asks first; a new question set starts with every prompt empty
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+  const guardLeave = (leave: () => void) => {
     flushSave();
     sounds.playClick();
-    onClose();
+    if (view === 'editor' && editingDeck) {
+      // Save now: the autosave timer would not run once the Studio closes
+      void saveEditingDeck(editingDeck, currentQuestions());
+      if (blankPromptBlockIds.length > 0) {
+        setIsMoreMenuOpen(false);
+        setPendingLeave(() => leave);
+        return;
+      }
+    }
+    leave();
+  };
+
+  const handleClose = () => guardLeave(onClose);
+  const handleBackToDecks = () => guardLeave(() => {
+    setView('decks');
+    setEditingDeck(null);
+  });
+
+  const handleExportJson = () => {
+    sounds.playClick();
+    const name = editingDeck?.name || currentActiveBankName || 'question_set';
+    const payload = {
+      name,
+      lessonGoal: editingDeck?.lessonGoal ?? lessonGoal ?? '',
+      description: editingDeck?.description ?? '',
+      exportedAt: new Date().toISOString(),
+      questions: currentQuestions(),
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Keyboard navigation shortcuts
@@ -679,6 +771,25 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
     return blocks.filter(isBlockFilled).length;
   }, [blocks, isBlockFilled]);
 
+  // Shrinking only removes empty blocks from the end, so the deck can't go below the last written block
+  const minSafeCount = useMemo(() => {
+    let lastFilled = 0;
+    blocks.forEach((b, i) => {
+      if (isBlockFilled(b)) lastFilled = i + 1;
+    });
+    return Math.max(10, lastFilled);
+  }, [blocks, isBlockFilled]);
+
+  // Written blocks with no prompt (a fresh blank deck starts this way)
+  const blankPromptBlockIds = useMemo(() => {
+    return blocks
+      .filter(b => {
+        const q = b.id === currentBlock.id ? editingQuestion : b.question;
+        return q.type !== 'mystery_card' && !(q.title && q.title.trim());
+      })
+      .map(b => b.id);
+  }, [blocks, currentBlock.id, editingQuestion]);
+
   const filteredBlocks = useMemo(() => {
     let result = blocks;
     if (blockFilter === 'filled') result = blocks.filter(isBlockFilled);
@@ -783,7 +894,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
             <button
               type="button"
               onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: true }))}
-              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-colors cursor-pointer ${
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors cursor-pointer ${
                 isTrue
                   ? 'bg-emerald-600 text-white border-emerald-300 ring-4 ring-emerald-400/50 shadow-lg font-black'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
@@ -795,7 +906,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
             <button
               type="button"
               onClick={() => updateDraftQuestion(prev => ({ ...prev, isTrue: false }))}
-              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 font-mario text-base sm:text-lg transition-colors cursor-pointer ${
+              className={`p-3 rounded-2xl border-2 flex items-center justify-center gap-2.5 text-base sm:text-lg transition-colors cursor-pointer ${
                 !isTrue
                   ? 'bg-rose-600 text-white border-rose-300 ring-4 ring-rose-400/50 shadow-lg font-black'
                   : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 border-white/15'
@@ -894,356 +1005,280 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-slate-950/85 backdrop-blur-sm overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-900 overflow-hidden">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="relative w-full max-w-5xl h-[94vh] md:h-[88vh] min-h-[36.25rem] max-h-[55rem] bg-slate-900 rounded-3xl border border-white/20 shadow-2xl overflow-hidden my-auto flex flex-col"
+        className="relative w-full h-full bg-slate-900 overflow-hidden flex flex-col"
       >
-        {/* Ambient Top Glow Line */}
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-blue-500 via-indigo-500 to-amber-500 opacity-90 shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
-
-        {/* Unified Top Navigation & Status Bar */}
-        <div className="bg-slate-800/95 px-4 py-3 text-white flex flex-wrap items-center justify-between gap-3 border-b border-white/15 shrink-0">
-          {/* Left: Studio Title & Mode Tabs */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Settings2 className="w-5 h-5 text-yellow-300" />
-              <h2 className="font-mario text-xl text-yellow-300 drop-shadow">
-                Question Studio
-              </h2>
-              <span className="text-[0.625rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 hidden sm:inline-block">
-                {THEME_UI[theme].edition}
-              </span>
-              {currentActiveBankName && (
-                <span className="text-[0.625rem] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30 max-w-[8.75rem] truncate hidden md:inline-block" title={currentActiveBankName}>
-                  Set: {currentActiveBankName}
-                </span>
-              )}
-            </div>
-
-            {/* Main Tabs */}
-            <div className="flex items-center bg-black/40 p-1 rounded-2xl border border-white/15 text-xs">
+        {/* Header: where you are on the left; save state, More and Play on the right */}
+        <div className="bg-slate-950 px-3 sm:px-5 h-14 text-white grid grid-cols-[1fr_auto] items-center gap-3 border-b border-white/10 shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            {view === 'editor' ? (
               <button
                 type="button"
-                onClick={() => {
-                  sounds.playClick();
-                  setActiveTab('deck');
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
-                  activeTab === 'deck'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-300 hover:text-white'
-                }`}
+                onClick={handleBackToDecks}
+                className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 text-sm font-semibold transition-colors cursor-pointer shrink-0"
+                title="Save and go back to My Decks"
               >
-                <Layers className="w-3.5 h-3.5" />
-                <span>Deck ({blocks.length})</span>
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">My Decks</span>
               </button>
-              {onApplyQuestionBank && (
-                <button
-                  id="studio-open-library"
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    setActiveTab('library');
-                  }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-colors cursor-pointer ${
-                    activeTab === 'library'
-                      ? 'bg-orange-500 text-slate-950 shadow-sm font-black'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <Library className="w-3.5 h-3.5" />
-                  <span>Library</span>
-                </button>
-              )}
+            ) : (
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 text-sm font-semibold transition-colors cursor-pointer shrink-0"
+                title="Go back to the game"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back to game</span>
+              </button>
+            )}
+            <div className="min-w-0 leading-tight">
+              <h2 className="text-lg font-bold text-white truncate">
+                {view === 'editor' ? 'Question Editor' : 'Question Studio'}
+              </h2>
+              <p className="text-xs text-slate-400 truncate">
+                {view === 'editor'
+                  ? editingDeck?.name
+                  : `Playing: ${currentActiveBankName || 'built-in questions'} · ${THEME_UI[theme].edition}`}
+              </p>
             </div>
           </div>
 
-          {/* Right: Auto-Save Status, Settings, Close */}
-          <div className="flex items-center gap-2.5">
-            {/* Auto-Save Indicator */}
-            {saveStatus === 'saving' ? (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span>Saving…</span>
-              </span>
-            ) : (
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Saved</span>
-              </span>
-            )}
-
-            {/* Cloud Status Pill */}
-            {isLoggedIn && user ? (
-              <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/60 border border-white/10 text-xs">
-                <Avatar className="w-4 h-4 border border-amber-400/80">
-                  {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} referrerPolicy="no-referrer" />}
-                  <AvatarFallback className="text-[0.5rem] bg-indigo-800 text-amber-200">
-                    {(user.displayName || user.email || 'U')[0].toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-slate-300 text-[0.6875rem] truncate max-w-[6.25rem]">
-                  {user.displayName || user.email}
-                </span>
-                <Cloud className="w-3 h-3 text-emerald-400" />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={loginWithGoogle}
-                className="hidden md:flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-indigo-200 border border-white/20 text-xs font-semibold cursor-pointer transition-colors"
-                title="Sign in with Google to enable cloud backups"
+          <div className="flex items-center justify-end gap-2">
+            {view === 'editor' && (
+              <span
+                className={`hidden sm:flex items-center gap-1 text-xs font-semibold ${
+                  deckSaveState === 'error' ? 'text-rose-300' : saveStatus === 'saving' || deckSaveState === 'saving' ? 'text-amber-300' : 'text-slate-400'
+                }`}
+                aria-live="polite"
               >
-                <LogIn className="w-3 h-3 text-amber-300" />
-                <span>Sign in</span>
-              </button>
+                {deckSaveState === 'error' ? 'Not saved' : saveStatus === 'saving' || deckSaveState === 'saving' ? 'Saving…' : (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    Saved to deck
+                  </>
+                )}
+              </span>
             )}
 
-            {/* Export PDF Button */}
-            <button
-              id="studio-export-pdf-btn"
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                flushSave();
-                setIsExportPdfOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-500/20 to-amber-500/20 hover:from-rose-500/35 hover:to-amber-500/35 text-rose-200 hover:text-white border border-rose-400/40 text-xs font-bold transition-all cursor-pointer shadow-sm active:scale-95"
-              title="Export question deck to PDF with hidden teacher answer key on each page"
-            >
-              <FileDown className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden sm:inline">Export PDF</span>
-            </button>
-
-            {/* New Deck Button */}
-            <button
-              type="button"
-              onClick={() => {
-                sounds.playClick();
-                setIsNewDeckConfirmOpen(true);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-rose-400/50 bg-rose-950/60 hover:bg-rose-900/80 text-rose-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
-              title="Create a new blank question deck"
-            >
-              <PlusCircle className="w-3.5 h-3.5 text-rose-400" />
-              <span>New Deck</span>
-            </button>
-
-            {/* Return to Launcher Button */}
-            {onBackToLauncher && (
+            {/* Less-used actions live in one menu */}
+            <div className="relative" ref={moreMenuRef}>
               <button
                 type="button"
                 onClick={() => {
                   sounds.playClick();
-                  flushSave();
-                  onClose();
-                  onBackToLauncher();
+                  setIsMoreMenuOpen(open => !open);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-slate-200 hover:text-white border border-white/20 text-xs font-bold transition-all cursor-pointer shadow-sm"
-                title="Return to Activity Library"
+                aria-haspopup="menu"
+                aria-expanded={isMoreMenuOpen}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/10 border border-white/15 text-sm font-semibold transition-colors cursor-pointer"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-amber-300" />
-                <span className="hidden md:inline">Activity Library</span>
+                <MoreHorizontal className="w-4 h-4" />
+                <span className="hidden md:inline">More</span>
               </button>
-            )}
+              {isMoreMenuOpen && (
+                <div role="menu" className="absolute right-0 top-full mt-2 w-56 rounded-xl bg-slate-800 border border-white/15 shadow-2xl py-1.5 z-[60] text-sm">
+                  {view === 'editor' && (
+                    <>
+                      <button
+                        id="studio-export-pdf-btn"
+                        role="menuitem"
+                        type="button"
+                        onClick={() => {
+                          sounds.playClick();
+                          setIsMoreMenuOpen(false);
+                          flushSave();
+                          setIsExportPdfOpen(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-slate-200 hover:bg-white/10 cursor-pointer"
+                      >
+                        <FileDown className="w-4 h-4 text-slate-400" />
+                        Download PDF
+                      </button>
+                      <button
+                        role="menuitem"
+                        type="button"
+                        onClick={() => {
+                          setIsMoreMenuOpen(false);
+                          handleExportJson();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-slate-200 hover:bg-white/10 cursor-pointer"
+                      >
+                        <DownloadCloud className="w-4 h-4 text-slate-400" />
+                        Download backup (JSON)
+                      </button>
+                    </>
+                  )}
+                  {onBackToLauncher && (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        guardLeave(() => {
+                          onClose();
+                          onBackToLauncher();
+                        });
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-slate-200 hover:bg-white/10 cursor-pointer"
+                    >
+                      <ArrowLeft className="w-4 h-4 text-slate-400" />
+                      Activity Library
+                    </button>
+                  )}
+                  <div className="my-1.5 border-t border-white/10" />
+                  {isLoggedIn && user ? (
+                    <div className="flex items-center gap-2.5 px-3.5 py-2 text-slate-400">
+                      <Avatar className="w-5 h-5">
+                        {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || ''} referrerPolicy="no-referrer" />}
+                        <AvatarFallback className="text-[0.625rem] bg-indigo-800 text-amber-200">
+                          {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate">{user.displayName || user.email}</span>
+                      <Cloud className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    </div>
+                  ) : (
+                    <button
+                      role="menuitem"
+                      type="button"
+                      onClick={() => {
+                        setIsMoreMenuOpen(false);
+                        void loginWithGoogle();
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-slate-200 hover:bg-white/10 cursor-pointer"
+                    >
+                      <LogIn className="w-4 h-4 text-slate-400" />
+                      Sign in to back up decks
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
 
-            {/* Play / Return to Game Button */}
             <button
               type="button"
               onClick={handleClose}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white text-xs font-bold transition-all cursor-pointer shadow-md font-mario"
-              title="Save changes and start / resume game"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm transition-colors cursor-pointer"
+              title="Save and play this deck"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>PLAY GAME</span>
-            </button>
-
-            {/* Modal Close Button */}
-            <button
-              onClick={handleClose}
-              className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/20 cursor-pointer"
-              title="Close editor (Esc)"
-            >
-              <X className="w-5 h-5" />
+              <Play className="w-4 h-4 fill-current" />
+              <span>Play</span>
             </button>
           </div>
         </div>
 
-        {/* Inline Lesson Goal Bar (Slim & Always Accessible) */}
-        {activeTab === 'deck' && onLessonGoalChange && (
-          <div className="bg-slate-950/80 px-4 py-2 border-b border-white/10 flex items-center gap-2.5 shrink-0">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-rose-300 shrink-0">
-              <Target className="w-3.5 h-3.5 text-rose-400" />
-              <span className="hidden sm:inline uppercase tracking-wider text-[0.6875rem]">Lesson Goal:</span>
-            </div>
-            <input
-              type="text"
-              value={lessonGoal ?? ''}
-              onChange={(e) => onLessonGoalChange(e.target.value)}
-              onBlur={() => onLessonGoalCommit?.(lessonGoal ?? '')}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  onLessonGoalCommit?.(lessonGoal ?? '');
-                }
-              }}
-              placeholder={theme === 'classic' ? DEFAULT_CLASSIC_LESSON_GOAL : 'e.g. Summer vocabulary & trivia mix'}
-              className="flex-1 bg-black/40 border border-white/15 rounded-xl px-3 py-1 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-rose-400/50"
-            />
+        {/* Deck details: title, optional goal and description; saved with the deck */}
+        {view === 'editor' && editingDeck && (
+          <div className="bg-slate-950/80 px-4 sm:px-5 py-2.5 border-b border-white/10 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)_minmax(0,1.3fr)] gap-2.5 shrink-0">
+            <label className="flex flex-col gap-1 text-xs font-semibold text-slate-300">
+              Lesson title
+              <input
+                value={editingDeck.name}
+                maxLength={40}
+                onChange={(e) => {
+                  updateDeckDetails({ name: e.target.value });
+                  if (e.target.value.trim()) handleActiveBankChange(editingDeck.id, e.target.value.trim());
+                }}
+                onBlur={() => {
+                  const name = editingDeck.name.trim() || 'Untitled deck';
+                  updateDeckDetails({ name });
+                  handleActiveBankChange(editingDeck.id, name);
+                }}
+                className="bg-black/40 border border-white/15 rounded-lg px-3 py-1.5 text-sm text-white font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-semibold text-slate-300">
+              <span>Lesson goal <span className="font-normal text-slate-500">(optional, shown above each question)</span></span>
+              <input
+                value={editingDeck.lessonGoal}
+                maxLength={80}
+                onChange={(e) => {
+                  updateDeckDetails({ lessonGoal: e.target.value });
+                  onLessonGoalChange?.(e.target.value);
+                }}
+                onBlur={() => onLessonGoalCommit?.(editingDeck.lessonGoal)}
+                placeholder={theme === 'classic' ? DEFAULT_CLASSIC_LESSON_GOAL : 'Summer vocabulary review'}
+                className="bg-black/40 border border-white/15 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs font-semibold text-slate-300">
+              <span>Description <span className="font-normal text-slate-500">(optional, only you see it)</span></span>
+              <input
+                value={editingDeck.description ?? ''}
+                maxLength={120}
+                onChange={(e) => updateDeckDetails({ description: e.target.value })}
+                placeholder="Review for Thursday's 4th graders"
+                className="bg-black/40 border border-white/15 rounded-lg px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-400/50"
+              />
+            </label>
           </div>
         )}
 
-        {/* New Deck Confirmation Dialog Overlay */}
+        {/* Blank prompts check before leaving */}
         <AnimatePresence>
-          {isNewDeckConfirmOpen && (
+          {pendingLeave && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              className="fixed inset-0 z-[70] bg-black/75 flex items-center justify-center p-4"
+              role="alertdialog"
+              aria-labelledby="blank-prompts-title"
             >
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="w-full max-w-md bg-slate-900 border-2 border-rose-500/60 rounded-3xl p-6 shadow-2xl space-y-4"
-              >
-                <div className="flex items-center gap-3 text-rose-400">
-                  <div className="w-10 h-10 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0">
-                    <AlertTriangle className="w-6 h-6 text-rose-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-mario text-lg text-yellow-300">Create New Blank Deck?</h3>
-                    <p className="text-xs text-slate-300">This will clear existing questions and start with a fresh blank template.</p>
-                  </div>
-                </div>
-
-                <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10 text-xs text-slate-300 space-y-2">
-                  <p>• Creates an empty deck with {totalCount} blank question blocks.</p>
-                  <p>• Clears current prompts, images, and custom answer options.</p>
-                  <p>• Resets the lesson goal so you can start from scratch.</p>
-
-                  <div className="pt-2 border-t border-white/10">
-                    <label className="text-[0.6875rem] font-bold text-amber-300 block mb-1.5 uppercase tracking-wider">
-                      Default Question Type for Blank Blocks:
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { type: 'open_trivia', label: '🎁 Open Trivia (Default)' },
-                        { type: 'multiple_choice', label: '🖼️ Multiple Choice' },
-                        { type: 'true_false', label: '⚖️ True/False' },
-                      ].map((opt) => (
-                        <button
-                          key={opt.type}
-                          type="button"
-                          onClick={() => setNewDeckDefaultType(opt.type as QuestionType)}
-                          className={`p-2 rounded-xl text-[0.6875rem] font-bold border transition-colors cursor-pointer text-center ${
-                            newDeckDefaultType === opt.type
-                              ? 'bg-amber-400 text-slate-950 border-amber-300 font-black shadow'
-                              : 'bg-slate-800/80 text-slate-300 border-white/15 hover:bg-slate-700'
-                          }`}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-3 pt-2">
+              <div className="w-full max-w-md bg-slate-900 border border-amber-400/50 rounded-2xl p-5 shadow-2xl space-y-3">
+                <h3 id="blank-prompts-title" className="text-lg text-amber-300 flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5" />
+                  {blankPromptBlockIds.length} {blankPromptBlockIds.length === 1 ? 'question has' : 'questions have'} no prompt
+                </h3>
+                <p className="text-sm text-slate-300">
+                  {blankPromptBlockIds.length === 1 ? 'Block' : 'Blocks'}{' '}
+                  {blankPromptBlockIds.slice(0, 12).join(', ')}
+                  {blankPromptBlockIds.length > 12 ? ` and ${blankPromptBlockIds.length - 12} more` : ''}{' '}
+                  {blankPromptBlockIds.length === 1 ? 'is' : 'are'} empty and will show as blank blocks in the game. Your work is saved either way.
+                </p>
+                <div className="flex flex-wrap justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsNewDeckConfirmOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-white/15 cursor-pointer"
+                    onClick={() => {
+                      sounds.playClick();
+                      setPendingLeave(null);
+                      handleSelectBlock(blankPromptBlockIds[0]);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 text-sm font-semibold cursor-pointer"
                   >
-                    Cancel
+                    Go to block {blankPromptBlockIds[0]}
                   </button>
                   <button
                     type="button"
                     onClick={() => {
-                      sounds.playResetDeck();
-                      if (debounceTimerRef.current) {
-                        clearTimeout(debounceTimerRef.current);
-                        debounceTimerRef.current = null;
-                      }
-                      isDirtyRef.current = false;
-
-                      const defaultBlankQ: GameQuestion = {
-                        id: 1,
-                        blockNumber: 1,
-                        category: 'grammar',
-                        title: '',
-                        rewardCoins: 1,
-                        ...(newDeckDefaultType === 'multiple_choice'
-                          ? { type: 'multiple_choice' as const, options: ['', '', '', ''], correctIndex: 0 }
-                          : newDeckDefaultType === 'true_false'
-                          ? { type: 'true_false' as const, isTrue: true, explanation: '' }
-                          : { type: 'open_trivia' as const, answer: '' }),
-                      };
-
-                      if (onCreateBlankDeck) {
-                        onCreateBlankDeck(totalCount, newDeckDefaultType);
-                      } else {
-                        // Fallback: clear all questions manually
-                        for (let i = 1; i <= blocks.length; i++) {
-                          onUpdateBlockQuestion(i, {
-                            ...defaultBlankQ,
-                            id: i,
-                            blockNumber: i,
-                          });
-                        }
-                      }
-                      if (onLessonGoalChange) {
-                        onLessonGoalChange('');
-                        onLessonGoalCommit?.('');
-                      }
-
-                      // Force-reset active block 1 so it clears immediately without needing to click away
-                      setSelectedBlockId(1);
-                      activeBlockIdRef.current = 1;
-                      setEditingQuestion(defaultBlankQ);
-                      editingQuestionRef.current = defaultBlankQ;
-                      setSaveStatus('saved');
-
-                      setIsNewDeckConfirmOpen(false);
-                      toast.success(`Created New Blank Deck (${totalCount} blocks)!`, {
-                        description: `Default format: ${newDeckDefaultType.replace('_', ' ')}`,
-                      });
+                      const leave = pendingLeave;
+                      setPendingLeave(null);
+                      leave();
                     }}
-                    className="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold border border-rose-400 cursor-pointer shadow-lg"
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold border border-white/15 cursor-pointer"
                   >
-                    Confirm & Clear
+                    Leave anyway
                   </button>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Main Body */}
-        {activeTab === 'library' && onApplyQuestionBank ? (
-          <QuestionLibraryPanel
-            questions={blocks.map(block =>
-              block.id === currentBlock.id
-                ? { ...editingQuestion, title: legacySlashesToMarks(editingQuestion.title) }
-                : block.question
-            )}
-            lessonGoal={lessonGoal ?? ''}
-            showStarterExamples={theme === 'classic'}
+        {view === 'decks' ? (
+          <MyDecksPanel
             activeBankId={currentActiveBankId}
-            activeBankName={currentActiveBankName}
-            onActiveBankChange={handleActiveBankChange}
-            onApply={(bank) => {
-              flushSave();
-              handleActiveBankChange(bank.id, bank.name);
-              onApplyQuestionBank(bank.questions, bank.lessonGoal, bank.name, bank.id);
-              setActiveTab('deck');
-            }}
-            onClose={() => setActiveTab('deck')}
+            showStarterExamples={theme === 'classic'}
+            onLoad={handleLoadDeck}
+            onEdit={handleEditDeck}
+            onActiveDeckRemoved={() => handleActiveBankChange(undefined, undefined)}
           />
         ) : (
           <div className="p-3 sm:p-5 overflow-hidden flex-1 grid grid-cols-1 md:grid-cols-12 gap-3 sm:gap-4 min-h-0">
@@ -1369,7 +1404,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
 
               {/* Blocks Grid with Drag & Drop */}
               <div className="flex-1 min-h-0 overflow-y-auto p-1.5">
-                <div className="grid grid-cols-6 gap-1.5">
+                <div className="grid grid-cols-[repeat(auto-fill,minmax(4rem,1fr))] gap-1.5">
                   {filteredBlocks.map((b) => {
                     const isCurrent = selectedBlockId === b.id;
                     const q = isCurrent ? editingQuestion : b.question;
@@ -1429,7 +1464,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                           }
                         }}
                         onClick={() => handleSelectBlock(b.id)}
-                        className={`p-2 rounded-xl font-mario text-sm border transition-all cursor-grab active:cursor-grabbing relative flex flex-col items-center justify-center ${
+                        className={`aspect-square p-2 rounded-xl text-lg border transition-all cursor-grab active:cursor-grabbing relative flex flex-col items-center justify-center ${
                           isBeingDragged
                             ? 'opacity-40 scale-95 border-dashed border-yellow-400'
                             : isDragOver
@@ -1481,17 +1516,19 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                 <div className="flex items-center justify-between gap-2 bg-slate-900/90 p-2 rounded-xl border border-white/10">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className="text-[0.6875rem] font-bold text-indigo-200">Deck Size:</span>
-                    <span className="text-xs font-mario text-amber-300">
+                    <span className="text-xs text-amber-300">
                       {totalCount} blocks
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       type="button"
-                      disabled={totalCount <= 10}
+                      disabled={totalCount <= minSafeCount}
                       onClick={() => handleTotalCountChange(totalCount - 1)}
                       className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-white font-bold text-xs flex items-center justify-center border border-white/15 cursor-pointer active:scale-95"
-                      title="Decrease total questions"
+                      title={totalCount <= minSafeCount && minSafeCount > 10
+                        ? `Block ${minSafeCount} has a question. Delete blocks individually to go smaller.`
+                        : 'Remove an empty block from the end'}
                     >
                       -
                     </button>
@@ -1506,7 +1543,7 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                           handleTotalCountChange(val);
                         }
                       }}
-                      className="w-11 h-6 bg-black/60 border border-white/20 rounded-lg text-center text-xs font-mario text-yellow-300 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      className="w-11 h-6 bg-black/60 border border-white/20 rounded-lg text-center text-xs text-yellow-300 focus:outline-none focus:ring-1 focus:ring-amber-400"
                     />
                     <button
                       type="button"
@@ -1519,31 +1556,33 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
                     </button>
                   </div>
                 </div>
+                {totalCount <= minSafeCount && minSafeCount > 10 && (
+                  <p className="text-[0.6875rem] text-slate-400 px-1 -mt-1">
+                    Smallest size that keeps your questions is {minSafeCount}. To go smaller, delete blocks one at a time.
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[0.6875rem] font-semibold text-slate-300">Order:</span>
-                  <button
-                    type="button"
-                    onClick={handleToggleShuffle}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer shadow-sm ${
-                      isShuffleEnabled
-                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400/80 shadow-[0_0_12px_rgba(99,102,241,0.3)]'
-                        : 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.3)]'
-                    }`}
-                    title={isShuffleEnabled ? 'Questions randomized when game starts' : 'Questions presented in exact order created (1, 2, 3...)'}
+                  <span className="text-[0.6875rem] font-semibold text-slate-300">Order</span>
+                  <ToggleGroup
+                    type="single"
+                    value={isShuffleEnabled ? 'shuffle' : 'sequential'}
+                    // Single toggle groups emit '' when the active item is clicked again; keep the current order
+                    onValueChange={(value) => {
+                      if (value) handleSetShuffle(value === 'shuffle');
+                    }}
+                    aria-label="Question order"
+                    className="flex-1"
                   >
-                    {isShuffleEnabled ? (
-                      <>
-                        <Shuffle className="w-3.5 h-3.5 text-yellow-300" />
-                        <span>🎲 Shuffled</span>
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDownUp className="w-3.5 h-3.5 text-emerald-200" />
-                        <span>🔢 Sequential (1 to {totalCount})</span>
-                      </>
-                    )}
-                  </button>
+                    <ToggleGroupItem value="sequential" title="Questions appear in order 1, 2, 3…">
+                      <ArrowDownUp />
+                      Sequential
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="shuffle" title="Questions are shuffled when the game starts">
+                      <Shuffle />
+                      Auto-Shuffle
+                    </ToggleGroupItem>
+                  </ToggleGroup>
                 </div>
               </div>
             </div>
@@ -1553,10 +1592,15 @@ export const CustomizerModal: React.FC<CustomizerModalProps> = React.memo(functi
               {/* Header: Block Info & Question Type Selector */}
               <div className="p-3.5 sm:p-4 border-b border-white/15 bg-slate-900/70 flex flex-col gap-2.5 shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-mario text-xl text-yellow-300">
-                      Block #{currentBlock.id}
-                    </h3>
+                  <div className="flex items-center gap-2.5">
+                    <div className="leading-tight">
+                      <span className="block text-[0.6875rem] font-semibold uppercase tracking-wider text-slate-400">
+                        Question Editor
+                      </span>
+                      <h3 className="text-xl text-yellow-300">
+                        Block #{currentBlock.id}
+                      </h3>
+                    </div>
                     <span className="text-[0.625rem] bg-indigo-500/20 text-indigo-300 px-2.5 py-0.5 rounded-full border border-indigo-400/30 font-bold uppercase tracking-wider">
                       {editingQuestion.type.replace('_', ' ')}
                     </span>
