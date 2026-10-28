@@ -34,8 +34,8 @@ import { createGameBlocks, getDeckLength, makeBlankQuestion, TOTAL_BLOCKS } from
 export { TOTAL_BLOCKS };
 
 export interface MarioPartyQuizProps {
-  initialTheme?: GameTheme;
-  initialOpenStudio?: boolean;
+  /** Seasonal board editions only; Classic runs in its own module (MarioBlastClassic). */
+  initialTheme?: Exclude<GameTheme, 'classic'>;
   onExitToLauncher: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
@@ -43,7 +43,6 @@ export interface MarioPartyQuizProps {
 
 export function MarioPartyQuiz({
   initialTheme = 'summer',
-  initialOpenStudio = false,
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
@@ -54,7 +53,7 @@ export function MarioPartyQuiz({
   const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
   const [lessonGoal, setLessonGoal] = useState(() => loadPartyLessonGoal(theme));
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(initialOpenStudio);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const pendingEffectsRef = useRef<EngineEffect[]>([]);
 

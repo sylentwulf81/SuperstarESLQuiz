@@ -47,6 +47,8 @@ export interface MarioBlastClassicProps {
   onExitToLauncher: () => void;
   soundEnabled: boolean;
   onToggleSound: () => void;
+  /** Open straight into the Question Studio (launcher "Studio" button). */
+  initialOpenStudio?: boolean;
 }
 
 const CLASSIC_THEME = 'classic' as const;
@@ -55,13 +57,14 @@ export function MarioBlastClassic({
   onExitToLauncher,
   soundEnabled,
   onToggleSound,
+  initialOpenStudio = false,
 }: MarioBlastClassicProps) {
   const { user, isLoggedIn, saveQuestionsCloud, loadQuestionsCloud } = useAuth();
   const theme = CLASSIC_THEME;
   const [state, setState] = useState(() => createClassicState(createGameBlocks(theme), loadClassicTestGame()));
   const [showCatchUpNote, setShowCatchUpNote] = useState(loadShowCatchUpNote);
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
-  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(initialOpenStudio);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lessonGoal, setLessonGoal] = useState(loadClassicLessonGoal);
   const [isReviewingRound, setIsReviewingRound] = useState(false);

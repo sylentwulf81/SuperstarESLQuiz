@@ -41,8 +41,7 @@ type ShellSession =
   | { kind: 'launcher' }
   | {
       kind: typeof MARIO_PARTY_QUIZ_MODULE;
-      theme: GameTheme;
-      initialOpenStudio?: boolean;
+      theme: Exclude<GameTheme, 'classic'>;
     }
   | { kind: typeof MARIO_BLAST_CLASSIC_MODULE; initialOpenStudio?: boolean }
   | { kind: typeof ALIEN_INVASION_MODULE };
@@ -78,20 +77,16 @@ function AppShell() {
       return;
     }
     if (game.gameModule !== MARIO_PARTY_QUIZ_MODULE) return;
-    setSession({
-      kind: MARIO_PARTY_QUIZ_MODULE,
-      theme: game.themeKey ?? 'summer',
-    });
+    // Classic is its own module; the board engine only runs the seasonal themes
+    const theme = !game.themeKey || game.themeKey === 'classic' ? 'summer' : game.themeKey;
+    setSession({ kind: MARIO_PARTY_QUIZ_MODULE, theme });
   }, []);
 
+  // The Studio edits the Classic deck, so open it inside Super Blast Classic
   const handleOpenStudioFromLauncher = useCallback(() => {
     bgm.pause();
     sounds.playClick();
-    setSession({
-      kind: MARIO_PARTY_QUIZ_MODULE,
-      theme: 'classic',
-      initialOpenStudio: true,
-    });
+    setSession({ kind: MARIO_BLAST_CLASSIC_MODULE, initialOpenStudio: true });
   }, []);
 
   if (session.kind === MARIO_BLAST_CLASSIC_MODULE) {
@@ -101,6 +96,7 @@ function AppShell() {
           onExitToLauncher={exitToLauncher}
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
+          initialOpenStudio={session.initialOpenStudio}
         />
       </Suspense>
     );
@@ -124,7 +120,6 @@ function AppShell() {
       <Suspense fallback={<GameLoadingFallback />}>
         <MarioPartyQuiz
           initialTheme={session.theme}
-          initialOpenStudio={session.initialOpenStudio}
           onExitToLauncher={exitToLauncher}
           soundEnabled={soundEnabled}
           onToggleSound={handleToggleSound}
