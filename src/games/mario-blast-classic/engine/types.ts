@@ -17,6 +17,8 @@ export interface ClassicState {
   currentTeamIndex: number;
   blocks: BlockState[];
   selectedBlockId: number | null;
+  /** Block whose round modal was closed with Back; reselecting it resumes the round. */
+  pausedBlockId?: number | null;
   slots: ClassicCardSlot[];
   drawnTeamIds: string[];
   /** Teams the host marked as getting no card this round (e.g. missed a one-chance True/False). */
@@ -43,6 +45,7 @@ export type ClassicEvent =
   | { type: 'RESOLVE_MUSHROOM'; coins: SuperMushroomOffer }
   | { type: 'END_ROUND'; reason?: RoundOverReason }
   | { type: 'CANCEL_EMPTY_ROUND' }
+  | { type: 'PAUSE_ROUND' }
   | { type: 'CONTINUE_ROUND_OVER' }
   | { type: 'PASS_TURN' }
   | { type: 'SELECT_TEAM_TURN'; teamIndex: number }
@@ -89,6 +92,7 @@ export function createClassicState(blocks: BlockState[], testMode = false): Clas
 export function resetClassicRound(state: ClassicState): ClassicState {
   return {
     ...state,
+    pausedBlockId: null,
     slots: emptyClassicSlots(classicSlotCount(state.teams.length)),
     drawnTeamIds: [],
     passedTeamIds: [],

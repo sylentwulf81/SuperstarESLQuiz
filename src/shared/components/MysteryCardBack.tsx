@@ -11,6 +11,8 @@ export interface MysteryCardBackProps {
   previewTitle?: string;
   /** Optional slot number (e.g. 1-6) to show at bottom if bottomLabel is not provided */
   slotNumber?: number;
+  /** Show the slot number large in the medallion instead of '?' */
+  numberMedallion?: boolean;
   /** Custom bottom badge content (defaults to 'CARD {slotNumber}' or 'TAP TO PICK') */
   bottomLabel?: React.ReactNode;
   /** Whether to apply 3D transform / backface-visibility styles (for flip cards) */
@@ -27,6 +29,7 @@ export const MysteryCardBack: React.FC<MysteryCardBackProps> = React.memo(functi
   badgeText = '★ MYSTERY ★',
   previewTitle,
   slotNumber,
+  numberMedallion = false,
   bottomLabel,
   preserve3d = false,
   className = '',
@@ -82,7 +85,7 @@ export const MysteryCardBack: React.FC<MysteryCardBackProps> = React.memo(functi
           <div className="w-[clamp(2.75rem,36cqw,4.5rem)] h-[clamp(2.75rem,36cqw,4.5rem)] sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full p-1 sm:p-1.5 bg-gradient-to-br from-amber-300 via-yellow-400 to-amber-600 shadow-[0_0_20px_rgba(250,204,21,0.5)] flex items-center justify-center shrink-0">
             <div className="w-full h-full rounded-full bg-gradient-to-b from-red-900 to-red-950 border border-yellow-200/60 flex items-center justify-center">
               <span className="font-mario text-[clamp(1.75rem,24cqw,3rem)] sm:text-4xl lg:text-5xl text-yellow-300 text-shadow-mario leading-none select-none">
-                ?
+                {numberMedallion && slotNumber !== undefined ? slotNumber : '?'}
               </span>
             </div>
           </div>

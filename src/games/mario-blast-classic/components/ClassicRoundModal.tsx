@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star, Ban, Undo2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star, Ban, Undo2, ArrowLeft } from 'lucide-react';
 import { GameQuestion, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
@@ -31,6 +31,8 @@ interface ClassicRoundModalProps {
   onPickSlot: (slotIndex: number) => void;
   onEndRound: () => void;
   onCancelIfEmpty: () => void;
+  /** Close the modal without ending the round */
+  onBack?: () => void;
   testGame?: boolean;
   isRoundOver?: boolean;
   roundOverReason?: RoundOverReason | null;
@@ -52,6 +54,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   onPickSlot,
   onEndRound,
   onCancelIfEmpty,
+  onBack,
   testGame = false,
   isRoundOver = false,
   roundOverReason = null,
@@ -77,8 +80,24 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   const drawnTeamSet = useMemo(() => new Set(drawnTeamIds), [drawnTeamIds]);
   const passedTeamSet = useMemo(() => new Set(passedTeamIds), [passedTeamIds]);
 
+  // Keys 1-8 select the matching team (same rules as clicking its row)
+  useEffect(() => {
+    if (isRoundOver) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      if (!/^[1-8]$/.test(e.key)) return;
+      const team = teams[Number(e.key) - 1];
+      if (!team || drawnTeamSet.has(team.id) || passedTeamSet.has(team.id)) return;
+      sounds.playPop();
+      onSelectTeam(team.id);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isRoundOver, teams, drawnTeamSet, passedTeamSet, onSelectTeam]);
+
   const pickChar = CHARACTERS[pickingTeam.characterId];
-  const anyClaimed = slots.some(s => s.claimedByTeamId);
   const answerText =
     question.type === 'open_trivia'
       ? question.answer
@@ -123,6 +142,19 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
       {/* Top Header */}
       <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
         <div className="flex items-center gap-2.5 min-w-0">
+          {!isRoundOver && (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                (onBack ?? onCancelIfEmpty)();
+              }}
+              className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer inline-flex items-center gap-1.5 font-mario text-sm shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          )}
           <TeamAvatar
             characterId={pickingTeam.characterId}
             size="md"
@@ -153,30 +185,39 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
           <span className="font-mario text-sm sm:text-base text-yellow-200 bg-black/40 px-2.5 py-1 rounded-xl border border-white/20">
             {cardsRemaining}/{slots.length} Cards
           </span>
-          <button
-            type="button"
-            onClick={() => {
-              sounds.playClick();
-              if (isRoundOver && onFinishRound) {
-                onFinishRound();
-              } else if (anyClaimed) {
+          {isRoundOver ? (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
+                if (onFinishRound) onFinishRound();
+                else onEndRound();
+              }}
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                sounds.playClick();
                 onEndRound();
-              } else {
-                onCancelIfEmpty();
-              }
-            }}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+              }}
+              className="px-3 py-2 rounded-xl bg-rose-800/90 hover:bg-rose-700 text-white font-mario text-sm border-2 border-rose-300/50 cursor-pointer inline-flex items-center gap-2 shadow"
+            >
+              <OctagonX className="w-4 h-4" />
+              End Round
+            </button>
+          )}
         </div>
       </div>
 
       {/* Main 2-Column Classroom Layout */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* Left Column: Vertical Teams Rail with Giant Scores */}
-        <div className="w-full md:w-64 lg:w-72 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-2.5 flex flex-col shrink-0 overflow-y-auto max-h-24 sm:max-h-28 md:max-h-none">
+        <div className="w-full md:w-80 lg:w-96 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-2.5 flex flex-col shrink-0 overflow-y-auto max-h-24 sm:max-h-28 md:max-h-none">
           <div className="flex items-center justify-between pb-1 border-b border-white/10 mb-1.5 shrink-0">
             <span className="text-[0.6875rem] font-black uppercase tracking-wider text-yellow-300 font-mario">
               {isRoundOver ? 'SCORES' : '1. SELECT WINNER'}
@@ -195,7 +236,17 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               const canTogglePass = !alreadyDrew && !isRoundOver && Boolean(onTogglePassTeam);
 
               return (
-                <div key={team.id} className="flex items-stretch gap-1 min-w-[10.5rem] sm:min-w-[11.5rem] md:min-w-0">
+                <div key={team.id} className="flex items-stretch gap-1 min-w-[12rem] sm:min-w-[13rem] md:min-w-0">
+                <span
+                  className={`shrink-0 w-7 sm:w-8 flex items-center justify-center rounded-lg font-mario text-lg sm:text-xl border-2 ${
+                    isSelected
+                      ? 'bg-yellow-300 text-slate-900 border-yellow-100'
+                      : 'bg-black/60 text-yellow-300 border-amber-300/40'
+                  }`}
+                  aria-hidden="true"
+                >
+                  {teams.indexOf(team) + 1}
+                </span>
                 <button
                   type="button"
                   disabled={alreadyDrew || isPassed || isRoundOver}
@@ -301,7 +352,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     {lessonGoal}
                   </p>
                 )}
-                <h2 className="font-mario text-[clamp(1.4rem,3vw,2.75rem)] text-yellow-300 leading-tight text-shadow-mario">
+                <h2 className="font-mario text-[clamp(2rem,4.5vw,4.25rem)] text-yellow-300 leading-tight text-shadow-mario">
                   <MarkedPrompt text={question.title} />
                 </h2>
               </>
@@ -474,31 +525,24 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
           </div>
 
           {/* Cards Section */}
-          <div className="mt-4 flex-1 min-h-0 rounded-3xl bg-black/35 border-t-2 border-t-amber-300/40 border-x border-b border-white/10 p-3 sm:p-4 flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-mario text-xs sm:text-sm text-yellow-300">
-                {selectedTeam
-                  ? `2. ${selectedTeam.name} — Pick your Mystery Card!`
-                  : isRoundOver
-                  ? 'All Mystery Cards in this round:'
-                  : '2. Select a team on the left, then pick a Mystery Card!'}
-              </span>
-              {selectedTeam && (
-                <span className="font-mario text-xs text-amber-200 bg-amber-950/70 border border-amber-300/50 px-2 py-0.5 rounded-full">
-                  Drawing as {selectedTeam.name}
+          <div className="mt-auto rounded-3xl bg-black/35 border-t-2 border-t-amber-300/40 border-x border-b border-white/10 p-3 sm:p-4 flex flex-col shrink-0">
+            {(selectedTeam || isRoundOver) && (
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-mario text-xs sm:text-sm text-yellow-300">
+                  {selectedTeam ? `${selectedTeam.name} — Pick your Mystery Card!` : 'All Mystery Cards in this round:'}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Mystery Cards Grid (dynamic 6 to 8 cards) */}
-            <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div className="flex items-center justify-center">
               <div
                 className={`grid gap-2 sm:gap-2.5 w-full ${
                   slots.length >= 8
-                    ? 'grid-cols-4 sm:grid-cols-8 max-w-5xl'
+                    ? 'grid-cols-4 sm:grid-cols-8 max-w-4xl'
                     : slots.length === 7
-                    ? 'grid-cols-4 sm:grid-cols-7 max-w-5xl'
-                    : 'grid-cols-3 sm:grid-cols-6 max-w-4xl'
+                    ? 'grid-cols-4 sm:grid-cols-7 max-w-4xl'
+                    : 'grid-cols-3 sm:grid-cols-6 max-w-3xl'
                 }`}
               >
                 {slots.map((slot, idx) => {
@@ -558,6 +602,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         <MysteryCardBack
                           idx={idx}
                           slotNumber={idx + 1}
+                          numberMedallion
+                          bottomLabel={null}
                           badgeText={previewUnclaimed ? 'TEST' : undefined}
                           previewTitle={previewUnclaimed ? slot.card?.title : undefined}
                         />
@@ -569,8 +615,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             </div>
 
             {/* Bottom Actions */}
+            {isRoundOver && (
             <div className="flex items-center justify-end mt-3 pt-2 border-t border-white/10 shrink-0">
-              {isRoundOver ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -584,20 +630,8 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                   FINISH ROUND & NEXT BLOCK
                   <ArrowRight className="w-4 h-4" />
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    sounds.playClick();
-                    onEndRound();
-                  }}
-                  className="px-5 py-2.5 rounded-xl bg-rose-800/90 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm border-2 border-rose-300/50 cursor-pointer inline-flex items-center gap-2 shadow"
-                >
-                  <OctagonX className="w-4 h-4" />
-                  End Round
-                </button>
-              )}
             </div>
+            )}
           </div>
         </div>
       </div>

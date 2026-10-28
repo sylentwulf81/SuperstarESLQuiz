@@ -105,6 +105,9 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
         return { state, effects };
       }
       effects.push({ kind: 'sound', sound: 'blockHit' });
+      if (state.pausedBlockId === event.blockId) {
+        return { state: { ...state, selectedBlockId: event.blockId, pausedBlockId: null }, effects };
+      }
       let next = resetClassicRound({ ...state, selectedBlockId: event.blockId });
       // Mystery Card block: no question, so the picking team is ready to draw (host can still switch)
       if (block.question.type === 'mystery_card') {
@@ -309,6 +312,8 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
     }
     case 'END_ROUND':
       return { state: { ...state, roundOverReason: event.reason ?? 'host' }, effects };
+    case 'PAUSE_ROUND':
+      return { state: { ...state, pausedBlockId: state.selectedBlockId, selectedBlockId: null }, effects };
     case 'CANCEL_EMPTY_ROUND':
       return { state: resetClassicRound({ ...state, selectedBlockId: null }), effects };
     case 'CONTINUE_ROUND_OVER':

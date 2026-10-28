@@ -381,7 +381,8 @@ export function MarioBlastClassic({
     dispatch({ type: 'PICK_SLOT', slotIndex });
   }, [dispatch]);
   const handleEndRound = useCallback(() => dispatch({ type: 'END_ROUND', reason: 'host' }), [dispatch]);
-  const handleCancelEmptyRound = useCallback(() => dispatch({ type: 'CANCEL_EMPTY_ROUND' }), [dispatch]);
+  const handlePauseRound = useCallback(() => dispatch({ type: 'PAUSE_ROUND' }), [dispatch]);
+  const handleCancelEmptyRound =useCallback(() => dispatch({ type: 'CANCEL_EMPTY_ROUND' }), [dispatch]);
   const handleSkipCardAction = useCallback(() => dispatch({ type: 'SKIP_CARD_ACTION' }), [dispatch]);
   const handleResolveMystery = useCallback((outcome: MysteryBlockOutcome) => {
     dispatch({ type: 'RESOLVE_MYSTERY', outcome });
@@ -511,6 +512,7 @@ export function MarioBlastClassic({
             onPickSlot={handlePickSlot}
             onEndRound={handleEndRound}
             onCancelIfEmpty={handleCancelEmptyRound}
+            onBack={handlePauseRound}
             testGame={testMode}
             isRoundOver={Boolean(roundOverReason)}
             roundOverReason={roundOverReason}
