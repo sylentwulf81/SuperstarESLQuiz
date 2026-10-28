@@ -123,7 +123,22 @@ export function reduceClassic(state: ClassicState, event: ClassicEvent): Classic
       return { state: next, effects };
     }
     case 'SELECT_ANSWERING_TEAM':
+      if (state.passedTeamIds.includes(event.teamId)) return { state, effects };
       return { state: { ...state, selectedAnsweringTeamId: event.teamId }, effects };
+    case 'TOGGLE_PASS_TEAM': {
+      if (state.drawnTeamIds.includes(event.teamId) || state.pendingCard) return { state, effects };
+      const passed = state.passedTeamIds.includes(event.teamId);
+      return {
+        state: {
+          ...state,
+          passedTeamIds: passed
+            ? state.passedTeamIds.filter(id => id !== event.teamId)
+            : [...state.passedTeamIds, event.teamId],
+          selectedAnsweringTeamId: state.selectedAnsweringTeamId === event.teamId ? null : state.selectedAnsweringTeamId,
+        },
+        effects,
+      };
+    }
     case 'PICK_SLOT': {
       if (!state.selectedAnsweringTeamId || state.slots[event.slotIndex]?.claimedByTeamId) {
         return { state, effects };

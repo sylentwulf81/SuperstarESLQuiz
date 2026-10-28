@@ -19,6 +19,8 @@ export interface ClassicState {
   selectedBlockId: number | null;
   slots: ClassicCardSlot[];
   drawnTeamIds: string[];
+  /** Teams the host marked as getting no card this round (e.g. missed a one-chance True/False). */
+  passedTeamIds: string[];
   selectedAnsweringTeamId: string | null;
   pendingCard: RewardCard | null;
   pendingSlotIndex: number | null;
@@ -33,6 +35,7 @@ export type ClassicEvent =
   | { type: 'SET_BLOCKS'; blocks: BlockState[]; toast?: string; playShuffle?: boolean }
   | { type: 'SELECT_BLOCK'; blockId: number }
   | { type: 'SELECT_ANSWERING_TEAM'; teamId: string }
+  | { type: 'TOGGLE_PASS_TEAM'; teamId: string }
   | { type: 'PICK_SLOT'; slotIndex: number }
   | { type: 'RESOLVE_CARD'; card: RewardCard; options?: RewardCardActionOptions }
   | { type: 'SKIP_CARD_ACTION' }
@@ -72,6 +75,7 @@ export function createClassicState(blocks: BlockState[], testMode = false): Clas
     selectedBlockId: null,
     slots: emptyClassicSlots(6),
     drawnTeamIds: [],
+    passedTeamIds: [],
     selectedAnsweringTeamId: null,
     pendingCard: null,
     pendingSlotIndex: null,
@@ -87,6 +91,7 @@ export function resetClassicRound(state: ClassicState): ClassicState {
     ...state,
     slots: emptyClassicSlots(classicSlotCount(state.teams.length)),
     drawnTeamIds: [],
+    passedTeamIds: [],
     selectedAnsweringTeamId: null,
     pendingCard: null,
     pendingSlotIndex: null,

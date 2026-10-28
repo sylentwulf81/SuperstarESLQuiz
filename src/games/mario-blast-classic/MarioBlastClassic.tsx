@@ -139,7 +139,7 @@ export function MarioBlastClassic({
   }, [isLoggedIn, user?.uid, theme, dispatch]);
 
   const {
-    view, teams, currentTeamIndex, blocks, selectedBlockId, slots, drawnTeamIds,
+    view, teams, currentTeamIndex, blocks, selectedBlockId, slots, drawnTeamIds, passedTeamIds,
     selectedAnsweringTeamId, pendingCard, mysteryOutcomes, mushroomOffers, roundOverReason, testMode,
   } = state;
   const activeTeam = classicActiveTeam(state);
@@ -372,6 +372,9 @@ export function MarioBlastClassic({
   const handleSelectAnsweringTeam = useCallback((teamId: string) => {
     dispatch({ type: 'SELECT_ANSWERING_TEAM', teamId });
   }, [dispatch]);
+  const handleTogglePassTeam = useCallback((teamId: string) => {
+    dispatch({ type: 'TOGGLE_PASS_TEAM', teamId });
+  }, [dispatch]);
   const handlePickSlot = useCallback((slotIndex: number) => {
     dispatch({ type: 'PICK_SLOT', slotIndex });
   }, [dispatch]);
@@ -498,9 +501,11 @@ export function MarioBlastClassic({
             teams={teams}
             slots={slots}
             drawnTeamIds={drawnTeamIds}
+            passedTeamIds={passedTeamIds}
             selectedTeamId={selectedAnsweringTeamId}
             cardsRemaining={cardsRemaining}
             onSelectTeam={handleSelectAnsweringTeam}
+            onTogglePassTeam={handleTogglePassTeam}
             onPickSlot={handlePickSlot}
             onEndRound={handleEndRound}
             onCancelIfEmpty={handleCancelEmptyRound}

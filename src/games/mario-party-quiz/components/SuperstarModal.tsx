@@ -36,6 +36,11 @@ export const SuperstarModal = React.memo(function SuperstarModal({
   const winner = sortedTeams[0] || teams[0];
   const charInfo = CHARACTERS[winner.characterId];
   const victoryArt = charInfo.victoryImageUrl;
+  // Every team sharing the top score is a Superstar
+  const coWinners = sortedTeams.filter(team => team.coins === winner.coins);
+  const isTie = coWinners.length > 1;
+  // Shared ranks: tied teams get the same place (1, 1, 3, ...)
+  const rankOf = (team: Team) => 1 + sortedTeams.filter(other => other.coins > team.coins).length;
 
   useEffect(() => {
     sounds.playSuperstar();
@@ -87,7 +92,41 @@ export const SuperstarModal = React.memo(function SuperstarModal({
             <X className="w-5 h-5" />
           </button>
 
-          {victoryArt ? (
+          {isTie ? (
+            <div className="p-6 sm:p-8 relative overflow-hidden bg-gradient-to-b from-amber-900/80 to-slate-900">
+              <h2 className="font-mario text-3xl sm:text-5xl text-yellow-300 text-shadow-gold tracking-wide">
+                IT&rsquo;S A TIE!
+              </h2>
+              <p className="text-indigo-100 text-sm sm:text-base font-bold mt-1">
+                {coWinners.length} teams are Superstars!
+              </p>
+              <div className="flex flex-wrap items-start justify-center gap-4 sm:gap-6 mt-5">
+                {coWinners.map(team => (
+                  <div key={team.id} className="flex flex-col items-center gap-2 w-32 sm:w-40">
+                    <TeamAvatar
+                      characterId={team.characterId}
+                      size="2xl"
+                      customUrl={team.customImageUrl}
+                      className="w-24 h-24 sm:w-32 sm:h-32 shadow-2xl ring-4 ring-yellow-400 rounded-3xl"
+                    />
+                    <span className="font-mario text-lg sm:text-2xl text-white text-shadow-mario uppercase leading-tight">
+                      {team.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border mt-5 shadow-inner ${
+                winner.coins < 0
+                  ? 'bg-red-950/90 border-red-500/80'
+                  : 'bg-slate-800/90 border-yellow-300/60 glass-glow-gold'
+              }`}>
+                <MarioCoin size="xl" animated />
+                <span className={`font-mario text-3xl sm:text-4xl ${winner.coins < 0 ? 'text-red-500' : 'text-yellow-300 text-shadow-gold'}`}>
+                  {winner.coins} COINS EACH
+                </span>
+              </div>
+            </div>
+          ) : victoryArt ? (
             <div className="relative w-full aspect-[4/3] sm:aspect-[1024/764] max-h-[42vh] sm:max-h-[48vh] bg-black/30">
               <img
                 src={victoryArt}
@@ -174,8 +213,9 @@ export const SuperstarModal = React.memo(function SuperstarModal({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {sortedTeams.map((team, index) => {
-              const isWinner = index === 0;
+            {sortedTeams.map(team => {
+              const rank = rankOf(team);
+              const isWinner = rank === 1;
 
               return (
                 <div
@@ -188,10 +228,10 @@ export const SuperstarModal = React.memo(function SuperstarModal({
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-black/40 font-black text-sm border border-white/10">
-                      {index === 0 && <Crown className="w-4 h-4 text-yellow-400" />}
-                      {index === 1 && <Medal className="w-4 h-4 text-slate-300" />}
-                      {index === 2 && <Medal className="w-4 h-4 text-amber-600" />}
-                      {index > 2 && `#${index + 1}`}
+                      {rank === 1 && <Crown className="w-4 h-4 text-yellow-400" />}
+                      {rank === 2 && <Medal className="w-4 h-4 text-slate-300" />}
+                      {rank === 3 && <Medal className="w-4 h-4 text-amber-600" />}
+                      {rank > 3 && `#${rank}`}
                     </div>
                     <div className="text-left">
                       <div className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star } from 'lucide-react';
+import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star, Ban, Undo2 } from 'lucide-react';
 import { GameQuestion, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
@@ -14,6 +14,8 @@ import { shuffleWordLetters } from '@/shared/utils/shuffle';
 
 export type { ClassicCardSlot };
 
+const EMPTY_IDS: string[] = [];
+
 interface ClassicRoundModalProps {
   question: GameQuestion;
   lessonGoal: string;
@@ -21,9 +23,11 @@ interface ClassicRoundModalProps {
   teams: Team[];
   slots: ClassicCardSlot[];
   drawnTeamIds: string[];
+  passedTeamIds?: string[];
   selectedTeamId: string | null;
   cardsRemaining: number;
   onSelectTeam: (teamId: string) => void;
+  onTogglePassTeam?: (teamId: string) => void;
   onPickSlot: (slotIndex: number) => void;
   onEndRound: () => void;
   onCancelIfEmpty: () => void;
@@ -40,9 +44,11 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   teams,
   slots,
   drawnTeamIds,
+  passedTeamIds = EMPTY_IDS,
   selectedTeamId,
   cardsRemaining,
   onSelectTeam,
+  onTogglePassTeam,
   onPickSlot,
   onEndRound,
   onCancelIfEmpty,
@@ -69,6 +75,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   }, [teams]);
 
   const drawnTeamSet = useMemo(() => new Set(drawnTeamIds), [drawnTeamIds]);
+  const passedTeamSet = useMemo(() => new Set(passedTeamIds), [passedTeamIds]);
 
   const pickChar = CHARACTERS[pickingTeam.characterId];
   const anyClaimed = slots.some(s => s.claimedByTeamId);
@@ -175,7 +182,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
               {isRoundOver ? 'SCORES' : '1. SELECT WINNER'}
             </span>
             <span className="text-[10px] text-slate-400 font-bold">
-              {drawnTeamIds.length}/{teams.length} Drew
+              {drawnTeamIds.length}/{teams.length} Drew{passedTeamIds.length > 0 ? ` · ${passedTeamIds.length} skipped` : ''}
             </span>
           </div>
 
@@ -183,21 +190,25 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             {teams.map(team => {
               const char = CHARACTERS[team.characterId];
               const alreadyDrew = drawnTeamSet.has(team.id);
+              const isPassed = passedTeamSet.has(team.id);
               const isSelected = selectedTeamId === team.id;
+              const canTogglePass = !alreadyDrew && !isRoundOver && Boolean(onTogglePassTeam);
 
               return (
+                <div key={team.id} className="flex items-stretch gap-1 min-w-[10.5rem] sm:min-w-[11.5rem] md:min-w-0">
                 <button
-                  key={team.id}
                   type="button"
-                  disabled={alreadyDrew || isRoundOver}
+                  disabled={alreadyDrew || isPassed || isRoundOver}
                   onClick={() => {
-                    if (alreadyDrew || isRoundOver) return;
+                    if (alreadyDrew || isPassed || isRoundOver) return;
                     sounds.playPop();
                     onSelectTeam(team.id);
                   }}
-                  className={`relative flex items-center justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 transition-all text-left min-w-[8.5rem] sm:min-w-[9.5rem] md:min-w-0 ${
+                  className={`relative flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 transition-all text-left ${
                     alreadyDrew
                       ? 'bg-emerald-950/60 border-emerald-400/50 cursor-default opacity-85'
+                      : isPassed
+                      ? 'bg-rose-950/50 border-rose-400/40 cursor-default opacity-75'
                       : isSelected
                       ? `${char.bgColor} bg-opacity-70 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] cursor-pointer z-10`
                       : isRoundOver
@@ -224,7 +235,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                         {team.name}
                       </div>
                       <div className="text-[9.5px] sm:text-[10px] text-slate-300 font-bold">
-                        {alreadyDrew ? 'Drew card' : isSelected ? 'Drawing now' : 'Can answer'}
+                        {alreadyDrew ? 'Drew card' : isPassed ? 'No card this round' : isSelected ? 'Drawing now' : 'Can answer'}
                       </div>
                     </div>
                   </div>
@@ -243,6 +254,26 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     )}
                   </div>
                 </button>
+                {canTogglePass && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      sounds.playClick();
+                      onTogglePassTeam?.(team.id);
+                    }}
+                    title={isPassed ? `Let ${team.name} draw this round` : `${team.name} gets no card this round`}
+                    aria-label={isPassed ? `Undo no card for ${team.name}` : `No card for ${team.name}`}
+                    className={`shrink-0 w-8 sm:w-9 rounded-xl border flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
+                      isPassed
+                        ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-300'
+                        : 'bg-slate-800/80 hover:bg-rose-900/70 text-slate-300 hover:text-rose-100 border-white/15'
+                    }`}
+                  >
+                    {isPassed ? <Undo2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
+                    <span className="text-[8px] font-black uppercase leading-none">{isPassed ? 'Undo' : 'Skip'}</span>
+                  </button>
+                )}
+                </div>
               );
             })}
           </div>
@@ -511,6 +542,15 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                               </span>
                             </div>
                           )}
+                        </div>
+                      ) : isRoundOver && slot.card ? (
+                        <div className="absolute inset-0 bg-gradient-to-b from-slate-800/70 to-slate-950/80 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center opacity-70">
+                          <span className="font-mario text-[8.5px] sm:text-[10px] md:text-xs text-slate-200 leading-tight line-clamp-2">
+                            {slot.card.title}
+                          </span>
+                          <span className="mt-auto text-[7.5px] sm:text-[8px] font-black uppercase tracking-wider text-slate-300 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20">
+                            Not picked
+                          </span>
                         </div>
                       ) : (
                         <MysteryCardBack
