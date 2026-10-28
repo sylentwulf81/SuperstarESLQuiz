@@ -9,11 +9,16 @@ interface GameModalShellProps {
   zIndexClass?: string;
   /** Skip the enter scale tween so Classic card reveals paint on the click frame. */
   instant?: boolean;
+  /** Nearly fill the screen (question rounds, where the background isn't needed). */
+  fullscreen?: boolean;
 }
 
 /** One classroom overlay size so card reveals don't jump when inner content changes. */
 export const GAME_MODAL_FRAME =
   'relative w-[min(96vw,86rem)] h-[min(92dvh,54rem)] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden flex flex-col';
+
+export const GAME_MODAL_FRAME_FULL =
+  'relative w-[98vw] h-[96dvh] bg-slate-900 rounded-3xl border-2 border-white/20 shadow-2xl overflow-hidden flex flex-col';
 
 export const GameModalShell: React.FC<GameModalShellProps> = ({
   children,
@@ -21,6 +26,7 @@ export const GameModalShell: React.FC<GameModalShellProps> = ({
   className = '',
   zIndexClass = 'z-50',
   instant = false,
+  fullscreen = false,
 }) => {
   useBodyScrollLock();
   return (
@@ -29,7 +35,7 @@ export const GameModalShell: React.FC<GameModalShellProps> = ({
         initial={instant ? false : { scale: 0.97, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={instant ? undefined : { scale: 0.97, opacity: 0 }}
-        className={`${GAME_MODAL_FRAME} ${className}`}
+        className={`${fullscreen ? GAME_MODAL_FRAME_FULL : GAME_MODAL_FRAME} ${className}`}
       >
         {barColor && <div className="absolute top-0 inset-x-0 h-1.5" style={{ background: barColor }} />}
         {children}

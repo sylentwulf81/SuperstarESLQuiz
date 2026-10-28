@@ -138,7 +138,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   );
 
   return (
-    <GameModalShell barColor={pickChar.accentColor} instant>
+    <GameModalShell barColor={pickChar.accentColor} instant fullscreen>
       {/* Top Header */}
       <div className={`${pickChar.bgColor} px-3 sm:px-5 py-2 flex items-center justify-between border-b-2 ${pickChar.borderColor} shrink-0 gap-3`}>
         <div className="flex items-center gap-2.5 min-w-0">
