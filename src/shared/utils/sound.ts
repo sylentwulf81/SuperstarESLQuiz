@@ -325,7 +325,7 @@ class SoundEngine {
 
     arpeggio.forEach(item => {
       setTimeout(() => {
-        this.playNote(item.f, item.d, 'triangle', 0.28);
+        this.playNote(item.f, item.d, 'triangle', 0.12);
       }, item.t);
     });
   }
@@ -467,7 +467,7 @@ class SoundEngine {
     osc.frequency.setValueAtTime(783.99, now + 0.10);
 
     gain.gain.setValueAtTime(0.05, now);
-    gain.gain.linearRampToValueAtTime(0.22, now + 0.05);
+    gain.gain.linearRampToValueAtTime(0.10, now + 0.05);
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
 
     osc.connect(gain);
