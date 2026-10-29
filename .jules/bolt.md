@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of Unmemoized Overlay/Modal Components & Team Calculations
+**Learning:** Overlays and modals mounted on top of active game views (such as `RulebookModal`, `BlueShellSkipOverlay`, `TeamCalculatorModal`, and `InvasionCinematic`) were unmemoized. When background game ambient ticks or timer intervals fired, these components re-evaluated their VDOM subtrees and re-computed array partitions (`splitGroups`) on every render pass.
+**Action:** Wrap modal/overlay components in `React.memo` and memoize derived group size array allocations (`sizes`, `unique`) in `useMemo` hooks to prevent wasteful VDOM re-rendering and array allocations during ambient state ticks.

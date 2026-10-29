@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { Calculator, Minus, Plus, Users, X } from 'lucide-react';
 import { GameTheme } from '@/shared/types';
@@ -49,11 +49,16 @@ interface TeamCalculatorModalProps {
   onClose: () => void;
 }
 
-export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped TeamCalculatorModal in React.memo to prevent unnecessary VDOM re-renders when parent timer / BGM / state ticks.
+ * 2) Memoized group sizes and unique counts via useMemo to eliminate redundant array allocations on render passes.
+ */
+export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = React.memo(function TeamCalculatorModal({
   theme,
   suggestedGroups,
   onClose,
-}) => {
+}) {
   useBodyScrollLock();
   const [students, setStudents] = useState(loadClassSize);
   const [groups, setGroups] = useState(() =>
@@ -64,8 +69,8 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
     persistClassSize(students);
   }, [students]);
 
-  const sizes = splitGroups(students, groups);
-  const unique = [...new Set(sizes)];
+  const sizes = useMemo(() => splitGroups(students, groups), [students, groups]);
+  const unique = useMemo(() => [...new Set(sizes)], [sizes]);
 
   const bumpStudents = (delta: number) => {
     sounds.playPop();
@@ -203,4 +208,4 @@ export const TeamCalculatorModal: React.FC<TeamCalculatorModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
