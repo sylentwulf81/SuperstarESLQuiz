@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
   AlertTriangle,
@@ -199,7 +199,7 @@ export const MyDecksPanel = React.memo(function MyDecksPanel({
     toast.info(`Folder “${folder}” removed; its decks are now unfiled`);
   };
 
-  const handleDelete = async (deckId: string) => {
+  const handleDelete = useCallback(async (deckId: string) => {
     setBusy(true);
     saveLocalDecks(loadLocalDecks().filter(d => d.id !== deckId));
     if (isLoggedIn) {
@@ -212,19 +212,19 @@ export const MyDecksPanel = React.memo(function MyDecksPanel({
     if (activeBankId === deckId) onActiveDeckRemoved?.();
     setMine(prev => prev.filter(d => d.id !== deckId));
     toast.info('Deck deleted');
-  };
+  }, [isLoggedIn, deleteQuestionBank, activeBankId, onActiveDeckRemoved]);
 
   // Older builds padded short decks with built-in questions; remove them from the saved deck
-  const handleTrimFiller = async (deck: Deck, fillerCount: number) => {
+  const handleTrimFiller = useCallback(async (deck: Deck, fillerCount: number) => {
     setArmed(null);
     const saved = await saveDeck(
       { ...deck, questions: deck.questions.slice(0, deck.questions.length - fillerCount) },
       `Removed ${fillerCount} filler questions from “${deck.name}”`
     );
     if (saved && activeBankId === deck.id) onLoad(saved);
-  };
+  }, [saveDeck, activeBankId, onLoad]);
 
-  const handleDuplicate = async (deck: QuestionBank) => {
+  const handleDuplicate = useCallback(async (deck: QuestionBank) => {
     sounds.playClick();
     await saveDeck(
       {
@@ -236,7 +236,7 @@ export const MyDecksPanel = React.memo(function MyDecksPanel({
       },
       `Copied “${deck.name}” to your decks`
     );
-  };
+  }, [saveDeck]);
 
   const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -269,16 +269,51 @@ export const MyDecksPanel = React.memo(function MyDecksPanel({
     reader.readAsText(file);
   };
 
+  const armedRef = useRef(armed);
+  useEffect(() => {
+    armedRef.current = armed;
+  }, [armed]);
+
   // Loading replaces the game's questions; ask first only when they aren't saved in a deck
-  const confirmThen = (deck: QuestionBank, mode: 'load' | 'edit', run: () => void) => {
-    if (activeIsMine || deck.id === activeBankId || (armed?.id === deck.id && armed.mode === mode)) {
+  const confirmThen = useCallback((deck: QuestionBank, mode: 'load' | 'edit', run: () => void) => {
+    const currentArmed = armedRef.current;
+    if (activeIsMine || deck.id === activeBankId || (currentArmed?.id === deck.id && currentArmed.mode === mode)) {
       setArmed(null);
       run();
       return;
     }
     sounds.playClick();
     setArmed({ id: deck.id, mode });
-  };
+  }, [activeIsMine, activeBankId]);
+
+  const handleLoadCard = useCallback((deck: QuestionBank) => {
+    confirmThen(deck, 'load', () => {
+      sounds.playCorrect();
+      onLoad({ ...deck, questions: deck.questions.map(q => ({ ...q })) });
+      toast.success(`“${deck.name}” is ready to play`);
+    });
+  }, [confirmThen, onLoad]);
+
+  const handleEditCard = useCallback((deck: Deck) => {
+    confirmThen(deck, 'edit', () => onEdit(deck));
+  }, [confirmThen, onEdit]);
+
+  const handleDuplicateCard = useCallback((deck: QuestionBank) => {
+    void handleDuplicate(deck);
+  }, [handleDuplicate]);
+
+  const handleExportPdfCard = useCallback((deck: QuestionBank) => {
+    sounds.playClick();
+    setExportPdfDeck({ questions: deck.questions, name: deck.name, goal: deck.lessonGoal });
+  }, []);
+
+  const handleDeleteCard = useCallback((deckId: string) => {
+    void handleDelete(deckId);
+  }, [handleDelete]);
+
+  const handleTrimFillerCard = useCallback((deck: Deck, count: number) => {
+    void handleTrimFiller(deck, count);
+  }, [handleTrimFiller]);
 
   const renderCard = (deck: QuestionBank, isMine: boolean) => (
     <DeckCard
@@ -288,20 +323,13 @@ export const MyDecksPanel = React.memo(function MyDecksPanel({
       busy={busy}
       isMine={isMine}
       isActive={deck.id === activeBankId}
-      onLoad={() => confirmThen(deck, 'load', () => {
-        sounds.playCorrect();
-        onLoad({ ...deck, questions: deck.questions.map(q => ({ ...q })) });
-        toast.success(`“${deck.name}” is ready to play`);
-      })}
-      onEdit={isMine ? () => confirmThen(deck, 'edit', () => onEdit(deck as Deck)) : undefined}
-      onDuplicate={!isMine ? () => void handleDuplicate(deck) : undefined}
-      onExportPdf={() => {
-        sounds.playClick();
-        setExportPdfDeck({ questions: deck.questions, name: deck.name, goal: deck.lessonGoal });
-      }}
+      onLoad={handleLoadCard}
+      onEdit={isMine ? handleEditCard : undefined}
+      onDuplicate={!isMine ? handleDuplicateCard : undefined}
+      onExportPdf={handleExportPdfCard}
       onArm={setArmed}
-      onDelete={isMine ? () => void handleDelete(deck.id) : undefined}
-      onTrimFiller={isMine ? count => void handleTrimFiller(deck as Deck, count) : undefined}
+      onDelete={isMine ? handleDeleteCard : undefined}
+      onTrimFiller={isMine ? handleTrimFillerCard : undefined}
     />
   );
 
@@ -677,6 +705,14 @@ function NewFolderDialog({ onCancel, onCreate }: { onCancel: () => void; onCreat
 
 const ICON_BUTTON = 'p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 cursor-pointer transition-colors disabled:opacity-60';
 
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped DeckCard in React.memo.
+ * 2) Updated action callback props to receive the target deck parameter from stable parent handlers.
+ *    This ensures callback references remain identical across parent MyDecksPanel renders
+ *    (e.g., drag-and-drop hover state, folder collapse toggles, modal dialog triggers),
+ *    preventing wasteful VDOM tree re-renders across all deck cards in the library.
+ */
 const DeckCard = React.memo(function DeckCard({
   deck,
   armed,
@@ -697,13 +733,13 @@ const DeckCard = React.memo(function DeckCard({
   busy: boolean;
   isMine: boolean;
   isActive: boolean;
-  onLoad: () => void;
-  onEdit?: () => void;
-  onDuplicate?: () => void;
-  onExportPdf: () => void;
+  onLoad: (deck: QuestionBank) => void;
+  onEdit?: (deck: Deck) => void;
+  onDuplicate?: (deck: QuestionBank) => void;
+  onExportPdf: (deck: QuestionBank) => void;
   onArm: (next: Armed) => void;
-  onDelete?: () => void;
-  onTrimFiller?: (count: number) => void;
+  onDelete?: (deckId: string) => void;
+  onTrimFiller?: (deck: Deck, count: number) => void;
 }) {
   const isArmed = (mode: NonNullable<Armed>['mode']) => armed?.id === deck.id && armed.mode === mode;
   const fillerCount = useMemo(
@@ -757,7 +793,7 @@ const DeckCard = React.memo(function DeckCard({
           <button
             type="button"
             disabled={busy}
-            onClick={() => (isArmed('trim') ? onTrimFiller?.(fillerCount) : onArm({ id: deck.id, mode: 'trim' }))}
+            onClick={() => (isArmed('trim') ? onTrimFiller?.(deck as Deck, fillerCount) : onArm({ id: deck.id, mode: 'trim' }))}
             className="px-2 py-0.5 rounded-md font-semibold bg-slate-800 hover:bg-slate-700 text-amber-200 border border-white/15 cursor-pointer shrink-0"
           >
             {isArmed('trim') ? `Remove ${fillerCount}?` : 'Remove'}
@@ -769,7 +805,7 @@ const DeckCard = React.memo(function DeckCard({
         <button
           type="button"
           disabled={busy}
-          onClick={onLoad}
+          onClick={() => onLoad(deck)}
           className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border cursor-pointer transition-colors ${
             isArmed('load') ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-200' : 'bg-slate-800 hover:bg-slate-700 text-slate-100 border-white/15'
           }`}
@@ -782,7 +818,7 @@ const DeckCard = React.memo(function DeckCard({
           <button
             type="button"
             disabled={busy}
-            onClick={onEdit}
+            onClick={() => onEdit(deck as Deck)}
             className={`flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold border cursor-pointer transition-colors ${
               isArmed('edit') ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 border-emerald-200' : 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-400/60'
             }`}
@@ -793,16 +829,16 @@ const DeckCard = React.memo(function DeckCard({
           </button>
         )}
         {onDuplicate && (
-          <button type="button" disabled={busy} onClick={onDuplicate} className={ICON_BUTTON} title="Copy to my decks so you can edit it" aria-label={`Copy ${deck.name} to my decks`}>
+          <button type="button" disabled={busy} onClick={() => onDuplicate(deck)} className={ICON_BUTTON} title="Copy to my decks so you can edit it" aria-label={`Copy ${deck.name} to my decks`}>
             <Copy className="w-4 h-4" />
           </button>
         )}
-        <button type="button" onClick={onExportPdf} className={ICON_BUTTON} title="Download as PDF with a teacher answer key" aria-label={`Download ${deck.name} as PDF`}>
+        <button type="button" onClick={() => onExportPdf(deck)} className={ICON_BUTTON} title="Download as PDF with a teacher answer key" aria-label={`Download ${deck.name} as PDF`}>
           <FileDown className="w-4 h-4" />
         </button>
         {onDelete && (
           isArmed('delete') ? (
-            <button type="button" disabled={busy} onClick={onDelete} className="px-2.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold cursor-pointer">
+            <button type="button" disabled={busy} onClick={() => onDelete(deck.id)} className="px-2.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-sm font-semibold cursor-pointer">
               Delete?
             </button>
           ) : (
