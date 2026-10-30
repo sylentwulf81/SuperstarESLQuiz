@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Callback Function Stabilization for Card List Memoization
+**Learning:** In `MyDecksPanel`, passing inline arrow functions in card rendering callbacks invalidated `React.memo` on `DeckCard`, forcing full VDOM tree re-renders across all deck cards in every folder during drag-and-drop operations, folder toggles, and modal state changes.
+**Action:** Wrap card action handlers (`handleLoadCard`, `handleEditCard`, `handleDuplicateCard`, etc.) in `useCallback` hooks and use `armedRef` to maintain stable callback identities, allowing `React.memo(DeckCard)` to successfully skip re-renders for unaffected cards.
