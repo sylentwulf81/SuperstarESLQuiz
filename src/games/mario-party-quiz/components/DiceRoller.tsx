@@ -14,7 +14,29 @@ interface DiceRollerProps {
   fill?: boolean;
 }
 
-export const DiceRoller: React.FC<DiceRollerProps> = ({
+// ⚡ Bolt Performance Optimization:
+// Hoist static pip coordinate map and 3x3 positions grid outside component scope.
+// Prevents per-tick object & array allocations during high-frequency dice rolling (65ms interval).
+const PIPS_BY_FACE: Record<number, readonly number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 2, 3, 5, 6, 8],
+};
+
+const DEFAULT_CENTER_PIP: readonly number[] = [4];
+const DICE_GRID_POSITIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
+
+/**
+ * ⚡ Bolt Performance Optimization:
+ * 1) Wrapped DiceRoller in React.memo to prevent unnecessary re-renders when parent modal state
+ *    (such as timer ticks, toast messages, or sound toggles in RewardRouletteModal) updates.
+ * 2) Hoisted static pip mappings and grid positions outside the render loop.
+ * Expected Impact: Eliminates ~16+ unnecessary object allocations per roll and stops parent-triggered VDOM re-renders.
+ */
+export const DiceRoller: React.FC<DiceRollerProps> = React.memo(function DiceRoller({
   onRollComplete,
   title = 'Roll the 6-Sided Die!',
   subtitle = 'Tap the die to roll and determine your steal amount',
@@ -22,7 +44,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   autoRoll = false,
   compact = false,
   fill = false,
-}) => {
+}) {
   const [face, setFace] = useState<number>(1);
   const [isRolling, setIsRolling] = useState<boolean>(false);
   const [hasRolled, setHasRolled] = useState<boolean>(false);
@@ -77,26 +99,13 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
 
   // Pip coordinates for faces 1-6 in a 3x3 grid
   const renderPips = (num: number) => {
-    // 3x3 grid positions:
-    // [0, 1, 2]
-    // [3, 4, 5]
-    // [6, 7, 8]
-    const pipsForNum: Record<number, number[]> = {
-      1: [4],
-      2: [0, 8],
-      3: [0, 4, 8],
-      4: [0, 2, 6, 8],
-      5: [0, 2, 4, 6, 8],
-      6: [0, 2, 3, 5, 6, 8],
-    };
-
-    const activePips = pipsForNum[num] || [4];
+    const activePips = PIPS_BY_FACE[num] || DEFAULT_CENTER_PIP;
 
     return (
       <div className={`grid grid-cols-3 grid-rows-3 pointer-events-none ${
         compact ? 'w-12 h-12 p-1.5' : 'w-16 h-16 sm:w-20 sm:h-20 p-2.5 sm:p-3'
       }`}>
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(pos => {
+        {DICE_GRID_POSITIONS.map(pos => {
           const isPip = activePips.includes(pos);
           const isCenter = pos === 4;
           return (
@@ -215,4 +224,4 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
     </div>
   );
-};
+});
