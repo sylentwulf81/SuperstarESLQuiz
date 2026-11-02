@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { sounds } from '@/shared/utils/sound';
 import { 
@@ -20,12 +20,36 @@ interface RulebookModalProps {
   initialTab?: 'guide' | 'rules' | 'mystery_cards';
 }
 
-export const RulebookModal: React.FC<RulebookModalProps> = ({ 
+/** Bolt Performance Optimization: Hoisted static card styles for O(1) constant-time property lookup */
+const CARD_STYLES: Record<string, string> = {
+  bowser_revolution: 'from-red-950/90 via-slate-900 to-orange-950/80 border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.25)]',
+  bowser_fury: 'from-red-950/90 via-slate-900 to-amber-950/80 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)]',
+  blue_shell: 'from-sky-950/90 via-slate-900 to-blue-950/80 border-sky-400/60 shadow-[0_0_20px_rgba(56,189,248,0.25)]',
+  super_star_x2: 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]',
+  mushroom_x2: 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]',
+  ghost_steal_5: 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]',
+  boo_steal_5: 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]',
+  boo_steal_10: 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]',
+  king_boo: 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]',
+  super_coins_10: 'from-yellow-950/90 via-slate-900 to-amber-950/80 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
+  pow_block: 'from-blue-950/90 via-slate-900 to-indigo-950/80 border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]',
+  hidden_block: 'from-emerald-950/90 via-slate-900 to-amber-950/80 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.25)]',
+};
+const DEFAULT_CARD_STYLE = 'from-indigo-950/80 via-slate-900 to-slate-950 border-amber-400/40 shadow-lg';
+
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped RulebookModal in React.memo to prevent unnecessary VDOM diffing and re-renders
+ *    across 21+ animated card preview elements and guide tabs when parent state or timer ticks.
+ * 2) Hoisted static CARD_STYLES and DEFAULT_CARD_STYLE outside render scope for O(1) lookups.
+ * 3) Wrapped action handlers (handleLanguageToggle, handleCardClick, handleApplyToGame) in useCallback.
+ */
+export const RulebookModal: React.FC<RulebookModalProps> = React.memo(function RulebookModal({
   onClose,
   onTestCardInGame,
   activeTeamName,
   initialTab = 'guide'
-}) => {
+}) {
   useBodyScrollLock();
   const [activeTab, setActiveTab] = useState<'guide' | 'rules' | 'mystery_cards'>(initialTab);
   const [language, setLanguage] = useState<GuideLanguage>(() => {
@@ -42,7 +66,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
 
   const t = GUIDE_TRANSLATIONS[language];
 
-  const handleLanguageToggle = (lang: GuideLanguage) => {
+  const handleLanguageToggle = useCallback((lang: GuideLanguage) => {
     sounds.playClick();
     setLanguage(lang);
     try {
@@ -50,9 +74,9 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
     } catch {
       // Ignore localstorage errors
     }
-  };
+  }, []);
 
-  const handleCardClick = (card: RewardCard) => {
+  const handleCardClick = useCallback((card: RewardCard) => {
     setActiveTestedCard(card);
     setAppliedNotification(null);
 
@@ -94,9 +118,9 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
         sounds.playCoin();
         break;
     }
-  };
+  }, []);
 
-  const handleApplyToGame = (card: RewardCard) => {
+  const handleApplyToGame = useCallback((card: RewardCard) => {
     if (!onTestCardInGame) return;
     onTestCardInGame(card);
     setAppliedNotification(
@@ -105,7 +129,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
         : `Applied "${t.mysteryCards.cardDescriptions[card.id]?.title || card.title}" to ${activeTeamName || 'the active team'}! Current turn remains active.`
     );
     setTimeout(() => setAppliedNotification(null), 3500);
-  };
+  }, [language, onTestCardInGame, activeTeamName, t.mysteryCards.cardDescriptions]);
 
   const getCardIcon = (type: string) => {
     switch (type) {
@@ -136,31 +160,7 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
   };
 
   const getCardStyle = (cardId: string) => {
-    switch (cardId) {
-      case 'bowser_revolution':
-        return 'from-red-950/90 via-slate-900 to-orange-950/80 border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.25)]';
-      case 'bowser_fury':
-        return 'from-red-950/90 via-slate-900 to-amber-950/80 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)]';
-      case 'blue_shell':
-        return 'from-sky-950/90 via-slate-900 to-blue-950/80 border-sky-400/60 shadow-[0_0_20px_rgba(56,189,248,0.25)]';
-      case 'super_star_x2':
-      case 'mushroom_x2':
-        return 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]';
-      case 'ghost_steal_5':
-      case 'boo_steal_5':
-        return 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]';
-      case 'boo_steal_10':
-      case 'king_boo':
-        return 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]';
-      case 'super_coins_10':
-        return 'from-yellow-950/90 via-slate-900 to-amber-950/80 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]';
-      case 'pow_block':
-        return 'from-blue-950/90 via-slate-900 to-indigo-950/80 border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]';
-      case 'hidden_block':
-        return 'from-emerald-950/90 via-slate-900 to-amber-950/80 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.25)]';
-      default:
-        return 'from-indigo-950/80 via-slate-900 to-slate-950 border-amber-400/40 shadow-lg';
-    }
+    return CARD_STYLES[cardId] || DEFAULT_CARD_STYLE;
   };
 
   const getSectionIcon = (iconName: string) => {
@@ -573,4 +573,4 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
