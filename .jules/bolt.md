@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of Multi-Tab Rulebook & Static Card Styles Hoisting
+**Learning:** Heavy multi-tab modal components like `RulebookModal` (containing 21+ animated card preview cards, audio bindings, and multi-lingual teacher guides) rendered at both top router and game session levels were completely unmemoized, triggering full VDOM diffing on parent ambient particle frames and audio toggles. Additionally, card styles were evaluated via a 10-branch switch statement on each card render.
+**Action:** Wrap `RulebookModal` in `React.memo`, hoist static style definitions to module scope (`CARD_STYLES`) for O(1) dictionary lookup, and wrap action handlers in `useCallback`.
