@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Static Helper Hoisting & Memoization for RulebookModal
+**Learning:** `RulebookModal` defined static resolver functions (`getCardIcon`, `getCardStyle`, and `getSectionIcon`) directly inside the component body, recreating closures on every render pass. Furthermore, without `React.memo`, parent game state updates (such as BGM audio progress, toast timers, or ambient particle renders) forced re-diffing the entire multi-tab rulebook and card grid DOM trees.
+**Action:** Hoist pure static resolver functions outside the component scope to avoid closure re-creations, and wrap `RulebookModal` in `React.memo` to skip redundant VDOM reconciliation when parent props have not changed.
