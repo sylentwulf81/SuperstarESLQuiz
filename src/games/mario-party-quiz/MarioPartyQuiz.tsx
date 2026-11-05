@@ -135,7 +135,7 @@ export function MarioPartyQuiz({
   // Re-read whenever the working deck changes (blocks are persisted alongside)
   const deckLength = useMemo(() => getDeckLength(theme), [theme, blocks]);
 
-  const persistQuestions = (updatedBlocks: typeof blocks) => {
+  const persistQuestions = useCallback((updatedBlocks: typeof blocks) => {
     const rawQuestions = updatedBlocks.map(b => b.question);
     try {
       localStorage.setItem(`mp_custom_blocks_v5_${theme}`, JSON.stringify(rawQuestions));
@@ -145,73 +145,29 @@ export function MarioPartyQuiz({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, rawQuestions).catch(() => {});
     }
-  };
+  }, [theme, isLoggedIn, user, saveQuestionsCloud]);
 
-  const handleStartGame = (configuredTeams: Team[]) => {
+  const handleStartGame = useCallback((configuredTeams: Team[]) => {
     dispatch({
       type: 'START',
       teams: configuredTeams,
       blocks: createGameBlocks(theme, undefined, true),
     });
-  };
+  }, [dispatch, theme]);
 
-  const handleUpdateBlockQuestion = (blockId: number, updatedQuestion: GameQuestion) => {
+  const handleUpdateBlockQuestion = useCallback((blockId: number, updatedQuestion: GameQuestion) => {
     dispatch({ type: 'UPDATE_QUESTION', blockId, question: updatedQuestion });
     const sanitized: GameQuestion = {
       ...updatedQuestion,
       rewardCoins: updatedQuestion.type === 'mystery_card' ? 0 : Math.max(1, Number(updatedQuestion.rewardCoins) || 1),
     };
     persistQuestions(blocks.map(b => (b.id === blockId ? { ...b, question: sanitized } : b)));
-  };
+  }, [blocks, dispatch, persistQuestions]);
 
-  const handleReorderBlocks = (newBlocks: BlockState[]) => {
+  const handleReorderBlocks = useCallback((newBlocks: BlockState[]) => {
     dispatch({ type: 'SET_BLOCKS', blocks: newBlocks });
     persistQuestions(newBlocks);
-  };
-
-  const handleResetAllQuestions = () => {
-    handleActiveBankChange(undefined, undefined);
-    try {
-      localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
-      localStorage.removeItem(`mp_custom_blocks_v4_${theme}`);
-      localStorage.removeItem(`mp_custom_blocks_v3_${theme}`);
-      localStorage.removeItem(`mp_custom_blocks_v2_${theme}`);
-    } catch {}
-    const defaultBlocks = createGameBlocks(theme);
-    dispatch({
-      type: 'SET_BLOCKS',
-      blocks: defaultBlocks,
-      toast: `🔄 Restored all ${defaultBlocks.length} block questions to default curriculum!`,
-    });
-    setLessonGoal('');
-    persistPartyLessonGoal(theme, '');
-  };
-
-  const handleResizeBlocks = (newCount: number) => {
-    const rawQuestions = blocks.map(b => b.question);
-    const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
-    dispatch({
-      type: 'SET_BLOCKS',
-      blocks: resizedBlocks,
-      toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
-    });
-    persistQuestions(resizedBlocks);
-  };
-
-  const handleCreateBlankDeck = (count?: number, defaultType: QuestionType = 'open_trivia') => {
-    handleActiveBankChange(undefined, undefined);
-    const target = count ?? blocks.length;
-    const blankQuestions = Array.from({ length: target }, (_, i) => makeBlankQuestion(i, defaultType));
-    const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
-    dispatch({
-      type: 'SET_BLOCKS',
-      blocks: newBlocks,
-      toast: `✨ Created a fresh blank question deck (${target} blocks)!`,
-    });
-    setLessonGoal('');
-    persistPartyLessonGoal(theme, '');
-    persistQuestions(newBlocks);
-  };
+  }, [dispatch, persistQuestions]);
 
   const [activeBankId, setActiveBankId] = useState<string | undefined>(() => {
     try {
@@ -241,20 +197,64 @@ export function MarioPartyQuiz({
     }
   }, [theme]);
 
-  const handleLessonGoalChange = (goal: string) => {
+  const handleResetAllQuestions = useCallback(() => {
+    handleActiveBankChange(undefined, undefined);
+    try {
+      localStorage.removeItem(`mp_custom_blocks_v5_${theme}`);
+      localStorage.removeItem(`mp_custom_blocks_v4_${theme}`);
+      localStorage.removeItem(`mp_custom_blocks_v3_${theme}`);
+      localStorage.removeItem(`mp_custom_blocks_v2_${theme}`);
+    } catch {}
+    const defaultBlocks = createGameBlocks(theme);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: defaultBlocks,
+      toast: `🔄 Restored all ${defaultBlocks.length} block questions to default curriculum!`,
+    });
+    setLessonGoal('');
+    persistPartyLessonGoal(theme, '');
+  }, [dispatch, handleActiveBankChange, theme]);
+
+  const handleResizeBlocks = useCallback((newCount: number) => {
+    const rawQuestions = blocks.map(b => b.question);
+    const resizedBlocks = createGameBlocks(theme, rawQuestions, false, newCount);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: resizedBlocks,
+      toast: `📏 Deck adjusted to ${resizedBlocks.length} blocks!`,
+    });
+    persistQuestions(resizedBlocks);
+  }, [blocks, dispatch, persistQuestions, theme]);
+
+  const handleCreateBlankDeck = useCallback((count?: number, defaultType: QuestionType = 'open_trivia') => {
+    handleActiveBankChange(undefined, undefined);
+    const target = count ?? blocks.length;
+    const blankQuestions = Array.from({ length: target }, (_, i) => makeBlankQuestion(i, defaultType));
+    const newBlocks = createGameBlocks(theme, blankQuestions, false, target);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: newBlocks,
+      toast: `✨ Created a fresh blank question deck (${target} blocks)!`,
+    });
+    setLessonGoal('');
+    persistPartyLessonGoal(theme, '');
+    persistQuestions(newBlocks);
+  }, [blocks.length, dispatch, handleActiveBankChange, persistQuestions, theme]);
+
+  const handleLessonGoalChange = useCallback((goal: string) => {
     setLessonGoal(goal);
     persistPartyLessonGoal(theme, goal);
-  };
+  }, [theme]);
 
-  const commitLessonGoal = (goal: string) => {
+  const commitLessonGoal = useCallback((goal: string) => {
     setLessonGoal(goal);
     persistPartyLessonGoal(theme, goal);
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, blocks.map(b => b.question), { lessonGoal: goal }).catch(() => {});
     }
-  };
+  }, [blocks, isLoggedIn, saveQuestionsCloud, theme, user]);
 
-  const handleApplyQuestionBank = (questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
+  const handleApplyQuestionBank = useCallback((questions: GameQuestion[], goal: string, name: string, bankId?: string) => {
     handleActiveBankChange(bankId, name);
     const nextGoal = goal.trim();
     const next = createGameBlocks(theme, questions);
@@ -269,9 +269,9 @@ export function MarioPartyQuiz({
     if (isLoggedIn && user) {
       saveQuestionsCloud(theme, next.map(block => block.question), { lessonGoal: nextGoal }).catch(() => {});
     }
-  };
+  }, [dispatch, handleActiveBankChange, isLoggedIn, saveQuestionsCloud, theme, user]);
 
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to sync questions to the cloud.');
       return;
@@ -281,9 +281,9 @@ export function MarioPartyQuiz({
     showToast(success
       ? `☁️ All ${rawQuestions.length} questions successfully backed up to Firestore!`
       : '⚠️ Could not sync to Firestore. Check connection.');
-  };
+  }, [isLoggedIn, blocks, saveQuestionsCloud, theme, lessonGoal, showToast]);
 
-  const handleManualLoad = async () => {
+  const handleManualLoad = useCallback(async () => {
     if (!isLoggedIn) {
       showToast('ℹ️ Sign in with Google to load your cloud questions.');
       return;
@@ -300,9 +300,9 @@ export function MarioPartyQuiz({
     } else {
       showToast(`ℹ️ No custom questions found in Firestore for ${theme} theme.`);
     }
-  };
+  }, [isLoggedIn, loadQuestionsCloud, theme, dispatch, persistQuestions, showToast]);
 
-  const handleRewardCardSelected = (
+  const handleRewardCardSelected = useCallback((
     card: RewardCard,
     targetTeamIdOrOptions?: string | RewardCardActionOptions,
     shouldAdvanceTurn: boolean = true
@@ -311,7 +311,46 @@ export function MarioPartyQuiz({
       ? { targetTeamId: targetTeamIdOrOptions }
       : (targetTeamIdOrOptions || {});
     dispatch({ type: 'RESOLVE_CARD', card, options, shouldAdvanceTurn });
-  };
+  }, [dispatch]);
+
+  // Bolt Performance Optimization: Stable memoized action handlers
+  // Prevents invalidating React.memo on child components (GameBoard, TeamSidebar, HeaderNav, SetupScreen)
+  // when unrelated states change (such as toast timers, ambient particles, or modal visibility).
+  const handleOpenRules = useCallback(() => setIsRulesModalOpen(true), []);
+  const handleCloseRules = useCallback(() => setIsRulesModalOpen(false), []);
+  const handleOpenCustomizer = useCallback(() => setIsCustomizerOpen(true), []);
+  const handleCloseCustomizer = useCallback(() => setIsCustomizerOpen(false), []);
+  const handleDeclareWinner = useCallback(() => dispatch({ type: 'DECLARE_SUPERSTAR' }), [dispatch]);
+  const handleResetGame = useCallback(() => dispatch({ type: 'RESTART_SETUP' }), [dispatch]);
+  const handleShuffleBoard = useCallback(() => {
+    const shuffled = createGameBlocks(theme, undefined, true);
+    dispatch({
+      type: 'SET_BLOCKS',
+      blocks: shuffled,
+      playShuffle: true,
+      toast: `🎲 All ${shuffled.length} board questions & mystery blocks reshuffled!`,
+    });
+  }, [dispatch, theme]);
+  const handleNextTurn = useCallback(() => dispatch({ type: 'PASS_TURN' }), [dispatch]);
+  const handleSelectTeamTurn = useCallback((idx: number) => {
+    dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx });
+  }, [dispatch]);
+  const handleAdjustCoins = useCallback((teamId: string, delta: number) => {
+    dispatch({ type: 'ADJUST_COINS', teamId, delta });
+  }, [dispatch]);
+  const handleSelectBlock = useCallback((blockId: number) => {
+    dispatch({ type: 'SELECT_BLOCK', blockId });
+  }, [dispatch]);
+  const handleCloseQuestion = useCallback(() => dispatch({ type: 'CLOSE_QUESTION' }), [dispatch]);
+  const handleAnswerCorrect = useCallback(() => dispatch({ type: 'ANSWER_CORRECT' }), [dispatch]);
+  const handleAnswerIncorrect = useCallback(() => dispatch({ type: 'ANSWER_INCORRECT' }), [dispatch]);
+  const handleTriggerRoulette = useCallback(() => dispatch({ type: 'TRIGGER_ROULETTE' }), [dispatch]);
+  const handleCloseRoulette = useCallback(() => dispatch({ type: 'CLOSE_ROULETTE' }), [dispatch]);
+  const handleCloseSuperstar = useCallback(() => dispatch({ type: 'CLOSE_SUPERSTAR' }), [dispatch]);
+  const handleDismissBlueShell = useCallback(() => dispatch({ type: 'DISMISS_BLUE_SHELL' }), [dispatch]);
+  const handleTestCardInGame = useCallback((card: RewardCard) => {
+    handleRewardCardSelected(card, undefined, false);
+  }, [handleRewardCardSelected]);
 
   // Bolt Performance Optimization: Memoize selected block lookup to avoid executing
   // linear Array.find() scans over blocks (60 items) on every unrelated render pass or tick.
@@ -345,8 +384,8 @@ export function MarioPartyQuiz({
           <SetupScreen
             theme={theme}
             onStartGame={handleStartGame}
-            onOpenRules={() => setIsRulesModalOpen(true)}
-            onOpenStudio={() => setIsCustomizerOpen(true)}
+            onOpenRules={handleOpenRules}
+            onOpenStudio={handleOpenCustomizer}
             onBackToLauncher={onExitToLauncher}
             deckLength={deckLength}
           />
@@ -362,21 +401,13 @@ export function MarioPartyQuiz({
               onToggleSound={onToggleSound}
               showCatchUpNote={showCatchUpNote}
               onToggleCatchUpNote={handleToggleCatchUpNote}
-              onOpenRules={() => setIsRulesModalOpen(true)}
-              onOpenCustomizer={() => setIsCustomizerOpen(true)}
-              onDeclareWinner={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
-              onResetGame={() => dispatch({ type: 'RESTART_SETUP' })}
+              onOpenRules={handleOpenRules}
+              onOpenCustomizer={handleOpenCustomizer}
+              onDeclareWinner={handleDeclareWinner}
+              onResetGame={handleResetGame}
               onExitToLauncher={onExitToLauncher}
-              onShuffleBoard={() => {
-                const shuffled = createGameBlocks(theme, undefined, true);
-                dispatch({
-                  type: 'SET_BLOCKS',
-                  blocks: shuffled,
-                  playShuffle: true,
-                  toast: `🎲 All ${shuffled.length} board questions & mystery blocks reshuffled!`,
-                });
-              }}
-              onNextTurn={() => dispatch({ type: 'PASS_TURN' })}
+              onShuffleBoard={handleShuffleBoard}
+              onNextTurn={handleNextTurn}
               openedCount={openedBlocksCount}
               totalBlocks={blocks.length}
               isGameOver={boardCleared}
@@ -388,8 +419,8 @@ export function MarioPartyQuiz({
                 <TeamSidebar
                   teams={teams}
                   currentTeamIndex={currentTeamIndex}
-                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
                 />
               ) : (
                 <TeamSidebar
@@ -398,17 +429,17 @@ export function MarioPartyQuiz({
                   startIndex={0}
                   side="left"
                   currentTeamIndex={currentTeamIndex}
-                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
                 />
               )}
               <main className="flex-1 min-h-0 flex flex-col overflow-hidden">
                 <GameBoard
                   blocks={blocks}
                   teams={teams}
-                  onSelectBlock={blockId => dispatch({ type: 'SELECT_BLOCK', blockId })}
+                  onSelectBlock={handleSelectBlock}
                   isGameOver={boardCleared}
-                  onOpenLeaderboard={() => dispatch({ type: 'DECLARE_SUPERSTAR' })}
+                  onOpenLeaderboard={handleDeclareWinner}
                 />
               </main>
               {teams.length > 4 && (
@@ -419,8 +450,8 @@ export function MarioPartyQuiz({
                   side="right"
                   hideMobileTrack
                   currentTeamIndex={currentTeamIndex}
-                  onSelectTeamTurn={idx => dispatch({ type: 'SELECT_TEAM_TURN', teamIndex: idx })}
-                  onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+                  onSelectTeamTurn={handleSelectTeamTurn}
+                  onAdjustCoins={handleAdjustCoins}
                 />
               )}
             </div>
@@ -433,11 +464,11 @@ export function MarioPartyQuiz({
           <QuestionModal
             question={selectedQuestion}
             currentTeam={activeTeam}
-            onClose={() => dispatch({ type: 'CLOSE_QUESTION' })}
-            onAnswerCorrect={() => dispatch({ type: 'ANSWER_CORRECT' })}
-            onAnswerIncorrect={() => dispatch({ type: 'ANSWER_INCORRECT' })}
-            onTriggerRoulette={() => dispatch({ type: 'TRIGGER_ROULETTE' })}
-            onAdjustCoins={(teamId, delta) => dispatch({ type: 'ADJUST_COINS', teamId, delta })}
+            onClose={handleCloseQuestion}
+            onAnswerCorrect={handleAnswerCorrect}
+            onAnswerIncorrect={handleAnswerIncorrect}
+            onTriggerRoulette={handleTriggerRoulette}
+            onAdjustCoins={handleAdjustCoins}
           />
         )}
       </AnimatePresence>
@@ -450,7 +481,7 @@ export function MarioPartyQuiz({
             teams={teams}
             theme={theme}
             onCardSelected={handleRewardCardSelected}
-            onClose={() => dispatch({ type: 'CLOSE_ROULETTE' })}
+            onClose={handleCloseRoulette}
             showCatchUpNote={showCatchUpNote}
           />
         )}
@@ -459,8 +490,8 @@ export function MarioPartyQuiz({
       <AnimatePresence>
         {isRulesModalOpen && (
           <RulebookModal
-            onClose={() => setIsRulesModalOpen(false)}
-            onTestCardInGame={(card) => handleRewardCardSelected(card, undefined, false)}
+            onClose={handleCloseRules}
+            onTestCardInGame={handleTestCardInGame}
             activeTeamName={activeTeam?.name}
           />
         )}
@@ -478,7 +509,7 @@ export function MarioPartyQuiz({
             onCreateBlankDeck={handleCreateBlankDeck}
             onSaveCloud={handleManualSync}
             onLoadCloud={handleManualLoad}
-            onClose={() => setIsCustomizerOpen(false)}
+            onClose={handleCloseCustomizer}
             onBackToLauncher={onExitToLauncher}
             showCatchUpNote={showCatchUpNote}
             onToggleCatchUpNote={handleToggleCatchUpNote}
@@ -497,8 +528,8 @@ export function MarioPartyQuiz({
         {view === 'superstar' && (
           <SuperstarModal
             teams={teams}
-            onRestart={() => dispatch({ type: 'RESTART_SETUP' })}
-            onClose={() => dispatch({ type: 'CLOSE_SUPERSTAR' })}
+            onRestart={handleResetGame}
+            onClose={handleCloseSuperstar}
             onExitToLauncher={onExitToLauncher}
           />
         )}
@@ -509,7 +540,7 @@ export function MarioPartyQuiz({
           <BlueShellSkipOverlay
             skippedTeam={blueShellNotice.skippedTeam}
             nextTeam={blueShellNotice.nextTeam}
-            onClose={() => dispatch({ type: 'DISMISS_BLUE_SHELL' })}
+            onClose={handleDismissBlueShell}
           />
         )}
       </AnimatePresence>
