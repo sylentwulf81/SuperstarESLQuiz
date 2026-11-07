@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Constant Time Map Lookup for Map State Modals & Rulebook Memoization
+**Learning:** High-frequency state modals (`InvasionQuestionModal`) were running linear `US_STATE_PATHS.find()` scans across 50 US state records on state resolution, duplicate of internal lookups in `UsaMap`. In addition, `RulebookModal` in `MarioPartyQuiz` was unmemoized, re-rendering large translation trees whenever parent audio, timer, or particle states ticked.
+**Action:** Export `STATE_PATHS_MAP` from `usStatePaths.ts` for global O(1) constant-time state path/name resolution across map and modal components, and wrap `RulebookModal` in `React.memo` to eliminate unnecessary VDOM tree diffing during live game sessions.

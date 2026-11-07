@@ -6,7 +6,7 @@ import { sounds } from '@/shared/utils/sound';
 import { FactionAvatar } from './FactionAvatar';
 import { useBodyScrollLock } from '@/shared/hooks/useBodyScrollLock';
 import { InvasionQuestion, scrambleWord } from '../data/invasionQuestions';
-import { US_STATE_PATHS } from '../data/usStatePaths';
+import { STATE_PATHS_MAP } from '../data/usStatePaths';
 
 interface InvasionQuestionModalProps {
   stateId: string;
@@ -20,8 +20,9 @@ interface InvasionQuestionModalProps {
 /**
  * Bolt Performance Optimization:
  * 1) Wrapped in React.memo to avoid wasteful re-renders when parent timer/state updates.
- * 2) Memoized stateName and owner lookups via useMemo to avoid O(N) array scans per render.
- * 3) Memoized letters via useMemo to prevent re-running scrambleWord array shuffle operations
+ * 2) O(1) constant-time stateName lookup using STATE_PATHS_MAP instead of linear US_STATE_PATHS.find() array search.
+ * 3) Memoized owner lookup via useMemo to avoid repeated array scans per render.
+ * 4) Memoized letters via useMemo to prevent re-running scrambleWord array shuffle operations
  *    on every render (e.g., toggling showAnswer), stabilizing scrambled UI display.
  */
 export const InvasionQuestionModal = React.memo(function InvasionQuestionModal({
@@ -36,7 +37,7 @@ export const InvasionQuestionModal = React.memo(function InvasionQuestionModal({
   const [showAnswer, setShowAnswer] = useState(false);
 
   const stateName = useMemo(
-    () => US_STATE_PATHS.find(s => s.id === stateId)?.name ?? stateId,
+    () => STATE_PATHS_MAP.get(stateId)?.name ?? stateId,
     [stateId]
   );
 

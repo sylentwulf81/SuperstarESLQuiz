@@ -1,6 +1,6 @@
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { InvasionTeam, factionOf } from '../data/factions';
-import { US_STATE_PATHS, UsStatePath } from '../data/usStatePaths';
+import { US_STATE_PATHS, STATE_PATHS_MAP } from '../data/usStatePaths';
 import { BOARD_VIEWBOX, CHIP_STATE_IDS, STATE_HIT_CHIPS, STATE_LABEL_NUDGE } from '../data/stateHitChips';
 
 interface UsaMapProps {
@@ -12,11 +12,6 @@ interface UsaMapProps {
 }
 
 const UNCLAIMED = '#e2e8f0';
-
-/** Module-level O(1) Map lookup for static state path objects. */
-const STATE_PATHS_MAP = new Map<string, UsStatePath>(
-  US_STATE_PATHS.map(state => [state.id, state])
-);
 
 /**
  * Bolt Performance Optimization:
