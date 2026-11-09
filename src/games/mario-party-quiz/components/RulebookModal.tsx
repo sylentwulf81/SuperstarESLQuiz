@@ -20,12 +20,90 @@ interface RulebookModalProps {
   initialTab?: 'guide' | 'rules' | 'mystery_cards';
 }
 
-export const RulebookModal: React.FC<RulebookModalProps> = ({ 
+// Bolt Performance Optimization: Hoist visual helpers outside component scope
+// to prevent reinstantiating pure resolver functions on every render pass.
+function getCardIcon(type: string) {
+  switch (type) {
+    case 'bowser_revolution':
+      return <Flame className="w-8 h-8 text-orange-400 fill-orange-400" />;
+    case 'bowser_fury':
+      return <Flame className="w-8 h-8 text-red-500 fill-red-500 animate-pulse" />;
+    case 'ghost_steal_5':
+    case 'boo_steal_5':
+      return <Ghost className="w-8 h-8 text-indigo-300" />;
+    case 'boo_steal_10':
+    case 'king_boo':
+      return <Crown className="w-8 h-8 text-purple-400" />;
+    case 'super_star_x2':
+    case 'mushroom_x2':
+      return <Zap className="w-8 h-8 text-red-400 fill-red-400 animate-pulse" />;
+    case 'blue_shell':
+      return <ShieldAlert className="w-8 h-8 text-sky-400 fill-sky-500/30" />;
+    case 'super_coins_10':
+      return <Trophy className="w-8 h-8 text-yellow-400 fill-yellow-500/30" />;
+    case 'pow_block':
+      return <BoxSelect className="w-8 h-8 text-blue-400" />;
+    case 'hidden_block':
+      return <Gift className="w-8 h-8 text-amber-400" />;
+    default:
+      return <Coins className="w-8 h-8 text-yellow-300 fill-yellow-400" />;
+  }
+}
+
+function getCardStyle(cardId: string) {
+  switch (cardId) {
+    case 'bowser_revolution':
+      return 'from-red-950/90 via-slate-900 to-orange-950/80 border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.25)]';
+    case 'bowser_fury':
+      return 'from-red-950/90 via-slate-900 to-amber-950/80 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)]';
+    case 'blue_shell':
+      return 'from-sky-950/90 via-slate-900 to-blue-950/80 border-sky-400/60 shadow-[0_0_20px_rgba(56,189,248,0.25)]';
+    case 'super_star_x2':
+    case 'mushroom_x2':
+      return 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]';
+    case 'ghost_steal_5':
+    case 'boo_steal_5':
+      return 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]';
+    case 'boo_steal_10':
+    case 'king_boo':
+      return 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]';
+    case 'super_coins_10':
+      return 'from-yellow-950/90 via-slate-900 to-amber-950/80 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]';
+    case 'pow_block':
+      return 'from-blue-950/90 via-slate-900 to-indigo-950/80 border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]';
+    case 'hidden_block':
+      return 'from-emerald-950/90 via-slate-900 to-amber-950/80 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.25)]';
+    default:
+      return 'from-indigo-950/80 via-slate-900 to-slate-950 border-amber-400/40 shadow-lg';
+  }
+}
+
+function getSectionIcon(iconName: string) {
+  switch (iconName) {
+    case 'Users': return <Users className="w-5 h-5 text-amber-400" />;
+    case 'Gamepad2': return <Gamepad2 className="w-5 h-5 text-emerald-400" />;
+    case 'Sliders': return <Sliders className="w-5 h-5 text-sky-400" />;
+    case 'HelpCircle': return <HelpCircle className="w-5 h-5 text-yellow-300" />;
+    case 'Settings2': return <Settings2 className="w-5 h-5 text-purple-400" />;
+    case 'Trophy': return <Trophy className="w-5 h-5 text-amber-300" />;
+    case 'Monitor': return <Monitor className="w-5 h-5 text-cyan-400" />;
+    default: return <Sparkles className="w-5 h-5 text-yellow-300" />;
+  }
+}
+
+/**
+ * Bolt Performance Optimization:
+ * 1) Wrapped RulebookModal in React.memo to prevent unnecessary VDOM diffing and re-renders
+ *    across host guide cards, game rules, and mystery cards whenever parent state (such as
+ *    ambient particles, background music ticks, or turn timers) changes while the modal is open.
+ * 2) Hoisted static visual resolvers (getCardIcon, getCardStyle, getSectionIcon) outside component scope.
+ */
+export const RulebookModal: React.FC<RulebookModalProps> = React.memo(function RulebookModal({
   onClose,
   onTestCardInGame,
   activeTeamName,
   initialTab = 'guide'
-}) => {
+}) {
   useBodyScrollLock();
   const [activeTab, setActiveTab] = useState<'guide' | 'rules' | 'mystery_cards'>(initialTab);
   const [language, setLanguage] = useState<GuideLanguage>(() => {
@@ -105,75 +183,6 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
         : `Applied "${t.mysteryCards.cardDescriptions[card.id]?.title || card.title}" to ${activeTeamName || 'the active team'}! Current turn remains active.`
     );
     setTimeout(() => setAppliedNotification(null), 3500);
-  };
-
-  const getCardIcon = (type: string) => {
-    switch (type) {
-      case 'bowser_revolution':
-        return <Flame className="w-8 h-8 text-orange-400 fill-orange-400" />;
-      case 'bowser_fury':
-        return <Flame className="w-8 h-8 text-red-500 fill-red-500 animate-pulse" />;
-      case 'ghost_steal_5':
-      case 'boo_steal_5':
-        return <Ghost className="w-8 h-8 text-indigo-300" />;
-      case 'boo_steal_10':
-      case 'king_boo':
-        return <Crown className="w-8 h-8 text-purple-400" />;
-      case 'super_star_x2':
-      case 'mushroom_x2':
-        return <Zap className="w-8 h-8 text-red-400 fill-red-400 animate-pulse" />;
-      case 'blue_shell':
-        return <ShieldAlert className="w-8 h-8 text-sky-400 fill-sky-500/30" />;
-      case 'super_coins_10':
-        return <Trophy className="w-8 h-8 text-yellow-400 fill-yellow-500/30" />;
-      case 'pow_block':
-        return <BoxSelect className="w-8 h-8 text-blue-400" />;
-      case 'hidden_block':
-        return <Gift className="w-8 h-8 text-amber-400" />;
-      default:
-        return <Coins className="w-8 h-8 text-yellow-300 fill-yellow-400" />;
-    }
-  };
-
-  const getCardStyle = (cardId: string) => {
-    switch (cardId) {
-      case 'bowser_revolution':
-        return 'from-red-950/90 via-slate-900 to-orange-950/80 border-orange-500/60 shadow-[0_0_20px_rgba(249,115,22,0.25)]';
-      case 'bowser_fury':
-        return 'from-red-950/90 via-slate-900 to-amber-950/80 border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)]';
-      case 'blue_shell':
-        return 'from-sky-950/90 via-slate-900 to-blue-950/80 border-sky-400/60 shadow-[0_0_20px_rgba(56,189,248,0.25)]';
-      case 'super_star_x2':
-      case 'mushroom_x2':
-        return 'from-rose-950/90 via-slate-900 to-red-950/80 border-red-400/60 shadow-[0_0_25px_rgba(244,63,94,0.3)]';
-      case 'ghost_steal_5':
-      case 'boo_steal_5':
-        return 'from-purple-950/90 via-slate-900 to-indigo-950/80 border-purple-400/50 shadow-[0_0_20px_rgba(192,132,252,0.25)]';
-      case 'boo_steal_10':
-      case 'king_boo':
-        return 'from-fuchsia-950/90 via-slate-900 to-purple-950/80 border-fuchsia-400/60 shadow-[0_0_20px_rgba(217,70,239,0.25)]';
-      case 'super_coins_10':
-        return 'from-yellow-950/90 via-slate-900 to-amber-950/80 border-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]';
-      case 'pow_block':
-        return 'from-blue-950/90 via-slate-900 to-indigo-950/80 border-blue-400/60 shadow-[0_0_20px_rgba(59,130,246,0.25)]';
-      case 'hidden_block':
-        return 'from-emerald-950/90 via-slate-900 to-amber-950/80 border-emerald-400/50 shadow-[0_0_20px_rgba(52,211,153,0.25)]';
-      default:
-        return 'from-indigo-950/80 via-slate-900 to-slate-950 border-amber-400/40 shadow-lg';
-    }
-  };
-
-  const getSectionIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Users': return <Users className="w-5 h-5 text-amber-400" />;
-      case 'Gamepad2': return <Gamepad2 className="w-5 h-5 text-emerald-400" />;
-      case 'Sliders': return <Sliders className="w-5 h-5 text-sky-400" />;
-      case 'HelpCircle': return <HelpCircle className="w-5 h-5 text-yellow-300" />;
-      case 'Settings2': return <Settings2 className="w-5 h-5 text-purple-400" />;
-      case 'Trophy': return <Trophy className="w-5 h-5 text-amber-300" />;
-      case 'Monitor': return <Monitor className="w-5 h-5 text-cyan-400" />;
-      default: return <Sparkles className="w-5 h-5 text-yellow-300" />;
-    }
   };
 
   return (
@@ -573,4 +582,4 @@ export const RulebookModal: React.FC<RulebookModalProps> = ({
       </motion.div>
     </div>
   );
-};
+});
