@@ -359,6 +359,140 @@ const SpotlightHero = React.memo(function SpotlightHero({
   );
 });
 
+interface LauncherGameCardProps {
+  game: LauncherGame;
+  onLaunch: (game: LauncherGame) => void;
+  onOpenRulebook: () => void;
+  onPreview: (game: LauncherGame) => void;
+}
+
+/**
+ * Bolt Performance Optimization:
+ * Extracted and wrapped LauncherGameCard in React.memo.
+ * Prevents redundant re-renders and VDOM diffing of all 14 library activity cards,
+ * descriptions, and badges when typing in the search box, opening/closing the preview modal,
+ * or when unrelated parent state updates.
+ */
+const LauncherGameCard = React.memo(function LauncherGameCard({
+  game,
+  onLaunch,
+  onOpenRulebook,
+  onPreview,
+}: LauncherGameCardProps) {
+  const handleLaunch = useCallback(() => {
+    sounds.playGameStart();
+    onLaunch(game);
+  }, [game, onLaunch]);
+
+  const handleOpenRules = useCallback(() => {
+    sounds.playClick();
+    onOpenRulebook();
+  }, [onOpenRulebook]);
+
+  const handlePreview = useCallback(() => {
+    sounds.playCardFlip();
+    onPreview(game);
+  }, [game, onPreview]);
+
+  return (
+    <div
+      className={`group relative flex flex-col rounded-3xl overflow-hidden border-2 bg-slate-900/90 shadow-xl transition-[border-color,box-shadow,opacity] duration-200 ${
+        game.isPlayable
+          ? 'border-white/15 hover:border-amber-300/90 hover:shadow-[0_0_28px_rgba(251,191,36,0.35)]'
+          : 'border-white/10 opacity-85 hover:opacity-100 hover:border-indigo-300/70 hover:shadow-[0_0_24px_rgba(129,140,248,0.28)]'
+      }`}
+    >
+      {/* Upper SNES Box Art Area */}
+      <SnesBoxArt game={game} size="card" />
+
+      {/* Lower Information & Actions Body */}
+      <div className="p-4 flex-1 flex flex-col justify-between gap-4 bg-slate-950/80">
+        <div className="space-y-3">
+          <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed min-h-[2.5rem]">
+            {game.description}
+          </p>
+
+          {/* Stats Pill Row */}
+          <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-white/60">
+            {game.activityStyle && (
+              <span className="bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-400/30 text-indigo-200 font-bold uppercase tracking-wide">
+                {ACTIVITY_STYLE_LABELS[game.activityStyle]}
+              </span>
+            )}
+            <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1">
+              <Users className="w-3 h-3 text-amber-300" />
+              {game.stats.players}
+            </span>
+            <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10">
+              {game.stats.questions}
+            </span>
+            <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10">
+              {game.stats.grades}
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons on Card */}
+        <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
+          {game.isPlayable ? (
+            <>
+              <button
+                onClick={handleLaunch}
+                className={`w-full py-2.5 px-3 rounded-xl font-mario text-xs sm:text-sm font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 ${
+                  game.themeKey === 'christmas'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950'
+                    : game.themeKey === 'classic'
+                      ? 'bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 text-slate-950'
+                      : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950'
+                }`}
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                START
+              </button>
+
+              <div className="flex items-center justify-between gap-2 text-[0.6875rem] pt-1">
+                {game.hasTeacherGuide ? (
+                  <button
+                    onClick={handleOpenRules}
+                    className="text-indigo-300 hover:text-indigo-100 flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Open Super Blast Host Guide & Rules"
+                  >
+                    <BookOpen className="w-3 h-3 text-indigo-400" />
+                    Host Guide & Rules
+                  </button>
+                ) : (
+                  <span />
+                )}
+
+                <button
+                  onClick={handlePreview}
+                  className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ml-auto"
+                >
+                  <Info className="w-3 h-3" />
+                  Details
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-1.5">
+              <button
+                onClick={handlePreview}
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-indigo-200 border border-indigo-400/30 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+                Preview Activity
+              </button>
+              <p className="text-[0.625rem] text-center text-white/40 italic">
+                Coming in the classroom activity suite
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
 interface LauncherScreenProps {
   onLaunchGame: (game: LauncherGame) => void;
   onOpenRulebook: () => void;
@@ -380,6 +514,10 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
   useBodyScrollLock(Boolean(previewGame));
 
   const spotlightGames = useMemo(() => LAUNCHER_GAMES.filter(g => g.isPlayable), []);
+
+  const handlePreviewGame = useCallback((game: LauncherGame) => {
+    setPreviewGame(game);
+  }, []);
 
   // Stop any lingering background music when entering launcher
   useEffect(() => {
@@ -542,114 +680,13 @@ export const LauncherScreen: React.FC<LauncherScreenProps> = React.memo(function
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
             {filteredGames.map(game => (
-              <div
+              <LauncherGameCard
                 key={game.id}
-                className={`group relative flex flex-col rounded-3xl overflow-hidden border-2 bg-slate-900/90 shadow-xl transition-[border-color,box-shadow,opacity] duration-200 ${
-                  game.isPlayable 
-                    ? 'border-white/15 hover:border-amber-300/90 hover:shadow-[0_0_28px_rgba(251,191,36,0.35)]' 
-                    : 'border-white/10 opacity-85 hover:opacity-100 hover:border-indigo-300/70 hover:shadow-[0_0_24px_rgba(129,140,248,0.28)]'
-                }`}
-              >
-                {/* Upper SNES Box Art Area */}
-                <SnesBoxArt game={game} size="card" />
-
-                {/* Lower Information & Actions Body */}
-                <div className="p-4 flex-1 flex flex-col justify-between gap-4 bg-slate-950/80">
-                  <div className="space-y-3">
-                    <p className="text-xs text-slate-300/80 line-clamp-2 leading-relaxed min-h-[2.5rem]">
-                      {game.description}
-                    </p>
-
-                    {/* Stats Pill Row */}
-                    <div className="flex flex-wrap items-center gap-2 text-[0.6875rem] text-white/60">
-                      {game.activityStyle && (
-                        <span className="bg-indigo-950/80 px-2 py-0.5 rounded-md border border-indigo-400/30 text-indigo-200 font-bold uppercase tracking-wide">
-                          {ACTIVITY_STYLE_LABELS[game.activityStyle]}
-                        </span>
-                      )}
-                      <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10 flex items-center gap-1">
-                        <Users className="w-3 h-3 text-amber-300" />
-                        {game.stats.players}
-                      </span>
-                      <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10">
-                        {game.stats.questions}
-                      </span>
-                      <span className="bg-slate-800/80 px-2 py-0.5 rounded-md border border-white/10">
-                        {game.stats.grades}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons on Card */}
-                  <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
-                    {game.isPlayable ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            sounds.playGameStart();
-                            onLaunchGame(game);
-                          }}
-                          className={`w-full py-2.5 px-3 rounded-xl font-mario text-xs sm:text-sm font-bold shadow flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 ${
-                            game.themeKey === 'christmas'
-                              ? 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950'
-                              : game.themeKey === 'classic'
-                                ? 'bg-gradient-to-r from-rose-500 to-amber-400 hover:from-rose-400 hover:to-amber-300 text-slate-950'
-                                : 'bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950'
-                          }`}
-                        >
-                          <Play className="w-3.5 h-3.5 fill-current" />
-                          START
-                        </button>
-
-                        <div className="flex items-center justify-between gap-2 text-[0.6875rem] pt-1">
-                          {game.hasTeacherGuide ? (
-                            <button
-                              onClick={() => {
-                                sounds.playClick();
-                                onOpenRulebook();
-                              }}
-                              className="text-indigo-300 hover:text-indigo-100 flex items-center gap-1 cursor-pointer transition-colors"
-                              title="Open Super Blast Host Guide & Rules"
-                            >
-                              <BookOpen className="w-3 h-3 text-indigo-400" />
-                              Host Guide & Rules
-                            </button>
-                          ) : (
-                            <span />
-                          )}
-
-                          <button
-                            onClick={() => {
-                              sounds.playCardFlip();
-                              setPreviewGame(game);
-                            }}
-                            className="text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer transition-colors ml-auto"
-                          >
-                            <Info className="w-3 h-3" />
-                            Details
-                          </button>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="space-y-1.5">
-                        <button
-                          onClick={() => {
-                            sounds.playCardFlip();
-                            setPreviewGame(game);
-                          }}
-                          className="w-full py-2.5 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-indigo-200 border border-indigo-400/30 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
-                          Preview Activity
-                        </button>
-                        <p className="text-[0.625rem] text-center text-white/40 italic">
-                          Coming in the classroom activity suite
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+                game={game}
+                onLaunch={onLaunchGame}
+                onOpenRulebook={onOpenRulebook}
+                onPreview={handlePreviewGame}
+              />
             ))}
           </div>
         </section>
