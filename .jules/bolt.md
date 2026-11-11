@@ -49,3 +49,7 @@
 ## 2025-05-30 - Memoization of Unmemoized Modals and Question Studio Block Filtering
 **Learning:** Unmemoized modal components (such as `CustomizerModal`, `InvasionVictoryModal`, and `InvasionRulebookModal`) were re-evaluating full component subtrees and block filtering operations whenever parent UI states ticked (e.g., sound toggles, BGM playback, or active team turn changes).
 **Action:** Wrap modal components in `React.memo` and memoize derived block filter checks (`isBlockFilled`) in `useCallback` and `useMemo` hooks with explicit dependency arrays to eliminate unnecessary VDOM re-renders.
+
+## 2025-05-31 - Memoization of RulebookModal and Static Style/Icon Lookup Hoisting
+**Learning:** `RulebookModal` was unmemoized and re-evaluating all guide sections, language tabs, and mystery card grids whenever parent containers (`MarioPartyQuiz` or `App`) experienced ambient particle ticks, BGM playback changes, or toast notifications. Inside `RulebookModal`, card styling lookup functions and icon resolvers were declared inside render scope, allocating new closures on every render pass.
+**Action:** Wrap `RulebookModal` in `React.memo` and hoist static lookup tables (`CARD_STYLES`) and icon helpers (`getCardIcon`, `getSectionIcon`) to module level outside the component render scope.
