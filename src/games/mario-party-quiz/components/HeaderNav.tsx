@@ -23,7 +23,7 @@ import {
 import { Team, GameTheme } from '@/shared/types';
 import { THEME_UI } from '@/shared/themeMeta';
 import { sounds } from '@/shared/utils/sound';
-import { MusicPlayer } from './MusicPlayer';
+import { MusicPlayer } from '@/shared/components/MusicPlayer';
 import { AccountMenu } from '@/shared/components/AccountMenu';
 import { TeamAvatar } from './TeamAvatar';
 import { MarioCoin } from '@/shared/components/MarioCoin';

@@ -1,34 +1,74 @@
 /**
- * Background music jukebox. Plays the bundled MP3s in /assets/audio and
- * user-uploaded audio files persisted in IndexedDB.
+ * Classroom BGM jukebox: bundled MP3s, procedural chiptunes, and IndexedDB uploads.
  */
 
-import { getAllStoredAudioTracks, saveAudioTrack, deleteAudioTrack, StoredAudioTrack } from './audioStorage';
+import { getAllStoredAudioTracks, saveAudioTrack, deleteAudioTrack } from './audioStorage';
+import { CHIP_TUNE_PRESETS, renderChiptuneBuffer } from './bgmChiptunes';
+
+export type BgmTrackCategory = 'static' | 'synth' | 'custom';
 
 export interface BgmTrack {
   id: string;
   name: string;
-  category: 'static' | 'custom';
-  audioUrl?: string; // For uploaded files
+  category: BgmTrackCategory;
+  audioUrl?: string;
   fileSize?: number;
 }
 
 export interface BgmState {
   isPlaying: boolean;
   isMuted: boolean;
-  volume: number; // 0 to 1
+  volume: number;
   currentTrackIndex: number;
   tracks: BgmTrack[];
+  /** Seconds; meaningful for static/custom only. */
+  currentTime: number;
+  /** Seconds; 0 when unknown / synth. */
+  duration: number;
+  seekable: boolean;
 }
 
-const track = (file: string): BgmTrack => ({
+const PREFS_KEY = 'mp_bgm_prefs_v1';
+
+interface BgmPrefs {
+  wantPlay: boolean;
+  muted: boolean;
+  volume: number;
+  trackId?: string;
+}
+
+function loadPrefs(): BgmPrefs {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return { wantPlay: true, muted: false, volume: 0.45 };
+    const parsed = JSON.parse(raw) as Partial<BgmPrefs>;
+    return {
+      wantPlay: parsed.wantPlay !== false,
+      muted: Boolean(parsed.muted),
+      volume: typeof parsed.volume === 'number' ? Math.max(0, Math.min(1, parsed.volume)) : 0.45,
+      trackId: typeof parsed.trackId === 'string' ? parsed.trackId : undefined,
+    };
+  } catch {
+    return { wantPlay: true, muted: false, volume: 0.45 };
+  }
+}
+
+function savePrefs(prefs: BgmPrefs) {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // ignore
+  }
+}
+
+const staticTrack = (file: string): BgmTrack => ({
   id: `static_${file}`,
   name: file,
   category: 'static',
   audioUrl: `/assets/audio/${encodeURIComponent(file)}.mp3`,
 });
 
-const PRESET_TRACKS: BgmTrack[] = [
+const STATIC_TRACKS: BgmTrack[] = [
   'Super Quiz World',
   'Coin Block Groove',
   'Pixel Power Quiz',
@@ -36,52 +76,120 @@ const PRESET_TRACKS: BgmTrack[] = [
   'Bustling Tavern',
   '8-Bit Quiz Quest',
   'Retro Quiz Run',
-].map(track);
+].map(staticTrack);
+
+const SYNTH_TRACKS: BgmTrack[] = CHIP_TUNE_PRESETS.map(t => ({
+  id: t.id,
+  name: t.name,
+  category: 'synth' as const,
+}));
+
+const BUILTIN_TRACKS: BgmTrack[] = [...STATIC_TRACKS, ...SYNTH_TRACKS];
 
 class BgmEngine {
+  private ctx: AudioContext | null = null;
+  private masterGain: GainNode | null = null;
+  private analyser: AnalyserNode | null = null;
+  private currentSource: AudioBufferSourceNode | null = null;
+  private mediaElementSource: MediaElementAudioSourceNode | null = null;
   private customAudioElement: HTMLAudioElement | null = null;
   private objectUrlCache: Map<string, string> = new Map();
+  private bufferCache: Map<string, AudioBuffer> = new Map();
+  private synthStartedAt = 0;
+  private synthOffset = 0;
+  private synthDuration = 0;
+  private progressTimer: number | null = null;
 
   private isPlayingState = false;
   private isMutedState = false;
   private volumeState = 0.45;
   private currentTrackIdx = 0;
   private isSwitchingTrack = false;
+  private wantPlay = true;
+  private currentTimeState = 0;
+  private durationState = 0;
 
   private listeners: Set<(state: BgmState) => void> = new Set();
 
-  public tracks: BgmTrack[] = [...PRESET_TRACKS];
+  public tracks: BgmTrack[] = [...BUILTIN_TRACKS];
 
   constructor() {
-    if (typeof window !== 'undefined') {
-      this.customAudioElement = new Audio();
-      this.customAudioElement.loop = false;
-      this.customAudioElement.addEventListener('play', () => {
-        this.isPlayingState = true;
+    if (typeof window === 'undefined') return;
+
+    const prefs = loadPrefs();
+    this.wantPlay = prefs.wantPlay;
+    this.isMutedState = prefs.muted;
+    this.volumeState = prefs.volume;
+
+    this.customAudioElement = new Audio();
+    this.customAudioElement.loop = false;
+    this.customAudioElement.crossOrigin = 'anonymous';
+    this.customAudioElement.addEventListener('play', () => {
+      this.isPlayingState = true;
+      this.notify();
+    });
+    this.customAudioElement.addEventListener('playing', () => {
+      this.isPlayingState = true;
+      this.notify();
+    });
+    this.customAudioElement.addEventListener('pause', () => {
+      if (!this.isSwitchingTrack && this.isMediaTrack()) {
+        this.isPlayingState = false;
         this.notify();
-      });
-      this.customAudioElement.addEventListener('playing', () => {
-        this.isPlayingState = true;
+      }
+    });
+    this.customAudioElement.addEventListener('ended', () => {
+      this.nextTrack();
+    });
+    this.customAudioElement.addEventListener('timeupdate', () => {
+      if (this.isMediaTrack() && this.customAudioElement) {
+        this.currentTimeState = this.customAudioElement.currentTime || 0;
+        this.durationState = Number.isFinite(this.customAudioElement.duration)
+          ? this.customAudioElement.duration
+          : 0;
         this.notify();
-      });
-      this.customAudioElement.addEventListener('pause', () => {
-        if (!this.isSwitchingTrack) {
-          this.isPlayingState = false;
-          this.notify();
-        }
-      });
-      this.customAudioElement.addEventListener('ended', () => {
-        this.nextTrack();
-      });
-      // Asynchronously restore uploaded tracks from IndexedDB or static /audio/
-      this.loadStoredTracks();
-    }
+      }
+    });
+    this.customAudioElement.addEventListener('loadedmetadata', () => {
+      if (this.customAudioElement) {
+        this.durationState = Number.isFinite(this.customAudioElement.duration)
+          ? this.customAudioElement.duration
+          : 0;
+        this.notify();
+      }
+    });
+
+    this.loadStoredTracks().then(() => {
+      if (prefs.trackId) {
+        const idx = this.tracks.findIndex(t => t.id === prefs.trackId);
+        if (idx >= 0) this.currentTrackIdx = idx;
+      }
+      this.notify();
+    });
+  }
+
+  private persist() {
+    const track = this.tracks[this.currentTrackIdx];
+    savePrefs({
+      wantPlay: this.wantPlay,
+      muted: this.isMutedState,
+      volume: this.volumeState,
+      trackId: track?.id,
+    });
+  }
+
+  private isMediaTrack(track = this.tracks[this.currentTrackIdx]) {
+    return track?.category === 'static' || track?.category === 'custom';
+  }
+
+  private isSeekable(track = this.tracks[this.currentTrackIdx]) {
+    return this.isMediaTrack(track);
   }
 
   private async loadStoredTracks() {
     try {
       const stored = await getAllStoredAudioTracks();
-      const customTracks: BgmTrack[] = stored.map((item) => {
+      const customTracks: BgmTrack[] = stored.map(item => {
         const url = URL.createObjectURL(item.blob);
         this.objectUrlCache.set(item.id, url);
         return {
@@ -92,72 +200,232 @@ class BgmEngine {
           fileSize: item.size,
         };
       });
-
-      if (customTracks.length > 0) {
-        this.tracks = [...customTracks, ...PRESET_TRACKS];
-        this.notify();
-      }
+      this.tracks = [...BUILTIN_TRACKS, ...customTracks];
+      this.notify();
     } catch (e) {
       console.warn('Failed to restore custom tracks from IndexedDB:', e);
     }
   }
 
-  private notify() {
-    const state: BgmState = {
+  private buildState(): BgmState {
+    const track = this.tracks[this.currentTrackIdx];
+    return {
       isPlaying: this.isPlayingState,
       isMuted: this.isMutedState,
       volume: this.volumeState,
       currentTrackIndex: this.currentTrackIdx,
       tracks: [...this.tracks],
+      currentTime: this.currentTimeState,
+      duration: this.durationState,
+      seekable: this.isSeekable(track),
     };
-    this.listeners.forEach((cb) => cb(state));
+  }
+
+  private notify() {
+    const state = this.buildState();
+    this.listeners.forEach(cb => cb(state));
   }
 
   public subscribe(callback: (state: BgmState) => void): () => void {
     this.listeners.add(callback);
-    callback({
-      isPlaying: this.isPlayingState,
-      isMuted: this.isMutedState,
-      volume: this.volumeState,
-      currentTrackIndex: this.currentTrackIdx,
-      tracks: [...this.tracks],
-    });
+    callback(this.buildState());
     return () => this.listeners.delete(callback);
+  }
+
+  private ensureGraph(): AudioContext | null {
+    if (typeof window === 'undefined') return null;
+    if (!this.ctx) {
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) return null;
+      this.ctx = new AudioCtx();
+      this.masterGain = this.ctx.createGain();
+      this.analyser = this.ctx.createAnalyser();
+      this.analyser.fftSize = 64;
+      this.analyser.smoothingTimeConstant = 0.75;
+      this.masterGain.gain.value = this.isMutedState ? 0 : this.volumeState;
+      this.analyser.connect(this.masterGain);
+      this.masterGain.connect(this.ctx.destination);
+    }
+    if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
+    return this.ctx;
+  }
+
+  private wireMediaElement() {
+    const ctx = this.ensureGraph();
+    if (!ctx || !this.customAudioElement || !this.analyser) return;
+    if (this.mediaElementSource) return;
+    try {
+      this.mediaElementSource = ctx.createMediaElementSource(this.customAudioElement);
+      this.mediaElementSource.connect(this.analyser);
+    } catch (e) {
+      console.warn('Could not wire media element to analyser:', e);
+    }
+  }
+
+  private stopSynthProgress() {
+    if (this.progressTimer != null) {
+      window.clearInterval(this.progressTimer);
+      this.progressTimer = null;
+    }
+  }
+
+  private startSynthProgress() {
+    this.stopSynthProgress();
+    this.progressTimer = window.setInterval(() => {
+      if (!this.isPlayingState || this.isMediaTrack()) return;
+      const ctx = this.ctx;
+      if (!ctx || this.synthDuration <= 0) return;
+      const elapsed = (ctx.currentTime - this.synthStartedAt + this.synthOffset) % this.synthDuration;
+      this.currentTimeState = elapsed;
+      this.durationState = this.synthDuration;
+      this.notify();
+    }, 200);
+  }
+
+  /** Fill `out` with analyser frequency bins (0–255). Returns false if unavailable. */
+  public getVisualizerData(out: Uint8Array): boolean {
+    if (!this.analyser || !this.isPlayingState || this.isMutedState) {
+      out.fill(0);
+      return false;
+    }
+    try {
+      // AnalyserNode typings vary across DOM lib versions.
+      this.analyser.getByteFrequencyData(out as unknown as Uint8Array<ArrayBuffer>);
+      return true;
+    } catch {
+      out.fill(0);
+      return false;
+    }
   }
 
   public async play(): Promise<void> {
     const track = this.tracks[this.currentTrackIdx];
-    if (!track?.audioUrl || !this.customAudioElement) return;
+    if (!track) return;
 
+    this.wantPlay = true;
     this.isPlayingState = true;
+    this.persist();
     this.notify();
 
-    const el = this.customAudioElement;
-    if (el.getAttribute('data-track-id') !== track.id || !el.src) {
-      el.setAttribute('data-track-id', track.id);
-      el.src = track.audioUrl;
-      el.currentTime = 0;
+    if (this.isMediaTrack(track) && track.audioUrl) {
+      if (this.currentSource) {
+        try {
+          this.currentSource.stop();
+        } catch {
+          /* ignore */
+        }
+        this.currentSource = null;
+      }
+      this.stopSynthProgress();
+      this.wireMediaElement();
+
+      const el = this.customAudioElement!;
+      const isDifferent =
+        el.getAttribute('data-track-id') !== track.id || !el.src;
+      if (isDifferent) {
+        el.setAttribute('data-track-id', track.id);
+        el.src = track.audioUrl;
+        el.currentTime = 0;
+      }
+      el.volume = this.isMutedState ? 0 : this.volumeState;
+      el.muted = this.isMutedState;
+      try {
+        await el.play();
+      } catch (e) {
+        console.warn('Audio playback issue or pending interaction:', e);
+        if (el.paused) {
+          this.isPlayingState = false;
+          this.notify();
+        }
+      }
+      return;
     }
 
-    el.volume = this.isMutedState ? 0 : this.volumeState;
-    el.muted = this.isMutedState;
+    // Synth
+    if (this.customAudioElement) {
+      try {
+        this.customAudioElement.pause();
+      } catch {
+        /* ignore */
+      }
+    }
 
-    try {
-      await el.play();
-    } catch (e) {
-      console.warn('Audio playback issue or pending interaction:', e);
-      if (el.paused) {
-        this.isPlayingState = false;
-        this.notify();
+    const ctx = this.ensureGraph();
+    if (!ctx || !this.analyser) return;
+
+    if (this.currentSource) {
+      try {
+        this.currentSource.stop();
+      } catch {
+        /* ignore */
+      }
+      this.currentSource = null;
+    }
+
+    let buffer = this.bufferCache.get(track.id) ?? null;
+    if (!buffer) {
+      buffer = await renderChiptuneBuffer(track.id);
+      if (buffer) this.bufferCache.set(track.id, buffer);
+    }
+    if (!buffer || !this.isPlayingState) return;
+
+    if (this.masterGain) {
+      this.masterGain.gain.value = this.isMutedState ? 0 : this.volumeState;
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+    source.connect(this.analyser);
+    source.start(0);
+    this.currentSource = source;
+    this.synthStartedAt = ctx.currentTime;
+    this.synthOffset = 0;
+    this.synthDuration = buffer.duration;
+    this.durationState = buffer.duration;
+    this.currentTimeState = 0;
+    this.startSynthProgress();
+    this.notify();
+  }
+
+  /**
+   * Call from a teacher gesture (Start Party). Resumes AudioContext and
+   * starts playback when the host prefers music on.
+   */
+  public async playOnHostGesture(): Promise<void> {
+    this.ensureGraph();
+    if (!this.wantPlay || this.isMutedState) return;
+    await this.play();
+  }
+
+  private stopPlayback() {
+    this.isPlayingState = false;
+    this.stopSynthProgress();
+    if (this.currentSource) {
+      try {
+        this.currentSource.stop();
+      } catch {
+        /* ignore */
+      }
+      this.currentSource = null;
+    }
+    if (this.customAudioElement) {
+      try {
+        this.customAudioElement.pause();
+      } catch {
+        /* ignore */
       }
     }
   }
 
   public pause() {
-    this.isPlayingState = false;
-    if (this.customAudioElement) {
-      try { this.customAudioElement.pause(); } catch (_) {}
-    }
+    this.wantPlay = false;
+    this.stopPlayback();
+    this.persist();
     this.notify();
   }
 
@@ -165,7 +433,7 @@ class BgmEngine {
     if (this.isPlayingState) {
       this.pause();
     } else {
-      this.play();
+      void this.play();
     }
   }
 
@@ -181,15 +449,29 @@ class BgmEngine {
 
   public setTrackIndex(index: number) {
     if (index < 0 || index >= this.tracks.length) return;
-    const wasPlaying = this.isPlayingState;
+    const resume = this.isPlayingState || this.wantPlay;
     this.isSwitchingTrack = true;
-    this.pause();
+    this.stopPlayback();
     this.currentTrackIdx = index;
+    this.currentTimeState = 0;
+    this.durationState = 0;
     this.isSwitchingTrack = false;
+    this.wantPlay = resume;
+    this.persist();
     this.notify();
-    if (wasPlaying) {
-      this.play();
+    if (resume) {
+      void this.play();
     }
+  }
+
+  public seek(seconds: number) {
+    if (!this.isSeekable() || !this.customAudioElement) return;
+    const el = this.customAudioElement;
+    const dur = Number.isFinite(el.duration) ? el.duration : 0;
+    const next = Math.max(0, Math.min(dur || seconds, seconds));
+    el.currentTime = next;
+    this.currentTimeState = next;
+    this.notify();
   }
 
   public toggleMute() {
@@ -198,19 +480,37 @@ class BgmEngine {
 
   public setMuted(muted: boolean) {
     this.isMutedState = muted;
+    if (this.masterGain && this.ctx) {
+      try {
+        this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(muted ? 0 : this.volumeState, this.ctx.currentTime);
+      } catch {
+        this.masterGain.gain.value = muted ? 0 : this.volumeState;
+      }
+    }
     if (this.customAudioElement) {
       this.customAudioElement.muted = muted;
       this.customAudioElement.volume = muted ? 0 : this.volumeState;
     }
+    this.persist();
     this.notify();
   }
 
   public setVolume(vol: number) {
     const clamped = Math.max(0, Math.min(1, vol));
     this.volumeState = clamped;
+    if (this.masterGain && this.ctx) {
+      try {
+        this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
+        this.masterGain.gain.setValueAtTime(this.isMutedState ? 0 : clamped, this.ctx.currentTime);
+      } catch {
+        this.masterGain.gain.value = this.isMutedState ? 0 : clamped;
+      }
+    }
     if (this.customAudioElement) {
       this.customAudioElement.volume = clamped;
     }
+    this.persist();
     this.notify();
   }
 
@@ -241,24 +541,24 @@ class BgmEngine {
       this.isSwitchingTrack = true;
       this.currentTrackIdx = newIdx;
       this.isSwitchingTrack = false;
+      this.wantPlay = true;
       this.isPlayingState = true;
+      this.persist();
       this.notify();
       await this.play();
     }
   }
 
   public async deleteCustomTrack(trackId: string): Promise<void> {
-    const trackIndex = this.tracks.findIndex((t) => t.id === trackId);
+    const trackIndex = this.tracks.findIndex(t => t.id === trackId);
     if (trackIndex === -1) return;
 
-    // Revoke cached URL
     const url = this.objectUrlCache.get(trackId);
     if (url) {
       URL.revokeObjectURL(url);
       this.objectUrlCache.delete(trackId);
     }
 
-    // Delete from IndexedDB
     await deleteAudioTrack(trackId);
 
     const wasCurrent = this.currentTrackIdx === trackIndex;
@@ -268,16 +568,18 @@ class BgmEngine {
       this.pause();
     }
 
-    this.tracks = this.tracks.filter((t) => t.id !== trackId);
+    this.tracks = this.tracks.filter(t => t.id !== trackId);
 
     if (this.currentTrackIdx >= this.tracks.length) {
       this.currentTrackIdx = Math.max(0, this.tracks.length - 1);
     }
 
+    this.persist();
     this.notify();
 
     if (wasCurrent && wasPlaying && this.tracks.length > 0) {
-      this.play();
+      this.wantPlay = true;
+      await this.play();
     }
   }
 }
