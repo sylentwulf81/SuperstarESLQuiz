@@ -90,6 +90,7 @@ export function AlienInvasion({
   }, [counts, teams]);
 
   const handleStartGame = useCallback((nextTeams: InvasionTeam[]) => {
+    void bgm.playOnHostGesture();
     dispatch({ type: 'START', teams: nextTeams });
   }, [dispatch]);
 

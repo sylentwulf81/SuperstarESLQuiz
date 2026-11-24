@@ -179,6 +179,7 @@ export function MarioBlastClassic({
   };
 
   const handleStartGame = (configuredTeams: Team[]) => {
+    void bgm.playOnHostGesture();
     dispatch({ type: 'START', teams: configuredTeams, blocks: createGameBlocks(theme, undefined, true) });
   };
 

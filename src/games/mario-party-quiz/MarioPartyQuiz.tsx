@@ -148,6 +148,7 @@ export function MarioPartyQuiz({
   };
 
   const handleStartGame = (configuredTeams: Team[]) => {
+    void bgm.playOnHostGesture();
     dispatch({
       type: 'START',
       teams: configuredTeams,
