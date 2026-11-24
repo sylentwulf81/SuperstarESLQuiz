@@ -18,9 +18,18 @@ class SoundEngine {
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      void this.ctx.resume();
     }
     return this.ctx;
+  }
+
+  /** Call from a click/tap so SFX AudioContext can start after browser autoplay locks. */
+  public unlock() {
+    if (!this.enabled) return;
+    const ctx = this.getContext();
+    if (ctx?.state === 'suspended') {
+      void ctx.resume();
+    }
   }
 
   // Classic Mario Coin sound (B5 -> E6)

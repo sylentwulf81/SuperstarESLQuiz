@@ -340,3 +340,25 @@
   animation: coinSpin 1.2s infinite ease-in-out;
 }
 
+/* Mini music player title — pause, scroll, pause, return (Apple Music–style) */
+@keyframes musicMarquee {
+  0%,
+  18% {
+    transform: translateX(0);
+  }
+  42%,
+  58% {
+    transform: translateX(var(--marquee-shift, 0px));
+  }
+  82%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.animate-music-marquee {
+  animation-name: musicMarquee;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+

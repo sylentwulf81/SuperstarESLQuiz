@@ -55,7 +55,13 @@ function AppShell() {
     setSoundEnabled(prev => {
       const next = !prev;
       sounds.enabled = next;
-      bgm.setMuted(!next);
+      // Master mute: silence BGM without fighting the mini-player mute preference long-term.
+      if (next) {
+        sounds.unlock();
+        bgm.setMuted(false);
+      } else {
+        bgm.setMuted(true);
+      }
       return next;
     });
   }, []);
