@@ -31,6 +31,82 @@ function formatTime(seconds: number) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Fixed-width title that pauses, then scrolls like Apple Music / Spotify when text overflows. */
+function MarqueeText({
+  text,
+  className = '',
+}: {
+  text: string;
+  className?: string;
+}) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLSpanElement>(null);
+  const [shiftPx, setShiftPx] = useState(0);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    const measure = measureRef.current;
+    if (!viewport || !measure) return;
+
+    const update = () => {
+      const overflow = measure.scrollWidth - viewport.clientWidth;
+      setShiftPx(overflow > 4 ? overflow : 0);
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(viewport);
+    ro.observe(measure);
+    return () => ro.disconnect();
+  }, [text]);
+
+  // Hold ~20% of the cycle at each end; longer overflow → slower full loop
+  const durationSec = shiftPx > 0 ? Math.min(18, Math.max(7, 6 + shiftPx / 22)) : 0;
+
+  return (
+    <div
+      ref={viewportRef}
+      className={`relative min-w-0 w-full overflow-hidden ${className}`}
+      style={
+        shiftPx > 0
+          ? {
+              maskImage:
+                'linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)',
+              WebkitMaskImage:
+                'linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)',
+            }
+          : undefined
+      }
+    >
+      {/* Hidden probe for accurate scrollWidth (unconstrained) */}
+      <span
+        ref={measureRef}
+        aria-hidden
+        className="invisible absolute left-0 top-0 whitespace-nowrap text-[0.6875rem] font-bold pointer-events-none"
+      >
+        {text}
+      </span>
+      <span
+        key={`${text}-${shiftPx}`}
+        title={text}
+        className={`block whitespace-nowrap text-[0.6875rem] font-bold ${
+          shiftPx > 0 ? 'will-change-transform animate-music-marquee' : 'truncate'
+        }`}
+        style={
+          shiftPx > 0
+            ? ({
+                ['--marquee-shift' as string]: `-${Math.ceil(shiftPx)}px`,
+                animationDuration: `${durationSec}s`,
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
 function VisualizerBars({
   active,
   bars = 5,
@@ -51,14 +127,18 @@ function VisualizerBars({
       return;
     }
     let frame = 0;
-    const tick = () => {
+    let t0 = performance.now();
+    const tick = (now: number) => {
       const data = dataRef.current;
       const ok = bgm.getVisualizerData(data);
       const step = Math.max(1, Math.floor(data.length / bars));
+      const pulse = 0.35 + 0.25 * Math.sin((now - t0) / 140);
       for (let i = 0; i < bars; i++) {
         const el = refs.current[i];
         if (!el) continue;
-        const v = ok ? data[i * step] / 255 : 0.15;
+        // Real analyser for chiptunes; gentle pulse fallback for MP3 element playback.
+        const analysed = ok ? data[i * step] / 255 : 0;
+        const v = analysed > 0.02 ? analysed : pulse * (0.55 + (i % 3) * 0.15);
         const h = Math.max(0.12, Math.min(1, v * 1.15));
         el.style.height = `${Math.round(h * 100)}%`;
       }
@@ -442,8 +522,8 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
   const vizActive = bgmState.isPlaying && !bgmState.isMuted;
 
   return (
-    <div className={`relative max-w-full ${className}`} ref={tracklistRef}>
-      <div className="flex items-center justify-between gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none w-full max-w-full shrink-0">
+    <div className={`relative w-[min(100%,20.75rem)] sm:w-[22.5rem] shrink-0 ${className}`} ref={tracklistRef}>
+      <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-2xl border shadow-lg bg-slate-900/90 border-white/20 text-white select-none w-full">
         <button
           id="music-track-title-btn"
           type="button"
@@ -451,23 +531,22 @@ export const MusicPlayer = React.memo(function MusicPlayer({ className = '' }: M
             sounds.playClick();
             setShowTracklist(prev => !prev);
           }}
-          className="flex items-center gap-1 sm:gap-1.5 min-w-0 flex-1 max-w-[8.125rem] sm:max-w-[10rem] text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
-          title="Tracklist"
+          className="flex items-center gap-1.5 min-w-0 flex-1 h-7 text-left hover:opacity-90 transition-opacity cursor-pointer group py-0.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400"
+          title={currentTrack?.name || 'Tracklist'}
         >
           <Music className="w-3.5 h-3.5 text-amber-300 shrink-0 group-hover:scale-110 transition-transform" />
-          <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-1 min-w-0">
-              <span className="truncate text-[0.6875rem] font-bold text-indigo-100 group-hover:text-amber-200">
-                {currentTrack?.name || 'No Track'}
-              </span>
-              <ChevronDown
-                className={`w-3 h-3 text-white/50 shrink-0 transition-transform duration-200 ${
-                  showTracklist ? 'rotate-180 text-amber-300' : 'group-hover:text-white'
-                }`}
-              />
-            </div>
+          <div className="min-w-0 flex-1 overflow-hidden text-indigo-100 group-hover:text-amber-200 transition-colors">
+            <MarqueeText text={currentTrack?.name || 'No Track'} />
           </div>
-          {vizActive && <VisualizerBars active className="hidden xs:flex ml-0.5" />}
+          <ChevronDown
+            className={`w-3 h-3 text-white/50 shrink-0 transition-transform duration-200 ${
+              showTracklist ? 'rotate-180 text-amber-300' : 'group-hover:text-white'
+            }`}
+          />
+          <VisualizerBars
+            active={vizActive}
+            className={`hidden xs:flex ml-0.5 w-3 justify-end ${vizActive ? 'opacity-100' : 'opacity-0'}`}
+          />
         </button>
 
         <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">

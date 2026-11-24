@@ -4,6 +4,7 @@
 
 import { getAllStoredAudioTracks, saveAudioTrack, deleteAudioTrack } from './audioStorage';
 import { CHIP_TUNE_PRESETS, renderChiptuneBuffer } from './bgmChiptunes';
+import { sounds } from './sound';
 
 export type BgmTrackCategory = 'static' | 'synth' | 'custom';
 
@@ -91,7 +92,6 @@ class BgmEngine {
   private masterGain: GainNode | null = null;
   private analyser: AnalyserNode | null = null;
   private currentSource: AudioBufferSourceNode | null = null;
-  private mediaElementSource: MediaElementAudioSourceNode | null = null;
   private customAudioElement: HTMLAudioElement | null = null;
   private objectUrlCache: Map<string, string> = new Map();
   private bufferCache: Map<string, AudioBuffer> = new Map();
@@ -108,6 +108,8 @@ class BgmEngine {
   private wantPlay = true;
   private currentTimeState = 0;
   private durationState = 0;
+  /** Bumps on each play/stop so stale async chiptune renders cannot start late. */
+  private playGeneration = 0;
 
   private listeners: Set<(state: BgmState) => void> = new Set();
 
@@ -123,7 +125,7 @@ class BgmEngine {
 
     this.customAudioElement = new Audio();
     this.customAudioElement.loop = false;
-    this.customAudioElement.crossOrigin = 'anonymous';
+    this.customAudioElement.preload = 'metadata';
     this.customAudioElement.addEventListener('play', () => {
       this.isPlayingState = true;
       this.notify();
@@ -141,12 +143,17 @@ class BgmEngine {
     this.customAudioElement.addEventListener('ended', () => {
       this.nextTrack();
     });
+    // Throttle seek UI updates — raw timeupdate re-renders the whole header too often.
+    let lastProgressNotify = 0;
     this.customAudioElement.addEventListener('timeupdate', () => {
-      if (this.isMediaTrack() && this.customAudioElement) {
-        this.currentTimeState = this.customAudioElement.currentTime || 0;
-        this.durationState = Number.isFinite(this.customAudioElement.duration)
-          ? this.customAudioElement.duration
-          : 0;
+      if (!this.isMediaTrack() || !this.customAudioElement) return;
+      this.currentTimeState = this.customAudioElement.currentTime || 0;
+      this.durationState = Number.isFinite(this.customAudioElement.duration)
+        ? this.customAudioElement.duration
+        : 0;
+      const now = performance.now();
+      if (now - lastProgressNotify > 250) {
+        lastProgressNotify = now;
         this.notify();
       }
     });
@@ -248,22 +255,20 @@ class BgmEngine {
       this.analyser.connect(this.masterGain);
       this.masterGain.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') {
-      void this.ctx.resume();
-    }
     return this.ctx;
   }
 
-  private wireMediaElement() {
+  private async resumeContext(): Promise<AudioContext | null> {
     const ctx = this.ensureGraph();
-    if (!ctx || !this.customAudioElement || !this.analyser) return;
-    if (this.mediaElementSource) return;
-    try {
-      this.mediaElementSource = ctx.createMediaElementSource(this.customAudioElement);
-      this.mediaElementSource.connect(this.analyser);
-    } catch (e) {
-      console.warn('Could not wire media element to analyser:', e);
+    if (!ctx) return null;
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch (e) {
+        console.warn('AudioContext resume failed:', e);
+      }
     }
+    return ctx;
   }
 
   private stopSynthProgress() {
@@ -306,12 +311,17 @@ class BgmEngine {
     const track = this.tracks[this.currentTrackIdx];
     if (!track) return;
 
+    const generation = ++this.playGeneration;
     this.wantPlay = true;
     this.isPlayingState = true;
     this.persist();
     this.notify();
+    // Same user gesture: unlock SFX context too (shared classroom audio feel).
+    sounds.unlock();
 
     if (this.isMediaTrack(track) && track.audioUrl) {
+      // MP3/custom: play through the element directly (do NOT createMediaElementSource —
+      // capturing the element into a Web Audio graph made the jukebox brittle / silent).
       if (this.currentSource) {
         try {
           this.currentSource.stop();
@@ -321,7 +331,6 @@ class BgmEngine {
         this.currentSource = null;
       }
       this.stopSynthProgress();
-      this.wireMediaElement();
 
       const el = this.customAudioElement!;
       const isDifferent =
@@ -331,13 +340,13 @@ class BgmEngine {
         el.src = track.audioUrl;
         el.currentTime = 0;
       }
-      el.volume = this.isMutedState ? 0 : this.volumeState;
       el.muted = this.isMutedState;
+      el.volume = this.isMutedState ? 0 : this.volumeState;
       try {
         await el.play();
       } catch (e) {
         console.warn('Audio playback issue or pending interaction:', e);
-        if (el.paused) {
+        if (el.paused && generation === this.playGeneration) {
           this.isPlayingState = false;
           this.notify();
         }
@@ -345,7 +354,7 @@ class BgmEngine {
       return;
     }
 
-    // Synth
+    // Synth — pause any MP3 first so only the buffer source is live
     if (this.customAudioElement) {
       try {
         this.customAudioElement.pause();
@@ -353,9 +362,6 @@ class BgmEngine {
         /* ignore */
       }
     }
-
-    const ctx = this.ensureGraph();
-    if (!ctx || !this.analyser) return;
 
     if (this.currentSource) {
       try {
@@ -366,20 +372,39 @@ class BgmEngine {
       this.currentSource = null;
     }
 
+    const ctx = await this.resumeContext();
+    if (!ctx || !this.analyser || !this.masterGain) {
+      if (generation === this.playGeneration) {
+        this.isPlayingState = false;
+        this.notify();
+      }
+      return;
+    }
+
     let buffer = this.bufferCache.get(track.id) ?? null;
     if (!buffer) {
-      buffer = await renderChiptuneBuffer(track.id);
-      if (buffer) this.bufferCache.set(track.id, buffer);
+      try {
+        buffer = await renderChiptuneBuffer(track.id);
+        if (buffer) this.bufferCache.set(track.id, buffer);
+      } catch (e) {
+        console.error('Chiptune render failed:', e);
+        buffer = null;
+      }
     }
-    if (!buffer || !this.isPlayingState) return;
+    if (generation !== this.playGeneration) return;
+    if (!buffer) {
+      console.error('Chiptune buffer missing for', track.id);
+      this.isPlayingState = false;
+      this.notify();
+      return;
+    }
 
-    if (this.masterGain) {
-      this.masterGain.gain.value = this.isMutedState ? 0 : this.volumeState;
-    }
+    this.masterGain.gain.value = this.isMutedState ? 0 : this.volumeState;
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
+    // Analyser is in the chain for the visualizer; it still passes audio through.
     source.connect(this.analyser);
     source.start(0);
     this.currentSource = source;
@@ -388,6 +413,7 @@ class BgmEngine {
     this.synthDuration = buffer.duration;
     this.durationState = buffer.duration;
     this.currentTimeState = 0;
+    this.isPlayingState = true;
     this.startSynthProgress();
     this.notify();
   }
@@ -397,12 +423,13 @@ class BgmEngine {
    * starts playback when the host prefers music on.
    */
   public async playOnHostGesture(): Promise<void> {
-    this.ensureGraph();
+    await this.resumeContext();
     if (!this.wantPlay || this.isMutedState) return;
     await this.play();
   }
 
   private stopPlayback() {
+    this.playGeneration += 1;
     this.isPlayingState = false;
     this.stopSynthProgress();
     if (this.currentSource) {
@@ -487,6 +514,8 @@ class BgmEngine {
       } catch {
         this.masterGain.gain.value = muted ? 0 : this.volumeState;
       }
+    } else if (this.masterGain) {
+      this.masterGain.gain.value = muted ? 0 : this.volumeState;
     }
     if (this.customAudioElement) {
       this.customAudioElement.muted = muted;
@@ -506,9 +535,11 @@ class BgmEngine {
       } catch {
         this.masterGain.gain.value = this.isMutedState ? 0 : clamped;
       }
+    } else if (this.masterGain) {
+      this.masterGain.gain.value = this.isMutedState ? 0 : clamped;
     }
     if (this.customAudioElement) {
-      this.customAudioElement.volume = clamped;
+      this.customAudioElement.volume = this.isMutedState ? 0 : clamped;
     }
     this.persist();
     this.notify();
