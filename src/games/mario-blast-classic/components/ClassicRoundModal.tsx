@@ -1,12 +1,11 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star, Ban, Undo2, ArrowLeft } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Eye, EyeOff, X, Check, OctagonX, Sparkles, ArrowRight, Star, Ban, ArrowLeft, Layers, Plus, Minus } from 'lucide-react';
 import { GameQuestion, Team } from '@/shared/types';
 import { CHARACTERS } from '@/games/mario-party-quiz/data/characters';
 import { sounds } from '@/shared/utils/sound';
 import { MarioCoin } from '@/shared/components/MarioCoin';
 import { TeamAvatar } from '@/games/mario-party-quiz/components/TeamAvatar';
 import { GameModalShell } from '@/shared/components/GameModalShell';
-import { getRevealArt } from '@/games/mario-party-quiz/data/revealArt';
 import { ClassicCardSlot, RoundOverReason } from '../engine';
 import { MarkedPrompt } from '@/shared/components/MarkedPrompt';
 import { MysteryCardBack } from '@/shared/components/MysteryCardBack';
@@ -28,6 +27,8 @@ interface ClassicRoundModalProps {
   cardsRemaining: number;
   onSelectTeam: (teamId: string) => void;
   onTogglePassTeam?: (teamId: string) => void;
+  /** Teacher edge-case coin fix (same as board sidebars) */
+  onAdjustCoins?: (teamId: string, delta: number) => void;
   onPickSlot: (slotIndex: number) => void;
   onEndRound: () => void;
   onCancelIfEmpty: () => void;
@@ -51,6 +52,7 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
   cardsRemaining,
   onSelectTeam,
   onTogglePassTeam,
+  onAdjustCoins,
   onPickSlot,
   onEndRound,
   onCancelIfEmpty,
@@ -62,6 +64,9 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 }: ClassicRoundModalProps) {
   const [answerRevealed, setAnswerRevealed] = useState(isRoundOver);
   const [showScrambledClue, setShowScrambledClue] = useState(false);
+  /** Host can pin the tray open; otherwise it appears when a team is selected. */
+  const [cardTrayPinned, setCardTrayPinned] = useState(false);
+  const cardTrayRef = useRef<HTMLDivElement>(null);
 
   const scrambledChars = useMemo(() => {
     if (question.type !== 'unscramble') return [];
@@ -111,6 +116,15 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 
   const selectedTeam = selectedTeamId ? teamsMap.get(selectedTeamId) ?? null : null;
   const isMysteryBlock = question.type === 'mystery_card';
+  const selectedAlreadyDrew = Boolean(selectedTeamId && drawnTeamSet.has(selectedTeamId));
+  const canSkipSelected =
+    Boolean(onTogglePassTeam) &&
+    Boolean(selectedTeamId) &&
+    !selectedAlreadyDrew &&
+    !isRoundOver;
+  const anyCardClaimed = useMemo(() => slots.some(s => Boolean(s.claimedByTeamId)), [slots]);
+  const showCardTray = isRoundOver || Boolean(selectedTeamId) || cardTrayPinned || anyCardClaimed;
+  const cardsActionLit = Boolean(selectedTeamId) && !selectedAlreadyDrew && !isRoundOver;
 
   // One reveal control per question, placed with the answer (choice questions only)
   const choiceRevealToggle = (
@@ -216,118 +230,197 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
 
       {/* Main 2-Column Classroom Layout */}
       <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
-        {/* Left Column: Vertical Teams Rail with Giant Scores */}
-        <div className="w-full md:w-80 lg:w-96 bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 p-2 sm:p-2.5 flex flex-col shrink-0 overflow-y-auto max-h-24 sm:max-h-28 md:max-h-none">
-          <div className="flex items-center justify-between pb-1 border-b border-white/10 mb-1.5 shrink-0">
+        {/* Left Column: big score rows + footer Skip / Cards */}
+        <div className="w-full md:w-[22rem] lg:w-[26rem] bg-slate-950/70 border-b md:border-b-0 md:border-r border-white/15 flex flex-col shrink-0 max-h-36 sm:max-h-40 md:max-h-none">
+          <div className="flex items-center justify-between px-2.5 sm:px-3 pt-2 pb-1.5 border-b border-white/10 shrink-0">
             <span className="text-[0.6875rem] font-black uppercase tracking-wider text-yellow-300 font-mario">
               {isRoundOver ? 'SCORES' : '1. SELECT WINNER'}
             </span>
-            <span className="text-[0.625rem] text-slate-400 font-bold">
-              {drawnTeamIds.length}/{teams.length} Drew{passedTeamIds.length > 0 ? ` · ${passedTeamIds.length} skipped` : ''}
+            <span className="text-[0.625rem] text-slate-400 font-bold tabular-nums">
+              {drawnTeamIds.length}/{teams.length}
+              {passedTeamIds.length > 0 ? ` · ${passedTeamIds.length}⏭` : ''}
             </span>
           </div>
 
-          <div className="flex-1 min-h-0 flex flex-row md:flex-col gap-1.5 sm:gap-2 overflow-x-auto md:overflow-y-auto px-1 py-1 [scrollbar-width:thin]">
-            {teams.map(team => {
+          <div className="flex-1 min-h-0 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto px-2 sm:px-2.5 py-2 [scrollbar-width:thin]">
+            {teams.map((team, teamIdx) => {
               const char = CHARACTERS[team.characterId];
               const alreadyDrew = drawnTeamSet.has(team.id);
               const isPassed = passedTeamSet.has(team.id);
               const isSelected = selectedTeamId === team.id;
-              const canTogglePass = !alreadyDrew && !isRoundOver && Boolean(onTogglePassTeam);
+
+              const rowDisabled = alreadyDrew || isRoundOver || (isPassed && !onTogglePassTeam);
 
               return (
-                <div key={team.id} className="flex items-stretch gap-1 min-w-[12rem] sm:min-w-[13rem] md:min-w-0">
-                <span
-                  className={`shrink-0 w-7 sm:w-8 flex items-center justify-center rounded-lg font-mario text-lg sm:text-xl border-2 ${
-                    isSelected
-                      ? 'bg-yellow-300 text-slate-900 border-yellow-100'
-                      : 'bg-black/60 text-yellow-300 border-amber-300/40'
-                  }`}
-                  aria-hidden="true"
-                >
-                  {teams.indexOf(team) + 1}
-                </span>
-                <button
-                  type="button"
-                  disabled={alreadyDrew || isPassed || isRoundOver}
-                  onClick={() => {
-                    if (alreadyDrew || isPassed || isRoundOver) return;
-                    sounds.playPop();
-                    onSelectTeam(team.id);
-                  }}
-                  className={`relative flex-1 min-w-0 flex items-center justify-between gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border-2 transition-all text-left ${
+                <div
+                  key={team.id}
+                  className={`relative flex items-center gap-1.5 sm:gap-2 min-w-[16rem] md:min-w-0 p-2 sm:p-2.5 rounded-2xl border-2 transition-all ${
                     alreadyDrew
-                      ? 'bg-emerald-950/60 border-emerald-400/50 cursor-default opacity-85'
+                      ? 'bg-emerald-950/60 border-emerald-400/50'
                       : isPassed
-                      ? 'bg-rose-950/50 border-rose-400/40 cursor-default opacity-75'
+                      ? 'bg-rose-950/45 border-rose-400/35'
                       : isSelected
-                      ? `${char.bgColor} bg-opacity-70 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)] cursor-pointer z-10`
+                      ? `${char.bgColor} bg-opacity-75 border-yellow-300 ring-2 ring-yellow-400 shadow-[0_0_18px_rgba(250,204,21,0.45)] z-10`
                       : isRoundOver
-                      ? 'bg-slate-800/60 border-white/10 cursor-default'
-                      : 'bg-slate-800/80 hover:bg-slate-750 border-white/15 hover:border-amber-300/60 cursor-pointer'
+                      ? 'bg-slate-800/60 border-white/10'
+                      : 'bg-slate-800/85 border-white/15'
                   }`}
                 >
-                  <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <button
+                    type="button"
+                    disabled={rowDisabled}
+                    onClick={() => {
+                      if (alreadyDrew || isRoundOver) return;
+                      // Tap a skipped row to undo; engine clears selection when skipping.
+                      if (isPassed) {
+                        if (!onTogglePassTeam) return;
+                        sounds.playClick();
+                        onTogglePassTeam(team.id);
+                        return;
+                      }
+                      sounds.playPop();
+                      onSelectTeam(team.id);
+                    }}
+                    title={isPassed ? `Undo skip — let ${team.name} draw` : undefined}
+                    className={`flex-1 min-w-0 flex items-center gap-2 sm:gap-2.5 text-left rounded-xl ${
+                      alreadyDrew || isRoundOver
+                        ? 'cursor-default'
+                        : isPassed
+                        ? 'cursor-pointer hover:opacity-100'
+                        : 'cursor-pointer hover:brightness-110'
+                    }`}
+                  >
+                    <span
+                      className={`shrink-0 w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl font-mario text-lg sm:text-xl border-2 ${
+                        isSelected
+                          ? 'bg-yellow-300 text-slate-900 border-yellow-100'
+                          : 'bg-black/55 text-yellow-300 border-amber-300/40'
+                      }`}
+                      aria-hidden="true"
+                    >
+                      {teamIdx + 1}
+                    </span>
+
                     <div className="relative shrink-0">
                       <TeamAvatar
                         characterId={team.characterId}
-                        size="sm"
+                        size="md"
                         customUrl={team.customImageUrl}
-                        className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-xl"
+                        className="w-11 h-11 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-xl ring-2 ring-white/25"
                       />
                       {alreadyDrew && (
-                        <span className="absolute -top-1 -right-1 z-20 flex h-4 w-4 sm:h-4.5 sm:w-4.5 items-center justify-center rounded-full bg-emerald-500 border-2 border-slate-900 shadow">
-                          <Check className="w-2.5 h-2.5 text-white" strokeWidth={3.5} />
+                        <span className="absolute -top-1 -right-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 border-2 border-slate-900 shadow">
+                          <Check className="w-3 h-3 text-white" strokeWidth={3.5} />
+                        </span>
+                      )}
+                      {isPassed && (
+                        <span className="absolute -top-1 -right-1 z-20 flex h-5 w-5 items-center justify-center rounded-full bg-rose-600 border-2 border-slate-900 shadow">
+                          <Ban className="w-3 h-3 text-white" strokeWidth={3} />
                         </span>
                       )}
                     </div>
-                    <div className="min-w-0 leading-tight">
-                      <div className="font-mario text-xs sm:text-sm text-white truncate">
-                        {team.name}
-                      </div>
-                      <div className="text-[0.5938rem] sm:text-[0.625rem] text-slate-300 font-bold">
-                        {alreadyDrew ? 'Drew card' : isPassed ? 'No card this round' : isSelected ? 'Drawing now' : 'Can answer'}
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                    <div className="flex items-center gap-1 bg-black/60 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-xl border border-white/15">
-                      <MarioCoin size="xs" />
-                      <span className="font-mario text-sm sm:text-base md:text-lg text-yellow-300 leading-none">
+                    <span className="flex-1 min-w-0 font-mario text-base sm:text-lg md:text-xl text-white truncate text-shadow-mario">
+                      {team.name}
+                    </span>
+                  </button>
+
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 bg-black/65 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-amber-300/35">
+                      <MarioCoin size="sm" />
+                      <span
+                        className={`font-mario text-2xl sm:text-3xl md:text-4xl leading-none tabular-nums tracking-tight ${
+                          team.coins < 0
+                            ? 'text-red-400'
+                            : 'text-yellow-300'
+                        }`}
+                      >
                         {team.coins}
                       </span>
                     </div>
-                    {alreadyDrew && (
-                      <span className="hidden sm:flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/90 text-white border border-emerald-200 shadow-sm shrink-0">
-                        <Check className="w-3 h-3 text-white" strokeWidth={3.5} />
-                      </span>
+                    {onAdjustCoins && (
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playPop();
+                            onAdjustCoins(team.id, 1);
+                          }}
+                          title={`Add 1 coin to ${team.name}`}
+                          aria-label={`Add 1 coin to ${team.name}`}
+                          className="w-7 h-7 rounded-lg bg-white/10 hover:bg-emerald-600/80 text-white flex items-center justify-center border border-white/20 hover:border-emerald-300 cursor-pointer transition-all active:scale-90"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            sounds.playPop();
+                            onAdjustCoins(team.id, -1);
+                          }}
+                          title={`Deduct 1 coin from ${team.name}`}
+                          aria-label={`Deduct 1 coin from ${team.name}`}
+                          className="w-7 h-7 rounded-lg bg-white/10 hover:bg-rose-600/80 text-white flex items-center justify-center border border-white/20 hover:border-rose-300 cursor-pointer transition-all active:scale-90"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
-                </button>
-                {canTogglePass && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      sounds.playClick();
-                      onTogglePassTeam?.(team.id);
-                    }}
-                    title={isPassed ? `Let ${team.name} draw this round` : `${team.name} gets no card this round`}
-                    aria-label={isPassed ? `Undo no card for ${team.name}` : `No card for ${team.name}`}
-                    className={`shrink-0 w-8 sm:w-9 rounded-xl border flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
-                      isPassed
-                        ? 'bg-rose-600 hover:bg-rose-500 text-white border-rose-300'
-                        : 'bg-slate-800/80 hover:bg-rose-900/70 text-slate-300 hover:text-rose-100 border-white/15'
-                    }`}
-                  >
-                    {isPassed ? <Undo2 className="w-3.5 h-3.5" /> : <Ban className="w-3.5 h-3.5" />}
-                    <span className="text-[0.5rem] font-black uppercase leading-none">{isPassed ? 'Undo' : 'Skip'}</span>
-                  </button>
-                )}
                 </div>
               );
             })}
           </div>
+
+          {!isRoundOver && onTogglePassTeam && (
+            <div className="shrink-0 grid grid-cols-2 gap-2 p-2 sm:p-2.5 border-t border-white/10 bg-black/40">
+              <button
+                type="button"
+                disabled={!canSkipSelected}
+                onClick={() => {
+                  if (!canSkipSelected || !selectedTeamId) return;
+                  sounds.playClick();
+                  onTogglePassTeam(selectedTeamId);
+                }}
+                title={
+                  !selectedTeamId
+                    ? 'Select a team first'
+                    : `${selectedTeam?.name} gets no card this round`
+                }
+                aria-label="Skip selected team"
+                className={`rounded-2xl border-2 py-2.5 sm:py-3 font-mario text-sm sm:text-base inline-flex items-center justify-center gap-2 transition-all ${
+                  !canSkipSelected
+                    ? 'bg-slate-900/50 border-white/10 text-slate-500 cursor-not-allowed'
+                    : 'bg-slate-800 hover:bg-rose-900/80 border-white/20 hover:border-rose-300/60 text-slate-200 hover:text-white cursor-pointer'
+                }`}
+              >
+                <Ban className="w-4 h-4" />
+                Skip
+              </button>
+              <button
+                type="button"
+                disabled={isRoundOver}
+                onClick={() => {
+                  sounds.playClick();
+                  setCardTrayPinned(true);
+                  requestAnimationFrame(() => {
+                    cardTrayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  });
+                }}
+                aria-label="Show mystery cards"
+                className={`rounded-2xl border-2 py-2.5 sm:py-3 font-mario text-sm sm:text-base inline-flex items-center justify-center gap-2 transition-all ${
+                  cardsActionLit
+                    ? 'bg-amber-500 hover:bg-amber-400 border-yellow-200 text-slate-950 shadow-[0_0_16px_rgba(251,191,36,0.45)] cursor-pointer animate-pulse'
+                    : showCardTray
+                    ? 'bg-amber-800/70 hover:bg-amber-700 border-amber-400/50 text-amber-100 cursor-pointer'
+                    : 'bg-slate-800 hover:bg-slate-700 border-white/20 text-slate-200 cursor-pointer'
+                }`}
+              >
+                <Layers className="w-4 h-4" />
+                Cards
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right Stage: Question Title, Answer Reveal & 6 Mystery Cards */}
@@ -524,99 +617,118 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
             )}
           </div>
 
-          {/* Cards Section */}
-          <div className="mt-auto rounded-3xl bg-black/35 border-t-2 border-t-amber-300/40 border-x border-b border-white/10 p-3 sm:p-4 flex flex-col shrink-0">
-            {(selectedTeam || isRoundOver) && (
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-mario text-xs sm:text-sm text-yellow-300">
-                  {selectedTeam ? `${selectedTeam.name} — Pick your Mystery Card!` : 'All Mystery Cards in this round:'}
-                </span>
-              </div>
-            )}
+          {/* Cards Section — gated until a winner is selected (or host pins via Cards) */}
+          <div
+            ref={cardTrayRef}
+            className="mt-auto rounded-3xl bg-black/35 border-t-2 border-t-amber-300/40 border-x border-b border-white/10 p-3 sm:p-4 flex flex-col shrink-0"
+          >
+            {showCardTray ? (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-mario text-xs sm:text-sm text-yellow-300">
+                    {selectedTeam
+                      ? `${selectedTeam.name} — Pick your Mystery Card!`
+                      : isRoundOver
+                      ? 'All Mystery Cards in this round:'
+                      : 'Mystery Cards'}
+                  </span>
+                </div>
 
-            {/* Mystery Cards Grid (dynamic 6 to 8 cards) */}
-            <div className="flex items-center justify-center">
-              <div
-                className={`grid gap-2 sm:gap-2.5 w-full ${
-                  slots.length >= 8
-                    ? 'grid-cols-4 sm:grid-cols-8 max-w-4xl'
-                    : slots.length === 7
-                    ? 'grid-cols-4 sm:grid-cols-7 max-w-4xl'
-                    : 'grid-cols-3 sm:grid-cols-6 max-w-3xl'
-                }`}
-              >
-                {slots.map((slot, idx) => {
-                  const claimedTeam = slot.claimedByTeamId ? teamsMap.get(slot.claimedByTeamId) ?? null : null;
-                  const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId && !isRoundOver;
-                  const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
+                <div className="flex items-center justify-center">
+                  <div
+                    className={`grid gap-2 sm:gap-2.5 w-full ${
+                      slots.length >= 8
+                        ? 'grid-cols-4 sm:grid-cols-8 max-w-4xl'
+                        : slots.length === 7
+                        ? 'grid-cols-4 sm:grid-cols-7 max-w-4xl'
+                        : 'grid-cols-3 sm:grid-cols-6 max-w-3xl'
+                    }`}
+                  >
+                    {slots.map((slot, idx) => {
+                      const claimedTeam = slot.claimedByTeamId ? teamsMap.get(slot.claimedByTeamId) ?? null : null;
+                      const canPick = Boolean(selectedTeamId) && !slot.claimedByTeamId && !isRoundOver;
+                      const previewUnclaimed = Boolean(testGame && slot.card && !slot.claimedByTeamId);
 
-                  return (
-                    <button
-                      key={idx}
-                      type="button"
-                      disabled={!canPick}
-                      onClick={() => canPick && onPickSlot(idx)}
-                      className={`relative aspect-[2/3] w-full rounded-2xl border-2 overflow-hidden transition-all select-none ${
-                        slot.claimedByTeamId
-                          ? 'border-white/30 cursor-default opacity-90'
-                          : canPick
-                          ? 'border-amber-300 cursor-pointer hover:scale-105 hover:brightness-110 shadow-lg'
-                          : 'border-white/15 opacity-60 cursor-not-allowed'
-                      }`}
-                    >
-                      {slot.claimedByTeamId && slot.card ? (
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center">
-                          <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-yellow-200 leading-tight line-clamp-2">
-                            {slot.card.title}
-                          </span>
-                          {(slot.card.type === 'gold_star' ||
-                            slot.card.type === 'bowser_revolution' ||
-                            slot.card.type === 'bowser_fury') && (
-                            <span className="text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
-                              Round Over
-                            </span>
-                          )}
-                          {claimedTeam && (
-                            <div className="flex flex-col items-center gap-0.5 mt-auto min-w-0 max-w-full">
-                              <TeamAvatar
-                                characterId={claimedTeam.characterId}
-                                size="xs"
-                                customUrl={claimedTeam.customImageUrl}
-                              />
-                              <span className="text-[0.5rem] sm:text-[0.5625rem] font-bold text-white truncate max-w-full">
-                                {claimedTeam.name}
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          disabled={!canPick}
+                          onClick={() => canPick && onPickSlot(idx)}
+                          className={`relative aspect-[2/3] w-full rounded-2xl border-2 overflow-hidden transition-all select-none ${
+                            slot.claimedByTeamId
+                              ? 'border-white/30 cursor-default opacity-90'
+                              : canPick
+                              ? 'border-amber-300 cursor-pointer hover:scale-105 hover:brightness-110 shadow-lg'
+                              : 'border-white/15 opacity-60 cursor-not-allowed'
+                          }`}
+                        >
+                          {slot.claimedByTeamId && slot.card ? (
+                            <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-950 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center">
+                              <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-yellow-200 leading-tight line-clamp-2">
+                                {slot.card.title}
+                              </span>
+                              {(slot.card.type === 'gold_star' ||
+                                slot.card.type === 'bowser_revolution' ||
+                                slot.card.type === 'bowser_fury') && (
+                                <span className="text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-rose-300 bg-rose-950/80 px-1.5 py-0.5 rounded-full border border-rose-400/40">
+                                  Round Over
+                                </span>
+                              )}
+                              {claimedTeam && (
+                                <div className="flex flex-col items-center justify-center gap-0.5 mt-auto min-w-0 max-w-full">
+                                  <TeamAvatar
+                                    characterId={claimedTeam.characterId}
+                                    size="xs"
+                                    customUrl={claimedTeam.customImageUrl}
+                                  />
+                                  <span className="text-[0.5rem] sm:text-[0.5625rem] font-bold text-white truncate max-w-full">
+                                    {claimedTeam.name}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          ) : isRoundOver && slot.card ? (
+                            <div className="absolute inset-0 bg-gradient-to-b from-slate-800/70 to-slate-950/80 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center opacity-70">
+                              <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-slate-200 leading-tight line-clamp-2">
+                                {slot.card.title}
+                              </span>
+                              <span className="mt-auto text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-slate-300 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20">
+                                Not picked
                               </span>
                             </div>
+                          ) : (
+                            <MysteryCardBack
+                              idx={idx}
+                              slotNumber={idx + 1}
+                              numberMedallion
+                              bottomLabel={null}
+                              badgeText={previewUnclaimed ? 'TEST' : undefined}
+                              previewTitle={previewUnclaimed ? slot.card?.title : undefined}
+                            />
                           )}
-                        </div>
-                      ) : isRoundOver && slot.card ? (
-                        <div className="absolute inset-0 bg-gradient-to-b from-slate-800/70 to-slate-950/80 flex flex-col items-center justify-between p-1.5 sm:p-2 text-center opacity-70">
-                          <span className="font-mario text-[0.5313rem] sm:text-[0.625rem] md:text-xs text-slate-200 leading-tight line-clamp-2">
-                            {slot.card.title}
-                          </span>
-                          <span className="mt-auto text-[0.4688rem] sm:text-[0.5rem] font-black uppercase tracking-wider text-slate-300 bg-black/60 px-1.5 py-0.5 rounded-full border border-white/20">
-                            Not picked
-                          </span>
-                        </div>
-                      ) : (
-                        <MysteryCardBack
-                          idx={idx}
-                          slotNumber={idx + 1}
-                          numberMedallion
-                          bottomLabel={null}
-                          badgeText={previewUnclaimed ? 'TEST' : undefined}
-                          previewTitle={previewUnclaimed ? slot.card?.title : undefined}
-                        />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playClick();
+                  setCardTrayPinned(true);
+                }}
+                className="w-full py-6 rounded-2xl border-2 border-dashed border-amber-300/40 bg-black/25 hover:bg-black/40 text-amber-200/90 font-mario text-sm sm:text-base inline-flex items-center justify-center gap-2 cursor-pointer transition-colors"
+              >
+                <Layers className="w-5 h-5 text-amber-300" />
+                Select a winner, then pick a card
+              </button>
+            )}
 
-            {/* Bottom Actions */}
             {isRoundOver && (
-            <div className="flex items-center justify-end mt-3 pt-2 border-t border-white/10 shrink-0">
+              <div className="flex items-center justify-end mt-3 pt-2 border-t border-white/10 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -624,13 +736,13 @@ export const ClassicRoundModal = React.memo(function ClassicRoundModal({
                     if (onFinishRound) onFinishRound();
                     else onEndRound();
                   }}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-mario text-sm sm:text-base border-2 border-yellow-200 cursor-pointer inline-flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-transform"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-mario text-sm sm:text-base border-2 border-yellow-200 cursor-pointer inline-flex items-center justify-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-transform"
                 >
                   <Sparkles className="w-4 h-4" />
                   FINISH ROUND & NEXT BLOCK
                   <ArrowRight className="w-4 h-4" />
                 </button>
-            </div>
+              </div>
             )}
           </div>
         </div>

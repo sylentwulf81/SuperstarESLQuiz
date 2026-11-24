@@ -510,6 +510,7 @@ export function MarioBlastClassic({
             cardsRemaining={cardsRemaining}
             onSelectTeam={handleSelectAnsweringTeam}
             onTogglePassTeam={handleTogglePassTeam}
+            onAdjustCoins={handleAdjustCoins}
             onPickSlot={handlePickSlot}
             onEndRound={handleEndRound}
             onCancelIfEmpty={handleCancelEmptyRound}
